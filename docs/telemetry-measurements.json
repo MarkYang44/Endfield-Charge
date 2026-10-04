@@ -298,5 +298,12 @@
     "Sources/EndfieldCharge/TelemetryWindowController.swift": "b9cdf36ac2d984ac5ff7e6fabb56ccf84f905f8157c7773aaf19d34ca7b8ff00",
     "Sources/EndfieldCharge/main.swift": "7894dfeff65629d3f17912ea7547d7c766e7511c4ea597968eef21edb4998b4e",
     "scripts/build-app.sh": "2cf2f32ef5fbf2343da637c0bae41c0445a6db0b839c3dfc8e61a547b738de5a"
+  },
+  "source_commit": "b1e77d18e2072420be09fbc196e5f3b00c63713b",
+  "github_build": {
+    "run_id": 37219089147,
+    "url": "https://github.com/MarkYang44/Endfield-Charge/actions/runs/37219089147",
+    "conclusion": "success",
+    "tested_source_commit": "b1e77d18e2072420be09fbc196e5f3b00c63713b"
   }
 }

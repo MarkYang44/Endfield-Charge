@@ -47,3 +47,7 @@ Artifact hashes, source-file fingerprints, run-level summaries and full compress
 Independent review found two functional issues: minimize/hide did not slow the resident sampler, and direct `--telemetry` could not reach an already-running resident. Both were repaired and re-reviewed; the native visibility sequence and real resident CLI test verified the resulting behavior. The fixed-action local request is addressed to the resident PID, handled on the main queue and accepts no paths, arbitrary arguments or preference edits.
 
 The final eight-line legacy battery forwarding fix was independently reviewed with no concrete P1/P2 finding. It updates only the cached battery fields, preserves the telemetry sample timestamp, honors the closing send gate and introduces no timer or additional collection.
+
+## Published source
+
+Final application source: `b1e77d18e2072420be09fbc196e5f3b00c63713b`. Its [GitHub macOS build](https://github.com/MarkYang44/Endfield-Charge/actions/runs/37219089147) completed successfully, including core tests, universal app packaging and artifact upload. Later documentation-only commits do not change the measured executable. Source fingerprints and the local artifact hash were checked against this commit.
