@@ -69,22 +69,184 @@ let triangle = VectorPath(commands: [
     .move(p(345, 236)), .line(p(839, 236)), .line(p(717, 451)),
     .move(p(372, 564)), .line(p(512, 810)), .line(p(652, 564))
 ])
+// Thirteen terrain contours flow in two groups inside the triangle silhouette.
+// Control points also stay inside it, keeping the cubic curves bounded.
 let contours = [
-    VectorPath(commands: [.move(p(268, 299)),
-        .curve(p(291, 341), p(338, 365), p(338, 405)),
-        .curve(p(338, 440), p(350, 466), p(365, 482))]),
-    VectorPath(commands: [.move(p(753, 300)),
-        .curve(p(693, 264), p(635, 276), p(638, 321)),
-        .curve(p(641, 370), p(723, 345), p(710, 402))]),
-    VectorPath(commands: [.move(p(732, 328)),
-        .curve(p(690, 301), p(660, 307), p(664, 333)),
-        .curve(p(668, 356), p(733, 362), p(688, 429))])
+    VectorPath(commands: [.move(p(246, 278)),
+        .curve(p(275, 318), p(313, 344), p(319, 383)),
+        .curve(p(325, 423), p(349, 435), p(365, 477)),
+        .curve(p(380, 518), p(384, 555), p(436, 619))]),
+    VectorPath(commands: [.move(p(270, 275)),
+        .curve(p(289, 306), p(338, 326), p(338, 373)),
+        .curve(p(338, 411), p(364, 426), p(382, 471)),
+        .curve(p(403, 514), p(410, 568), p(460, 639))]),
+    VectorPath(commands: [.move(p(294, 274)),
+        .curve(p(314, 303), p(359, 311), p(358, 360)),
+        .curve(p(357, 405), p(383, 415), p(399, 461)),
+        .curve(p(415, 507), p(430, 568), p(481, 654))]),
+    VectorPath(commands: [.move(p(319, 273)),
+        .curve(p(335, 293), p(381, 302), p(379, 350)),
+        .curve(p(377, 390), p(400, 416), p(418, 456)),
+        .curve(p(437, 498), p(445, 560), p(497, 662))]),
+    VectorPath(commands: [.move(p(343, 273)),
+        .curve(p(362, 290), p(400, 300), p(400, 337)),
+        .curve(p(399, 381), p(417, 404), p(438, 449)),
+        .curve(p(457, 491), p(470, 562), p(516, 655))]),
+    VectorPath(commands: [.move(p(367, 274)),
+        .curve(p(387, 290), p(421, 296), p(420, 329)),
+        .curve(p(419, 373), p(438, 397), p(456, 436)),
+        .curve(p(478, 482), p(491, 554), p(535, 632))]),
+    VectorPath(commands: [.move(p(765, 280)),
+        .curve(p(709, 252), p(650, 263), p(637, 299)),
+        .curve(p(625, 336), p(678, 353), p(692, 379)),
+        .curve(p(709, 414), p(669, 452), p(656, 488)),
+        .curve(p(644, 523), p(635, 548), p(618, 591))]),
+    VectorPath(commands: [.move(p(753, 303)),
+        .curve(p(705, 275), p(665, 283), p(660, 309)),
+        .curve(p(654, 336), p(702, 345), p(713, 376)),
+        .curve(p(723, 407), p(691, 441), p(675, 478))]),
+    VectorPath(commands: [.move(p(741, 326)),
+        .curve(p(708, 300), p(681, 305), p(681, 321)),
+        .curve(p(681, 339), p(727, 349), p(730, 376)),
+        .curve(p(733, 400), p(714, 423), p(698, 446))]),
+    VectorPath(commands: [.move(p(620, 276)),
+        .curve(p(594, 317), p(623, 348), p(654, 371)),
+        .curve(p(686, 397), p(647, 433), p(640, 477)),
+        .curve(p(634, 525), p(613, 567), p(604, 614))]),
+    VectorPath(commands: [.move(p(598, 275)),
+        .curve(p(570, 319), p(593, 351), p(625, 379)),
+        .curve(p(660, 410), p(628, 443), p(620, 488)),
+        .curve(p(610, 537), p(594, 582), p(580, 647))]),
+    VectorPath(commands: [.move(p(575, 275)),
+        .curve(p(548, 318), p(567, 358), p(596, 388)),
+        .curve(p(629, 422), p(606, 450), p(599, 495)),
+        .curve(p(592, 543), p(569, 592), p(555, 671))]),
+    VectorPath(commands: [.move(p(552, 275)),
+        .curve(p(527, 316), p(542, 360), p(569, 395)),
+        .curve(p(594, 428), p(586, 457), p(579, 501)),
+        .curve(p(570, 550), p(548, 600), p(533, 690))])
 ]
 // Exact Geo.Bolt points from HUDView.boltPath, QinAnze/zmd-charge (MIT).
 let boltPolygons = [
     [p(13, 2), p(4, 13), p(12, 13), p(18, 2)],
     [p(13, 11), p(20, 11), p(13, 22), p(4, 22)]
 ].map { polygon($0).transformed(scale: 340 / 24, offset: p(342, 260)) }
+
+// Exact glyph outlines from the first five children of g#svg-def-game-logo
+// and its I rectangle in Resources/endfield-industries.svg. Relative SVG and
+// smooth cubic commands are expanded to absolute commands, preserving winding.
+let endfieldWordmark = [
+    // Original wordmark child 1.
+    VectorPath(commands: [
+        .move(p(104.5, 239.2)),
+        .line(p(104.5, 279.9)),
+        .line(p(83.2, 279.9)),
+        .line(p(83.2, 203)),
+        .line(p(104.9, 203)),
+        .line(p(134.1, 243.1)),
+        .line(p(134.5, 243)),
+        .line(p(134.5, 203)),
+        .line(p(136.1, 203)),
+        .curve(p(147.7, 203), p(159.3, 202.9), p(170.9, 203)),
+        .curve(p(182.5, 203.1), p(192.4, 207.1), p(200.4, 215.5)),
+        .curve(p(206.4, 221.7), p(209.5, 229.3), p(210.3, 237.9)),
+        .curve(p(211.1, 246.5), p(209.9, 253), p(206.1, 259.9)),
+        .curve(p(200.8, 270), p(192.2, 275.9), p(181.2, 278.6)),
+        .curve(p(177.7, 279.4), p(174.2, 279.9), p(170.6, 279.9)),
+        .curve(p(158.9, 280), p(147.1, 280), p(135.4, 280)),
+        .line(p(134, 280)),
+        .line(p(104.8, 239)),
+        .line(p(104.5, 239.2)),
+        .move(p(156.5, 260.3)),
+        .curve(p(162.4, 260.1), p(168.1, 260.7), p(173.9, 259.7)),
+        .curve(p(183, 258.1), p(188.1, 252.7), p(188.9, 243.5)),
+        .curve(p(189.5, 236.8), p(187.6, 231), p(182, 226.8)),
+        .curve(p(179, 224.5), p(175.3, 223.1), p(171.5, 222.9)),
+        .curve(p(166.8, 222.6), p(162.2, 222.8), p(157.6, 222.7)),
+        .line(p(156.6, 222.9)),
+        .line(p(156.5, 260.3)),
+        .close
+    ]),
+    // Original wordmark child 2.
+    VectorPath(commands: [
+        .move(p(364.4, 280)),
+        .line(p(364.4, 203.1)),
+        .line(p(385.6, 203.1)),
+        .line(p(385.6, 260.2)),
+        .line(p(416.2, 260.2)),
+        .line(p(416.2, 203)),
+        .line(p(418, 203)),
+        .curve(p(429.4, 203), p(440.8, 202.9), p(452.1, 203)),
+        .curve(p(463.5, 203.1), p(474.3, 207.3), p(482.3, 216.2)),
+        .curve(p(488.3, 222.9), p(491.3, 230.8), p(491.7, 239.7)),
+        .curve(p(492.1, 246.3), p(490.8, 253), p(488, 259)),
+        .curve(p(482.7, 269.5), p(473.9, 275.8), p(462.6, 278.7)),
+        .curve(p(459.1, 279.6), p(455.6, 280), p(452, 280)),
+        .curve(p(423.3, 280.1), p(394.5, 280.1), p(365.8, 280.1)),
+        .line(p(364.3, 280.1)),
+        .move(p(437.9, 260.5)),
+        .line(p(446.6, 260.5)),
+        .curve(p(449.6, 260.5), p(452.6, 260.2), p(455.5, 259.8)),
+        .curve(p(462.6, 258.4), p(467.9, 254.6), p(469.7, 247.2)),
+        .curve(p(470.2, 245), p(470.4, 242.8), p(470.2, 240.5)),
+        .curve(p(469.9, 233.3), p(466.4, 228.1), p(459.9, 225)),
+        .curve(p(457.5, 223.8), p(454.8, 223.1), p(452, 223.1)),
+        .curve(p(447.7, 223), p(443.5, 223), p(439.2, 223)),
+        .line(p(437.9, 223.2)),
+        .line(p(437.9, 260.5)),
+        .close
+    ]),
+    // Original wordmark child 3.
+    VectorPath(commands: [
+        .move(p(42, 222.8)),
+        .curve(p(42, 223.5), p(41.9, 224.1), p(41.9, 224.7)),
+        .line(p(41.9, 232.5)),
+        .line(p(68.1, 232.5)),
+        .line(p(68.1, 250.4)),
+        .line(p(42.1, 250.4)),
+        .line(p(42.1, 260.3)),
+        .line(p(78.8, 260.3)),
+        .line(p(78.8, 280)),
+        .line(p(20.6, 280)),
+        .line(p(20.6, 203.1)),
+        .line(p(78.1, 203.1)),
+        .line(p(78.1, 222.8)),
+        .line(p(42, 222.8)),
+        .close
+    ]),
+    // Original wordmark child 4.
+    VectorPath(commands: [
+        .move(p(301.7, 279.9)),
+        .line(p(301.7, 203)),
+        .line(p(359.3, 203)),
+        .line(p(359.3, 222.7)),
+        .line(p(323.3, 222.7)),
+        .line(p(323.3, 232.4)),
+        .line(p(349.2, 232.4)),
+        .line(p(349.2, 250.3)),
+        .line(p(323.3, 250.3)),
+        .line(p(323.3, 260.3)),
+        .line(p(360, 260.3)),
+        .line(p(360, 279.9)),
+        .close
+    ]),
+    // Original wordmark child 5.
+    VectorPath(commands: [
+        .move(p(271.2, 222.8)),
+        .line(p(236.2, 222.8)),
+        .line(p(236.2, 234)),
+        .line(p(263.1, 234)),
+        .line(p(263.1, 253.9)),
+        .line(p(236.1, 253.9)),
+        .line(p(236.1, 280)),
+        .line(p(214.8, 280)),
+        .line(p(214.8, 203.1)),
+        .line(p(271.2, 203.1)),
+        .close
+    ]),
+    // Original I rectangle: x=275, y=203.1, width=21.2, height=76.9.
+    polygon([p(275, 203.1), p(296.2, 203.1), p(296.2, 280), p(275, 280)])
+]
 
 struct Shape {
     let path: VectorPath
@@ -103,10 +265,17 @@ struct Shape {
         return "  <path d=\"\(path.svg)\" \(style) opacity=\"\(opacity)\"/>"
     }
 }
+// App-only layout leaves a clear band below the triangle for the original logo.
+// The menu artwork continues to use the unmodified triangle and Geo.Bolt above.
+let appScale: CGFloat = 0.95
+let appOffset = p(25.6, -60)
 let appShapes = [Shape(path: roundedSquare(), color: 0x262425),
-                 Shape(path: triangle, color: 0xE9E7E4, width: 26)] +
-    contours.map { Shape(path: $0, color: 0xE9E7E4, width: 10, opacity: 0.46) } +
-    boltPolygons.map { Shape(path: $0, color: 0xC6CA4C) }
+                 Shape(path: triangle.transformed(scale: appScale, offset: appOffset),
+                       color: 0xE9E7E4, width: 26 * appScale)] +
+    contours.map { Shape(path: $0.transformed(scale: appScale, offset: appOffset),
+                         color: 0xE9E7E4, width: 6.5 * appScale, opacity: 0.36) } +
+    boltPolygons.map { Shape(path: $0.transformed(scale: appScale, offset: appOffset), color: 0xC6CA4C) } +
+    endfieldWordmark.map { Shape(path: $0.transformed(scale: 1.4, offset: p(153.8, 490.8)), color: 0xE9E7E4) }
 let menuScale: CGFloat = 1.22
 let menuOffset = p(512 * (1 - menuScale), 512 * (1 - menuScale))
 let menuShapes = [Shape(path: triangle.transformed(scale: menuScale, offset: menuOffset),
