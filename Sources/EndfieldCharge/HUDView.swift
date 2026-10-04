@@ -123,11 +123,11 @@ final class HUDView: NSView {
     private func drawNumbers(_ f: HUDFrame) {
         guard f.numbersOpacity > 0 else { return }
         let alpha = f.numbersOpacity
-        let current = snapshot.energyWh.map { String(format: "≈%.0f", $0 * 1000) } ?? "—"
-        let full = snapshot.fullEnergyWh.map { String(format: "/%.0f", $0 * 1000) } ?? "/—"
+        let current = snapshot.energyWh.map { String(format: "≈%.1f", $0) } ?? "—"
+        let full = snapshot.fullEnergyWh.map { String(format: "/%.1f", $0) } ?? "/—"
         let currentWidth = drawText(current, at: NSPoint(x: 94, y: 56), size: 26, alpha: alpha)
         let fullWidth = drawText(full, at: NSPoint(x: 98 + currentWidth, y: 64), size: 14, alpha: alpha * 0.55)
-        drawText("mWh", at: NSPoint(x: 103 + currentWidth + fullWidth, y: 67), size: 10, alpha: alpha * 0.4)
+        drawText("Wh", at: NSPoint(x: 103 + currentWidth + fullWidth, y: 67), size: 10, alpha: alpha * 0.4)
         let percentage = snapshot.percent.map(String.init) ?? "—"
         let numberWidth = textWidth(percentage, size: 22)
         drawText(percentage, at: NSPoint(x: 491 - numberWidth, y: 59), size: 22, alpha: alpha)

@@ -28,4 +28,12 @@ Physical charger insertion/removal, a real full-battery/low-battery cycle, sleep
 - [GitHub Actions run 37186658956](https://github.com/MarkYang44/Endfield-Charge/actions/runs/37186658956) completed successfully: tests, universal app build and artifact upload all passed. The tag-only release job was correctly skipped on the main-branch push.
 - The local zip was extracted into a separate temporary folder. Its executable matches the packaged application with SHA-256 `c9d182f1ce3acdfd96972f939fabbd430ff862d97426be80c7c6735a96443e66`; signature verification and live battery JSON output succeeded from that extracted copy.
 
-The final follow-up commit updates documentation only and skips a duplicate CI run. Native source and the tested application are unchanged. Physical-system and signing limits above still apply.
+The publication follow-up commit updates documentation only and skips a duplicate CI run. Native source and the tested application were unchanged at that stage. Physical-system and signing limits above still apply.
+
+## Wh display update
+
+- Hardware inspection confirms this local machine is a MacBook Air, identifier Mac17,3, with an Apple M5 chip.
+- HUD energy values now use Wh directly with one decimal place, preserving the approximate-value marker. The previous multiplication by 1000 and milli-unit label were removed; the underlying battery reader and energy calculation are unchanged.
+- Settings copy, README, design specification and numeric preview image were updated together. A freshly exported demo frame visibly reads `≈45.6 /60.0 Wh`.
+- Both arm64 and x86_64 builds completed successfully. The repackaged zip was extracted separately; strict signature verification passed and its executable matches the app byte-for-byte.
+- Updated executable SHA-256: `d650aece4f676d26d89c407635f70a662e0ba9bf6086578c7b29f4006d2ddc3e`. The updated app was relaunched with a live-battery preview.

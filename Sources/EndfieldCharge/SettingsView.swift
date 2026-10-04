@@ -126,7 +126,7 @@ struct SettingsView: View {
             Text(t("终末地风格的 macOS 原生电量终端", "A native Endfield-inspired macOS battery HUD"))
             Text(t("视觉、图案和动画参考 QinAnze/zmd-charge。原生实现：Mark Yang。", "Visuals, geometry and timing inspired by QinAnze/zmd-charge. Native implementation: Mark Yang."))
                 .font(.caption).foregroundStyle(.secondary)
-            Text(t("“超充模式”为主题文案，不代表检测到快充。mWh 为根据当前电压推算的近似能量。", "“Super charge” is theme copy, not fast-charge detection. mWh is an estimate using the current voltage."))
+            Text(t("“超充模式”为主题文案，不代表检测到快充。Wh 为根据当前电压推算的近似能量。", "“Super charge” is theme copy, not fast-charge detection. Wh is an estimate using the current voltage."))
                 .font(.caption).foregroundStyle(.secondary)
             HStack {
                 Link(t("GitHub 仓库", "GitHub Repository"), destination: URL(string: "https://github.com/MarkYang44/Endfield-Charge")!)

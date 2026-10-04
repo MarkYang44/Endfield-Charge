@@ -19,7 +19,7 @@ Alternatives considered: porting Avalonia preserves framework familiarity but ad
 - Menu bar: actual percentage, preview, charging/battery demos, settings, quit. A configurable native global shortcut previews actual state without accessibility permission.
 - Settings: display, top-left/center/right, scale, duration, Chinese/English/system language, low-battery/full-charge alerts, low-power-mode alerts, and opt-in launch at login.
 - Use debounced IOKit change events with a slow fallback refresh, recover after sleep, avoid duplicate alert storms, and handle Macs without batteries.
-- Display mAh only when that unit is actually available. An energy value in mWh derived from capacity and current voltage must be marked approximate. Unknown data must remain unknown rather than using invented capacities.
+- Display mAh only when that unit is actually available. An energy value in Wh derived from capacity and current voltage must be marked approximate and displayed with one decimal place. Unknown data must remain unknown rather than using invented capacities.
 
 ## Delivery and verification
 
