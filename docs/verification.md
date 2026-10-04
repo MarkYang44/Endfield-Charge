@@ -71,3 +71,9 @@ The publication follow-up commit updates documentation only and skips a duplicat
 - A separate unchanged-settings process-exit measurement kept the same resident PID throughout: 42.52 MiB with settings open, 11.20 MiB after SIGTERM of the settings child, and 14.56 MiB after a live preview finished. This measures child-exit cache release, not a user-confirmed physical close-button action; normal window close and acknowledged natural exit are covered by the native process regression.
 
 Physical event, real login, multiple-display, older macOS and Intel runtime limits from the earlier record still apply. Signing remains ad-hoc. The new source and packaged app were locally verified; the status of any subsequently triggered GitHub Actions run must be checked separately.
+
+## Optimization publication
+
+- Implementation commit `599642c69af01b537d0a1552151c429eb0f72366` was pushed to the existing public repository's main branch. A fresh remote reference matches the local commit; the GitHub API also reports the same source tree `3c3e534875fd3998422a5c3c730f1f9db6100ec4`.
+- [GitHub Actions run 37199548497](https://github.com/MarkYang44/Endfield-Charge/actions/runs/37199548497) passed core tests, universal app compilation and artifact upload. The tag-only release job was skipped as expected. These CI checks do not include the local graphical runtime script.
+- The optimized app was restored through LaunchServices and remains resident at the project dist path with settings closed. This publication follow-up updates verification/planning documentation only and skips a duplicate CI run; the tested source and packaged executable are unchanged.

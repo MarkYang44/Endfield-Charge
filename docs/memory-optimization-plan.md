@@ -39,6 +39,7 @@ Files: scripts/build-app.sh, docs/verification.md, README.md, docs/design.md, do
 - [x] Run `bash scripts/test.sh`, build universal, verify architecture/signature, snapshot CLI, PNG renders, launch and extracted ZIP binary equality.
 - [x] Run the same baseline benchmark against the final app; record medians and sampled peaks with limitations. Verify settings teardown, idle CPU and repeated animation lifecycle. Explicitly report higher settings-open total footprint.
 - [x] Request independent code review and resolve material findings; prepare verified source and app for publication to the existing authorized public repository.
+- [x] Publish the implementation, confirm remote commit/tree and successful GitHub universal build/artifact upload, and restore the optimized app through LaunchServices with settings closed.
 
 ## Audit decisions
 
