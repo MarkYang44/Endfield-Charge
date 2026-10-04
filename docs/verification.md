@@ -20,4 +20,12 @@ Sandboxed `iconutil` rejected a dimensionally valid iconset, and sandboxed Launc
 
 Physical charger insertion/removal, a real full-battery/low-battery cycle, sleep/wake, multiple real displays, a real subsequent login, macOS 13 runtime behavior and Intel runtime behavior were not independently exercised. Event reducers and visual demos cover their logic but do not prove the corresponding physical system transitions. Apple Developer ID signing and notarization were not performed.
 
-The public GitHub repository was created and confirmed through the authenticated connector. Remote source and CI verification are recorded after upload; this local record does not by itself claim a completed hosted build.
+## Confirmed on GitHub
+
+- Public repository: https://github.com/MarkYang44/Endfield-Charge. The connected GitHub profile is MarkYang44; repository metadata confirmed public visibility and user ownership.
+- The connector returned 403 for writing blobs to the newly created repository. Upload instead succeeded using the user's existing macOS Git credential helper, without changing connector permissions.
+- Code commit `e2b703a08acfa2922fda8647061ac4690c22d3c0` was pushed to main. An anonymous fresh clone reproduced both that commit and local tree `49257c4f2a38b2dfce242c7ad97180a80f1411e6` exactly, covering all source, workflow, documentation, icon and preview files. The local main branch tracks origin/main.
+- [GitHub Actions run 37186658956](https://github.com/MarkYang44/Endfield-Charge/actions/runs/37186658956) completed successfully: tests, universal app build and artifact upload all passed. The tag-only release job was correctly skipped on the main-branch push.
+- The local zip was extracted into a separate temporary folder. Its executable matches the packaged application with SHA-256 `c9d182f1ce3acdfd96972f939fabbd430ff862d97426be80c7c6735a96443e66`; signature verification and live battery JSON output succeeded from that extracted copy.
+
+The final follow-up commit updates documentation only and skips a duplicate CI run. Native source and the tested application are unchanged. Physical-system and signing limits above still apply.
