@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <path d="M258.000 64.000 L766.000 64.000 C873.143 64.000 960.000 150.857 960.000 258.000 L960.000 766.000 C960.000 873.143 873.143 960.000 766.000 960.000 L258.000 960.000 C150.857 960.000 64.000 873.143 64.000 766.000 L64.000 258.000 C64.000 150.857 150.857 64.000 258.000 64.000 Z" fill="#262425" opacity="1.0"/>
+  <path d="M265.000 236.000 L185.000 236.000 L307.000 451.000 M345.000 236.000 L839.000 236.000 L717.000 451.000 M372.000 564.000 L512.000 810.000 L652.000 564.000" fill="none" stroke="#E9E7E4" stroke-width="26.0" stroke-linecap="butt" stroke-linejoin="miter" opacity="1.0"/>
+  <path d="M268.000 299.000 C291.000 341.000 338.000 365.000 338.000 405.000 C338.000 440.000 350.000 466.000 365.000 482.000" fill="none" stroke="#E9E7E4" stroke-width="10.0" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.46"/>
+  <path d="M753.000 300.000 C693.000 264.000 635.000 276.000 638.000 321.000 C641.000 370.000 723.000 345.000 710.000 402.000" fill="none" stroke="#E9E7E4" stroke-width="10.0" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.46"/>
+  <path d="M732.000 328.000 C690.000 301.000 660.000 307.000 664.000 333.000 C668.000 356.000 733.000 362.000 688.000 429.000" fill="none" stroke="#E9E7E4" stroke-width="10.0" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.46"/>
+  <path d="M526.167 288.333 L398.667 444.167 L512.000 444.167 L597.000 288.333 Z" fill="#C6CA4C" opacity="1.0"/>
+  <path d="M526.167 415.833 L625.333 415.833 L526.167 571.667 L398.667 571.667 Z" fill="#C6CA4C" opacity="1.0"/>
+</svg>

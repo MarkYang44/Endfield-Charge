@@ -6,11 +6,13 @@
 ![电池模式](docs/images/battery-title.png)
 ![电量胶囊](docs/images/battery-level.png)
 
+![App 图标与菜单栏标识](docs/images/charge-icon-preview.png)
+
 ## 使用
 
 需要 macOS 13 或更新版本。应用支持 Apple Silicon 与 Intel；本地通过 `--universal` 打包可得到双架构版本。
 
-下载 [GitHub Actions 构建产物](https://github.com/MarkYang44/Endfield-Charge/actions)或 [Releases](https://github.com/MarkYang44/Endfield-Charge/releases) 中的 zip，解压后把 **Endfield Charge.app** 放入 Applications，双击启动。菜单栏会出现电标和电量。点击图标可预览、模拟插拔电源、打开遥测终端、设置或退出。
+下载 [最新正式版安装包](https://github.com/MarkYang44/Endfield-Charge/releases/latest/download/Endfield-Charge-macOS.zip)（[发行说明](https://github.com/MarkYang44/Endfield-Charge/releases/latest)）或 [GitHub Actions 构建产物](https://github.com/MarkYang44/Endfield-Charge/actions)，解压后把 **Endfield Charge.app** 放入 Applications，双击启动。菜单栏会出现电标和电量。点击图标可预览、模拟插拔电源、打开遥测终端、设置或退出。
 
 默认全局快捷键 **Control + Option + H**。在「设置 → 通用」中可组合选择 ⌘ Command、⌃ Control、⌥ Option、⇧ Shift 和 A–Z 字母，例如 **Command + Shift + E**；至少选择 Command、Control 或 Option 中的一个。快捷键不可用时会在设置中提示，可随时关闭。升级会保留原有设置。应用不需要辅助功能或录屏权限。默认关闭登录启动，移入 Applications 后可在设置中主动开启。
 
@@ -22,7 +24,7 @@
 - 插电波纹向外扩散，拔电波纹向内收拢；HUD 不抢焦点、不挡鼠标，可见胶囊紧贴菜单栏和刘海下方（间距约 2 pt），展开时向下伸展。
 - IOKit 电源事件监听、400ms 去抖、30 秒刷新兜底和唤醒后刷新。动态阶段保持 60 Hz，静止显示阶段只等待关闭时刻；结束后释放 HUD 窗口与绘图视图。
 - 真实百分比、剩余时间和近似 Wh（一位小数）；正确区分接电未充电、正在充电、已充满及电池供电。
-- 菜单栏使用提供的终末地图标原始图案，并跟随 macOS 明暗主题；来源 SVG 一并保存。
+- App 图标采用炭黑底、断开倒三角、简化等高线与黄绿色几何闪电；菜单栏采用同一标识的单色简化版，跟随 macOS 明暗主题。原始 SVG 与新矢量源均保留。
 - 多显示器选择、顶部左/中/右、40–120% 缩放、3–10 秒时长、波纹开关、中文/英文/跟随系统、菜单栏百分比。
 - 低电量、充满和系统低电量模式切换提醒，阈值可调；首次启动不会补发历史提醒。
 - 跟随系统“减少动态效果”，使用简化淡入淡出。设置自动保存到应用的 UserDefaults 域。
@@ -76,10 +78,16 @@ Sources/ChargeCore/          电池/遥测模型、差分与均值、事件、�
 Sources/EndfieldCharge/      原生采集/监听、AppKit HUD与遥测、菜单栏、快捷键、界面进程生命周期
 Tests/ChargeCoreTests/       电量、事件和动画测试
 Tests/RuntimeChecks/         需要图形桌面的原生生命周期与通信检查
-Resources/                  原项目应用图标
-scripts/                    测试与 .app / zip 打包
+Resources/                  新图标 PNG / SVG 与用户提供的原始标识
+scripts/                    图标矢量导出、测试与 .app / zip 打包
 .github/workflows/          通用架构 CI、标签 Release
 docs/                       设计、执行计划、验证记录与预览图
+```
+
+图标的原生矢量源可重复导出：
+
+```bash
+swift scripts/render-icons.swift
 ```
 
 推送 main 会测试并打包 universal zip；推送 `v*` 标签会创建 Release。尚未签发 Developer ID 或公证，CI 使用 ad-hoc 签名。
@@ -88,9 +96,9 @@ docs/                       设计、执行计划、验证记录与预览图
 
 设置和遥测界面使用原生 AppKit，并按需以同一可执行文件的独立进程打开；关闭窗口后进程退出，释放系统控件、字体和曲线缓存。常驻部分只有原电池监听/菜单栏/快捷键与低频遥测采集，无第三方运行时。私有管道只传单次采样和偏好，正常关闭在最终状态确认后退出，保留当前会话的页签和窗口位置；主进程无响应时另有 2 秒退出兜底。
 
-新版遥测的同机三轮冷启动测量如下，采用整个应用进程组的 physical footprint、采样末值中位数：
+遥测版本 `b1e77d1`（图标更新前）的同机三轮冷启动测量如下，采用整个应用进程组的 physical footprint、采样末值中位数：
 
-| 场景 | 遥测加入前 | 新版 |
+| 场景 | 遥测加入前 | 遥测版实测 |
 | --- | ---: | ---: |
 | 空闲常驻 | 11.20 MiB | 11.36 MiB |
 | 设置打开 | 42.55 MiB | 41.97 MiB |
@@ -98,7 +106,7 @@ docs/                       设计、执行计划、验证记录与预览图
 | 遥测终端打开 | — | 55.63 MiB |
 | 遥测界面进程退出后 | — | 11.30 MiB |
 
-遥测窗口开场动画有短暂绘图缓存开销，三轮 200 ms 采样的最高观测值为 98.05 MiB。常驻增量约 0.16 MiB；关闭后界面进程退出。详细验证、测量口径和边界见 [遥测验证](docs/telemetry-validation.md)，汇总与完整压缩采样见 [测量数据](docs/telemetry-measurements.json)。应用未加入额外包或运行时；双架构可执行文件 980,288 B，ZIP 490,449 B。
+遥测窗口开场动画有短暂绘图缓存开销，三轮 200 ms 采样的最高观测值为 98.05 MiB。常驻增量约 0.16 MiB；关闭后界面进程退出。详细验证、测量口径和边界见 [遥测验证](docs/telemetry-validation.md)，汇总与完整压缩采样见 [测量数据](docs/telemetry-measurements.json)。该次测量未加入额外包或运行时；当时的双架构可执行文件 980,288 B，ZIP 490,449 B。
 
 此前原生界面释放优化的三轮冷启动测量如下（源码 `599642c`，尚未加入遥测）。采用进程 physical footprint，设置打开时合计主进程与设置进程；每项取采样末值的中位数。
 

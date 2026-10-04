@@ -18,19 +18,19 @@
 
 **Files:** create scripts/render-icons.swift, Resources/ChargeIcon.svg, Resources/ChargeMenuIcon.svg and docs/images/charge-icon-preview.png; update Resources/AppIcon.png and Resources/MenuBarIcon.png.
 
-- [ ] Create native drawing/export code with one geometry definition per artwork; derive both SVG and PNG output from those definitions. Run `swift scripts/render-icons.swift` in the project root.
-- [ ] Export the two PNG sizes and transparent SVGs. Create a preview sheet containing the icon at large/small sizes and the monochrome mark on light/dark menu backgrounds.
-- [ ] Inspect the preview; adjust spacing and stroke weights where needed while keeping the approved silhouette and HUD bolt. Check PNG dimensions/transparency and original supplied SVG hash `3e2af120ec6c86d2132448e7fbd4264b50e7258276c1beabb2bf3fa666200025`.
-- [ ] Independently review design fidelity, small-size readability, generator correctness and dependency/runtime footprint; resolve concrete findings.
+- [x] Create native drawing/export code with one geometry definition per artwork; derive both SVG and PNG output from those definitions. Run `swift scripts/render-icons.swift` in the project root.
+- [x] Export the two PNG sizes and transparent SVGs. Create a preview sheet containing the icon at large/small sizes and the monochrome mark on light/dark menu backgrounds.
+- [x] Inspect the preview; adjust spacing and stroke weights where needed while keeping the approved silhouette and HUD bolt. Check PNG dimensions/transparency and original supplied SVG hash `3e2af120ec6c86d2132448e7fbd4264b50e7258276c1beabb2bf3fa666200025`.
+- [x] Independently review design fidelity, small-size readability, generator correctness and dependency/runtime footprint; resolve concrete findings.
 
 ### Task 2: Package and document v1.0.1
 
-**Files:** update scripts/build-app.sh, Sources/EndfieldCharge/SettingsPages.swift, THIRD_PARTY_NOTICES.md, README.md and .github/workflows/build.yml; create docs/releases/v1.0.1.md.
+**Files:** update scripts/build-app.sh, Sources/EndfieldCharge/SettingsPages.swift, THIRD_PARTY_NOTICES.md, README.md, docs/design.md and .github/workflows/build.yml; create docs/releases/v1.0.1.md.
 
-- [ ] Set CFBundleShortVersionString/About to 1.0.1 and CFBundleVersion to 2. Keep the existing package icon conversion and PNG resource loading.
-- [ ] Correct attribution for the new derived vector artwork; add a preview and direct latest-release download in README.
-- [ ] Add concise release notes. In the release job, check out the tagged source and prefer `--notes-file docs/releases/$GITHUB_REF_NAME.md` when present, otherwise keep `--generate-notes`.
-- [ ] Run `bash scripts/test.sh`, `bash scripts/check-runtime.sh`, `bash scripts/build-app.sh --universal`, `git diff --check`, signature/lipo/ZIP checks and visual preview review.
+- [x] Set CFBundleShortVersionString/About to 1.0.1 and CFBundleVersion to 2. Keep the existing package icon conversion and PNG resource loading.
+- [x] Correct attribution for the new derived vector artwork; add a preview and direct latest-release download in README.
+- [x] Add concise release notes. In the release job, check out the tagged source and prefer `--notes-file docs/releases/$GITHUB_REF_NAME.md` when present, otherwise keep `--generate-notes`.
+- [x] Run `bash scripts/test.sh`, `bash scripts/check-runtime.sh`, `bash scripts/build-app.sh --universal`, `git diff --check`, signature/lipo/ZIP checks and visual preview review.
 
 ### Task 3: Install and publish
 

@@ -29,6 +29,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: Endfield-Charge-macOS
@@ -36,4 +37,11 @@ jobs:
       - name: Publish tagged build
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" release/Endfield-Charge-macOS.zip --repo "$GITHUB_REPOSITORY" --title "Endfield Charge $GITHUB_REF_NAME" --generate-notes
+        run: |
+          notes_file="docs/releases/$GITHUB_REF_NAME.md"
+          if [[ -f "$notes_file" ]]; then
+            notes=(--notes-file "$notes_file")
+          else
+            notes=(--generate-notes)
+          fi
+          gh release create "$GITHUB_REF_NAME" release/Endfield-Charge-macOS.zip --repo "$GITHUB_REPOSITORY" --title "Endfield Charge $GITHUB_REF_NAME" "${notes[@]}"
