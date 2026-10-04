@@ -11,4 +11,4 @@ Keep the supplied SVG unchanged. Export a high-resolution transparent PNG from i
 - [x] Package the supplied logo and replace the menu bar image.
 - [x] Run tests, build the universal app, inspect settings/icon, and confirm Command + Shift + E persists and registers. Record the automated-input limit and the user's subsequent successful physical-keyboard test.
 - [x] Verify the ZIP and document asset provenance.
-- [ ] Push the update to GitHub.
+- [x] Push the update to GitHub (implementation commit `8d705aa6db2c5bfe27a6c6069270ae5179b91620`).
