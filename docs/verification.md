@@ -37,3 +37,11 @@ The publication follow-up commit updates documentation only and skips a duplicat
 - Settings copy, README, design specification and numeric preview image were updated together. A freshly exported demo frame visibly reads `≈45.6 /60.0 Wh`.
 - Both arm64 and x86_64 builds completed successfully. The repackaged zip was extracted separately; strict signature verification passed and its executable matches the app byte-for-byte.
 - Updated executable SHA-256: `d650aece4f676d26d89c407635f70a662e0ba9bf6086578c7b29f4006d2ddc3e`. The updated app was relaunched with a live-battery preview.
+
+## Placement next to the menu bar
+
+- Compensated for the transparent canvas inset and anchored the visible pill's top while expanding downward. The target gap below the selected screen's visible top is 2 pt, independent of the HUD scale.
+- Runtime coordinate inspection caught AppKit constraining the transparent panel to the menu bar's bottom. The borderless HUD panel now retains its explicitly calculated frame; visible content remains below the menu bar and ignores mouse events.
+- On this MacBook at 80% scale, the menu bar ends at screen Y=34 pt and the updated panel starts at Y=14 pt. Adding its 27 × 0.8 pt transparent inset places the visible pill at approximately Y=35.6 pt: a 1.6 pt gap after window pixel rounding. Before removing AppKit's constraint, the panel was forced down to Y=34 pt.
+- PNGs rendered at 1.55 s (expanded) and 3 s (collapsed) both have their first visible center pixel at Y=54 in a 2× bitmap, confirming a shared 27 pt top inset. The expanded title and collapsed live-battery HUD were visually inspected.
+- Universal arm64/x86_64 build and strict signature verification passed. The final ZIP was extracted separately and its executable matches the running app byte-for-byte. Executable SHA-256: `e39677d8bb2f32a78fac86ac5d9f32da27348c1354cc28efde18ff0d3a68e654`.

@@ -7,6 +7,7 @@ enum HUDKind {
 
 /// Reimplements upstream HUD geometry and its 560 × 60 → 90 → 60 silhouette.
 final class HUDView: NSView {
+    static let topInset: CGFloat = 27
     override var isFlipped: Bool { true }
     var snapshot = BatterySnapshot(hasBattery: false)
     var preferences = Preferences()
@@ -23,7 +24,8 @@ final class HUDView: NSView {
         guard f.overallScale > 0.001 else { return }
         NSGraphicsContext.saveGraphicsState()
         let transform = NSAffineTransform()
-        transform.translateX(by: bounds.midX, yBy: bounds.midY)
+        // Anchor the visible pill's top edge while it expands downward.
+        transform.translateX(by: bounds.midX, yBy: (Self.topInset + f.pillHeight / 2) * bounds.height / 144)
         transform.scaleX(by: bounds.width / 620 * f.overallScale, yBy: bounds.height / 144 * f.overallScale)
         transform.translateX(by: -center.x, yBy: -center.y)
         transform.concat()

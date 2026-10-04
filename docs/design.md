@@ -15,7 +15,7 @@ Alternatives considered: porting Avalonia preserves framework familiarity but ad
 - A dark capsule near the top of the selected display. Three stages: bolt appears, capsule expands to show a power-mode title, capsule contracts to show actual battery percentage and capacity, then dismisses.
 - Charger connection uses outward ripples; disconnection uses inward ripples. Match the reference's charcoal, off-white, lime (#C6CA4C), and low-battery red (#FF4D4F).
 - Distinguish external power from actual charging. Optimized charging, full charge, and external power while discharging must not be falsely labeled fast charging. “Super charge mode” is a visual theme, not a measured charging capability.
-- Keep below the menu bar/notch, do not take focus, and do not intercept clicks. Honor Reduce Motion.
+- Keep the visible pill's top edge 2 pt below the menu bar/notch at every configured scale; expand downward with that edge fixed. Compensate for the transparent canvas inset when positioning the panel. Do not take focus or intercept clicks. Honor Reduce Motion.
 - Menu bar: actual percentage, preview, charging/battery demos, settings, quit. A configurable native global shortcut previews actual state without accessibility permission.
 - Settings: display, top-left/center/right, scale, duration, Chinese/English/system language, low-battery/full-charge alerts, low-power-mode alerts, and opt-in launch at login.
 - Use debounced IOKit change events with a slow fallback refresh, recover after sleep, avoid duplicate alert storms, and handle Macs without batteries.

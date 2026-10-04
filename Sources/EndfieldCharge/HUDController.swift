@@ -4,6 +4,8 @@ import ChargeCore
 final class HUDPanel: NSPanel {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+    // The transparent canvas may extend above visibleFrame; position() keeps the visible pill below it.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
 }
 
 final class HUDController {
@@ -81,8 +83,8 @@ final class HUDController {
         case "right": x = safe.maxX - width - 12
         default: x = safe.midX - width / 2
         }
-        // visibleFrame avoids the menu bar and the camera housing on MacBooks.
-        panel.setFrame(NSRect(x: x, y: safe.maxY - height - 8, width: width, height: height), display: true)
+        // Compensate for the transparent canvas inset; the visible pill sits 2 pt below the menu bar.
+        panel.setFrame(NSRect(x: x, y: safe.maxY - height + HUDView.topInset * scale - 2, width: width, height: height), display: true)
         view.frame = NSRect(x: 0, y: 0, width: width, height: height)
     }
 
