@@ -5,10 +5,13 @@ import ChargeCore
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 // The same executable hosts the real child role, allowing an actual pipe/exit/reopen regression.
-if let index = CommandLine.arguments.firstIndex(of: "--settings-ui") {
+let telemetryRole = CommandLine.arguments.contains("--telemetry-ui")
+if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry-ui" : "--settings-ui") {
     let args = CommandLine.arguments
     let parent = Int32(args[index + 1])!, tab = Int(args[index + 2])!
-    let delegate = SettingsApplicationDelegate(parentPID: parent, tab: tab, frame: args[index + 3])
+    let delegate: NSApplicationDelegate = telemetryRole
+        ? TelemetryApplicationDelegate(parentPID: parent, tab: tab, frame: args[index + 3])
+        : SettingsApplicationDelegate(parentPID: parent, tab: tab, frame: args[index + 3])
     app.delegate = delegate
     var closedAt: Double?
     let exitObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
@@ -21,11 +24,32 @@ if let index = CommandLine.arguments.firstIndex(of: "--settings-ui") {
         bytes.append(0x0A)
         _ = try? file.seekToEnd(); try? file.write(contentsOf: bytes); try? file.close()
     }
-    _ = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
-        guard let window = app.windows.first(where: { $0.isVisible && $0.toolbar != nil }) else {
+    if telemetryRole && tab == 0 {
+        _ = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { _ in
+            app.windows.first(where: { $0.contentView is TelemetryView })?.miniaturize(nil)
+        }
+        _ = Timer.scheduledTimer(withTimeInterval: 0.9, repeats: false) { _ in
+            app.windows.first(where: { $0.contentView is TelemetryView })?.deminiaturize(nil)
+        }
+        _ = Timer.scheduledTimer(withTimeInterval: 1.3, repeats: false) { _ in app.hide(nil) }
+        _ = Timer.scheduledTimer(withTimeInterval: 1.6, repeats: false) { _ in app.unhide(nil) }
+    }
+    _ = Timer.scheduledTimer(withTimeInterval: telemetryRole && tab == 0 ? 2.0 : 0.8, repeats: false) { _ in
+        guard let window = app.windows.first(where: { $0.isVisible && (telemetryRole ? $0.contentView is TelemetryView : $0.toolbar != nil) }) else {
             fputs("FAIL: child settings window missing\n", stderr); exit(1)
         }
-        if tab == 0 {
+        if telemetryRole {
+            guard let view = window.contentView as? TelemetryView,
+                  view.header.snapshot.percent == 68, view.header.preferences.scale == 0.75 else {
+                fputs("FAIL: telemetry did not receive resident snapshot/preferences\n", stderr); exit(1)
+            }
+            if tab == 0 {
+                view.selectedTab = 2
+                window.setFrameOrigin(NSPoint(x: 120, y: 220))
+            } else if tab != 2 || window.frame.origin != NSPoint(x: 120, y: 220) {
+                fputs("FAIL: telemetry reopen lost tab/position\n", stderr); exit(1)
+            }
+        } else if tab == 0 {
             guard let tabs = window.toolbar?.items.compactMap({ $0.view as? NSSegmentedControl }).first else {
                 fputs("FAIL: child settings tabs missing\n", stderr); exit(1)
             }
@@ -35,7 +59,13 @@ if let index = CommandLine.arguments.firstIndex(of: "--settings-ui") {
         } else if tab != 3 || window.frame.origin != NSPoint(x: 100, y: 200) {
             fputs("FAIL: child reopen lost tab/position\n", stderr); exit(1)
         }
-        _ = delegate.applicationShouldHandleReopen(app, hasVisibleWindows: true)
+        if telemetryRole {
+            guard let button = window.contentView?.subviews.compactMap({ $0 as? NSButton }).first,
+                  let action = button.action else {
+                fputs("FAIL: telemetry preview control missing\n", stderr); exit(1)
+            }
+            app.sendAction(action, to: button.target, from: button)
+        } else { _ = delegate.applicationShouldHandleReopen?(app, hasVisibleWindows: true) }
         closedAt = ProcessInfo.processInfo.systemUptime
         window.close()
     }
@@ -129,18 +159,94 @@ check(releasedController == nil && releasedWindow == nil, "Closed settings contr
 check(settings.onUIChange == nil && settings.onChange != nil, "Closing UI detaches only the UI callback")
 print("PASS: settings window release and preserved reopen state")
 
-for tab in 0..<4 {
+for tab in 0..<5 {
     autoreleasepool {
         let controller = SettingsWindowController(settings: settings, selectedTab: tab, frame: savedFrame,
             onPreview: { _ in }, onClose: { _, _ in })
         controller.present()
         check(controller.window?.frame == savedFrame, "Reopened frame remains identical")
-        check(!controller.bindings.isEmpty || tab == 3, "Current page controls are bound")
+        check(!controller.bindings.isEmpty || tab == 4, "Current page controls are bound")
         controller.window?.close()
     }
 }
 spin(0.1)
-print("PASS: all four lazy settings pages can open/close")
+print("PASS: all five lazy settings pages can open/close")
+
+let telemetrySample = TelemetrySnapshot(sampledAt: 100,
+    battery: BatterySnapshot(hasBattery: true, percent: 68, currentMAh: 3400, fullMAh: 5000, voltageMV: 12000),
+    power: PowerTelemetry(batteryWatts: -12, averageDischargeWatts: 10, adapterWatts: nil, cycleCount: 26),
+    compute: ComputeTelemetry(cpuFraction: 0.25, memoryUsedBytes: 8 * 1_073_741_824,
+        memoryTotalBytes: 24 * 1_073_741_824, compressedBytes: 1_073_741_824,
+        swapUsedBytes: 0, pressure: .normal), thermal: .fair)
+let telemetryBytes = try JSONEncoder().encode(SettingsMessage(.telemetry, preferences: settings.value, telemetry: telemetrySample))
+check(telemetryBytes.count < 16_384, "A telemetry IPC frame fits the private pipe bound")
+let decodedTelemetry = try JSONDecoder().decode(SettingsMessage.self, from: telemetryBytes)
+check(decodedTelemetry.telemetry == telemetrySample,
+    "Typed telemetry survives the actual IPC encoder")
+for tab in 0..<3 {
+    weak var releasedTerminal: TelemetryWindowController?
+    weak var releasedView: TelemetryView?
+    autoreleasepool {
+        var terminal: TelemetryWindowController? = TelemetryWindowController(settings: settings, selectedTab: tab,
+            frame: nil, onPreview: {}, onClose: { _, _ in })
+        releasedTerminal = terminal; releasedView = terminal?.view
+        terminal?.update(telemetrySample)
+        terminal?.present()
+        check(terminal?.selectedTab == tab && terminal?.view.header.snapshot.percent == 68, "Every telemetry page accepts actual data")
+        if let view = terminal?.view, let tabs = view.subviews.compactMap({ $0 as? NSSegmentedControl }).first,
+           let action = tabs.action {
+            tabs.selectedSegment = (tab + 1) % 3
+            app.sendAction(action, to: tabs.target, from: tabs)
+            check(terminal?.selectedTab == (tab + 1) % 3, "Palette-rendered native page control still dispatches selection")
+            terminal?.selectedTab = tab
+        } else { check(false, "Native telemetry page selector exists") }
+        spin(2.7)
+        check(terminal?.view.headerTimerActive == false, "Original header timeline stops after settling")
+        for i in 0..<400 {
+            var sample = telemetrySample; sample.sampledAt = Double(i + 200)
+            terminal?.update(sample)
+        }
+        check((terminal?.view.graphSampleCount ?? 301) <= 300, "Visible graph history is bounded")
+        terminal?.window?.close(); terminal = nil
+    }
+    spin(0.1)
+    check(releasedTerminal == nil && releasedView == nil, "Closed terminal releases view, history and animation owner")
+}
+print("PASS: three telemetry pages, bounded graph, stopped header timer and complete release")
+autoreleasepool {
+    let view = TelemetryView(settings: settings)
+    view.header.reduceMotion = true
+    view.startHeaderAnimation()
+    spin(0.25)
+    check(!view.headerTimerActive && view.header.elapsed == 0.15, "Reduced Motion stops the header timer at its fade endpoint")
+}
+
+let telemetrySettings = AppSettings(defaults: defaults)
+var sampler: TelemetryMonitor? = TelemetryMonitor(settings: telemetrySettings, battery: { telemetrySample.battery })
+weak var releasedSampler = sampler
+var telemetryUpdates = 0
+var lastTelemetry: TelemetrySnapshot?
+sampler?.onSnapshot = { telemetryUpdates += 1; lastTelemetry = $0 }
+sampler?.start()
+check(telemetryUpdates == 1, "Monitor establishes initial sample without waiting")
+sampler?.setPanelVisible(true)
+spin(2.4)
+check(telemetryUpdates >= 3, "Visible terminal enables 2-second native sampling")
+sampler?.setPanelVisible(false)
+let backgroundUpdates = telemetryUpdates
+spin(2.4)
+check(telemetryUpdates == backgroundUpdates, "Hidden terminal cancels the old 2-second timer")
+telemetrySettings.value.powerTelemetryEnabled = false
+telemetrySettings.value.computeTelemetryEnabled = false
+telemetrySettings.value.thermalTelemetryEnabled = false
+sampler?.preferencesChanged()
+let stoppedUpdates = telemetryUpdates
+spin(2.4)
+check(telemetryUpdates == stoppedUpdates && lastTelemetry?.power == nil && lastTelemetry?.compute == nil && lastTelemetry?.thermal == nil,
+    "Disabling every module stops timer and removes stale readings")
+sampler?.stop(); sampler = nil
+check(releasedSampler == nil, "Stopped native monitor releases observers and reader")
+print("PASS: native sampler cadence, disabled modules and owner release")
 
 settings.value.duration = 4
 let hud = HUDController(settings: settings)
@@ -205,7 +311,7 @@ spin(0.3)
 check(previews == 2, "Immediate show/closeAck must reopen a fresh settings process")
 check(settings.value == fixture, "Child preferences survive ready/close/reopen without stale overwrite")
 check(displayContext == nil, "Closed child clears context for future previews")
-let exits = try String(contentsOf: exitsURL).split(separator: "\n").map {
+let exits = try String(contentsOf: exitsURL, encoding: .utf8).split(separator: "\n").map {
     try JSONSerialization.jsonObject(with: Data($0.utf8)) as! [String: Any]
 }
 check(exits.count == 2, "Both settings children terminate naturally before the test stops them")
@@ -214,8 +320,47 @@ for record in exits {
     check(kill((record["pid"] as! NSNumber).int32Value, 0) == -1 && errno == ESRCH, "Closed child is no longer a process")
 }
 settingsProcess?.stop(); settingsProcess = nil
+settings.value.scale = 0.75
+var telemetryProcess: SettingsProcessController?
+var telemetryPreviews = 0
+var visibility: [Bool] = []
+telemetryProcess = SettingsProcessController(settings: settings, role: .telemetry, onPreview: { _ in
+    telemetryPreviews += 1
+    if telemetryPreviews == 1 { telemetryProcess?.open() }
+}, onScreen: { displayContext = $0 })
+telemetryProcess?.onVisibility = { visibility.append($0) }
+telemetryProcess?.sendTelemetry(telemetrySample)
+telemetryProcess?.open()
+let telemetryReopenDeadline = Date(timeIntervalSinceNow: 7)
+while telemetryPreviews < 2 && Date() < telemetryReopenDeadline { spin(0.05) }
+spin(0.3)
+check(telemetryPreviews == 2, "Telemetry close acknowledgment drains and rapidly reopens")
+check(settings.value.scale == 0.75, "Telemetry child never overwrites resident preferences from its defaults")
+check(visibility == [true, false, true, false, true, false, true, false],
+    "Minimize/hide return to background and restoration/reopen return to visible sampling")
+let allExits = try String(contentsOf: exitsURL, encoding: .utf8).split(separator: "\n").map {
+    try JSONSerialization.jsonObject(with: Data($0.utf8)) as! [String: Any]
+}
+check(allExits.count == 4, "Both telemetry children terminate naturally")
+for record in allExits.suffix(2) {
+    check((record["close_seconds"] as! Double) < 1.5, "Telemetry closes by acknowledgement before fallback")
+    check(kill((record["pid"] as! NSNumber).int32Value, 0) == -1 && errno == ESRCH, "Closed telemetry child is no longer running")
+}
+telemetryProcess?.stop(); telemetryProcess = nil
+let orphan = Process(), orphanInput = Pipe(), orphanOutput = Pipe()
+orphan.executableURL = Bundle.main.executableURL
+orphan.arguments = ["--telemetry-ui", String(ProcessInfo.processInfo.processIdentifier), "0", "center"]
+orphan.standardInput = orphanInput; orphan.standardOutput = orphanOutput
+try orphan.run()
+spin(0.2)
+try orphanInput.fileHandleForWriting.close()
+let eofDeadline = Date(timeIntervalSinceNow: 1.5)
+while orphan.isRunning && Date() < eofDeadline { spin(0.05) }
+check(!orphan.isRunning && orphan.terminationStatus == 0, "Telemetry child exits naturally on parent pipe EOF")
 if let previousExitsPath { setenv("ENDFIELD_RUNTIME_EXITS", previousExitsPath, 1) } else { unsetenv("ENDFIELD_RUNTIME_EXITS") }
 try FileManager.default.removeItem(at: exitsURL)
 UserDefaults.standard.set(standardPreferences, forKey: "preferences")
 print("PASS: actual child process, preview, close acknowledgment, rapid reopen and tab/frame preservation")
-print("All 8 native runtime check groups passed")
+print("PASS: telemetry delivery, preference direction, visibility, acknowledged close and rapid reopen")
+print("PASS: telemetry child exits on parent EOF without fallback")
+print("All 12 native runtime check groups passed")

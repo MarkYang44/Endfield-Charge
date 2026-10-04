@@ -88,6 +88,15 @@ extension SettingsWindowController {
         _ = caption(t("提醒使用同风格 HUD。首次启动只读取状态，不重复弹出历史提醒。", "Alerts use the same HUD. Starting the app does not replay old alerts."), in: page, y: 195)
     }
 
+    func telemetryPage(_ page: NSView) {
+        toggle(t("电源遥测", "Power telemetry"), \.powerTelemetryEnabled, in: page, y: 0)
+        toggle(t("CPU 与内存遥测", "CPU and memory telemetry"), \.computeTelemetryEnabled, in: page, y: 42)
+        toggle(t("系统散热状态", "System thermal state"), \.thermalTelemetryEnabled, in: page, y: 84)
+        toggle(t("散热压力提醒", "Thermal pressure alerts"), \.thermalAlert, in: page, y: 126)
+        _ = caption(t("从菜单栏打开「遥测终端」。窗口打开时每 2 秒采样，后台每 30 秒。", "Open Telemetry Terminal from the menu. Samples every 2 s while open, 30 s in the background."), in: page, y: 174)
+        _ = caption(t("关闭模块会停止额外采集。功率、内存为估算；散热状态不是温度读数。", "Disabled modules stop collection. Power and memory are estimates; thermal state is not a temperature."), in: page, y: 226)
+    }
+
     func aboutPage(_ page: NSView) {
         place(label("Endfield Charge 1.0.0", size: 21, weight: .bold), in: page, y: 0, width: 572, height: 30)
         place(label(t("终末地风格的 macOS 原生电量终端", "A native Endfield-inspired macOS battery HUD")), in: page, y: 46, width: 572)

@@ -9,15 +9,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hud: HUDController!
     private var menu: StatusMenuController!
     private var settingsProcess: SettingsProcessController!
+    private var telemetryProcess: SettingsProcessController!
+    private var telemetryMonitor: TelemetryMonitor!
     private var reducer = PowerEventReducer()
     private var snapshot = BatterySnapshot(hasBattery: false)
     private var shortcutConfiguration = ""
     private var shortcutStatus: Int32 = 0
+    private var requestObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         do { resident = try ResidentInstance() }
         catch ResidentInstance.LockError.alreadyRunning(let pid) {
-            NSRunningApplication(processIdentifier: pid)?.activate(options: [])
+            ResidentRequest.action(arguments: CommandLine.arguments).send(to: pid)
             NSApplication.shared.terminate(nil)
             return
         } catch {
@@ -34,6 +37,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.hud.contextDisplayID = display
             if display != nil { self?.hud.position() }
         })
+        telemetryProcess = SettingsProcessController(settings: settings, role: .telemetry, onPreview: { [weak self] _ in
+            self?.preview()
+        }, onScreen: { [weak self] display in
+            self?.hud.contextDisplayID = display
+            if display != nil { self?.hud.position() }
+        })
+        telemetryMonitor = TelemetryMonitor(settings: settings, battery: { [weak self] in
+            self?.snapshot ?? BatterySnapshot(hasBattery: false)
+        })
+        telemetryMonitor.onSnapshot = { [weak self] in self?.telemetryProcess.sendTelemetry($0) }
+        telemetryMonitor.onThermalAlert = { [weak self] level in
+            guard let self else { return }
+            self.hud.show(self.snapshot, kind: level == .critical ? .thermalCritical : .thermalWarning, queued: true)
+        }
+        telemetryProcess.onVisibility = { [weak self] in self?.telemetryMonitor.setPanelVisible($0) }
         menu = StatusMenuController(settings: settings, target: self, entries: [
             ("", "", nil, ""),
             ("预览本机电量", "Preview Battery", #selector(preview), ""),
@@ -41,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ("模拟拔电动画", "Battery Demo", #selector(batteryDemo), ""),
             ("", "", nil, ""),
             ("设置…", "Settings…", #selector(openSettings), ","),
+            ("遥测终端…", "Telemetry Terminal…", #selector(openTelemetry), ""),
             ("GitHub 仓库", "GitHub Repository", #selector(openRepository), ""),
             ("", "", nil, ""),
             ("退出 Endfield Charge", "Quit Endfield Charge", #selector(quit), "q")
@@ -50,12 +69,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.onChange = { [weak self] in self?.applySettings() }
         monitor.onSnapshot = { [weak self] in self?.receive($0) }
         monitor.start()
+        telemetryMonitor.start()
         applySettings()
+        requestObserver = DistributedNotificationCenter.default().addObserver(forName: ResidentRequest.name,
+            object: String(ProcessInfo.processInfo.processIdentifier), queue: .main) { [weak self] notification in
+                guard let raw = notification.userInfo?["action"] as? String,
+                      let request = ResidentRequest(rawValue: raw), let self else { return }
+                switch request {
+                case .preview: self.preview()
+                case .settings: self.openSettings()
+                case .telemetry: self.openTelemetry()
+                case .chargeDemo: self.chargingDemo()
+                case .batteryDemo: self.batteryDemo()
+                }
+        }
         let arguments = CommandLine.arguments
         if arguments.contains("--demo") { chargingDemo() }
         else if arguments.contains("--preview-unplug") { batteryDemo() }
         else if arguments.contains("--preview") { preview() }
         else if arguments.contains("--settings") { openSettings() }
+        else if arguments.contains("--telemetry") { openTelemetry() }
     }
 
     private func receive(_ value: BatterySnapshot) {
@@ -88,6 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menu.update(snapshot)
         hud.position()
+        telemetryMonitor.preferencesChanged()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -103,7 +137,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func quit() { NSApplication.shared.terminate(nil) }
 
     @objc private func openSettings() { settingsProcess.open() }
-    func applicationWillTerminate(_ notification: Notification) { settingsProcess?.stop() }
+    @objc private func openTelemetry() { telemetryProcess.open() }
+    func applicationWillTerminate(_ notification: Notification) {
+        telemetryMonitor?.stop(); settingsProcess?.stop(); telemetryProcess?.stop()
+        if let requestObserver { DistributedNotificationCenter.default().removeObserver(requestObserver) }
+    }
 }
 
 func demoSnapshot(charging: Bool) -> BatterySnapshot {

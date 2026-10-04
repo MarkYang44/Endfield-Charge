@@ -1,6 +1,6 @@
 # Endfield Charge · macOS 终末地风格电量 HUD
 
-一个原生 Swift 菜单栏工具。插拔充电器时，从屏幕顶部弹出「电标 → 模式标题 → 电量胶囊」三段动画，视觉、图案、配色及节奏参考 [QinAnze/zmd-charge](https://github.com/QinAnze/zmd-charge)。
+一个原生 Swift 菜单栏工具。插拔充电器时，从屏幕顶部弹出「电标 → 模式标题 → 电量胶囊」三段动画，视觉、图案、配色及节奏参考 [QinAnze/zmd-charge](https://github.com/QinAnze/zmd-charge)。菜单栏中的「遥测终端」提供电源、CPU/内存与系统散热状态；数据只在本机采集和展示。
 
 ![超充模式](docs/images/charge-title.png)
 ![电池模式](docs/images/battery-title.png)
@@ -10,7 +10,7 @@
 
 需要 macOS 13 或更新版本。应用支持 Apple Silicon 与 Intel；本地通过 `--universal` 打包可得到双架构版本。
 
-下载 [GitHub Actions 构建产物](https://github.com/MarkYang44/Endfield-Charge/actions)或 [Releases](https://github.com/MarkYang44/Endfield-Charge/releases) 中的 zip，解压后把 **Endfield Charge.app** 放入 Applications，双击启动。菜单栏会出现电标和电量。点击图标可预览、模拟插拔电源、打开设置或退出。
+下载 [GitHub Actions 构建产物](https://github.com/MarkYang44/Endfield-Charge/actions)或 [Releases](https://github.com/MarkYang44/Endfield-Charge/releases) 中的 zip，解压后把 **Endfield Charge.app** 放入 Applications，双击启动。菜单栏会出现电标和电量。点击图标可预览、模拟插拔电源、打开遥测终端、设置或退出。
 
 默认全局快捷键 **Control + Option + H**。在「设置 → 通用」中可组合选择 ⌘ Command、⌃ Control、⌥ Option、⇧ Shift 和 A–Z 字母，例如 **Command + Shift + E**；至少选择 Command、Control 或 Option 中的一个。快捷键不可用时会在设置中提示，可随时关闭。升级会保留原有设置。应用不需要辅助功能或录屏权限。默认关闭登录启动，移入 Applications 后可在设置中主动开启。
 
@@ -26,6 +26,14 @@
 - 多显示器选择、顶部左/中/右、40–120% 缩放、3–10 秒时长、波纹开关、中文/英文/跟随系统、菜单栏百分比。
 - 低电量、充满和系统低电量模式切换提醒，阈值可调；首次启动不会补发历史提醒。
 - 跟随系统“减少动态效果”，使用简化淡入淡出。设置自动保存到应用的 UserDefaults 域。
+- 遥测终端直接复用原 HUD 的几何与三段开场，2.52 秒后停止动画计时器；页面采用炭黑、灰白和黄绿色。POWER 显示电池侧估算功率、适配器报告功率、循环次数和近期放电均值；COMPUTE 显示 CPU、估算内存、压缩内存、Swap 与系统内存压力；THERMAL 显示系统热状态。
+- 单枚遥测定时器：窗口可见时每 2 秒、关闭/最小化/隐藏时每 30 秒采样。三模块可在「设置 → 遥测」分别关闭，全部关闭后停止额外定时器；散热压力提醒可独立关闭。严重/临界状态使用原风格 HUD，启动时不补发，重复与降级不会刷屏。
+
+![遥测终端示例（演示数据）](docs/images/telemetry-compute.png)
+
+CPU 使用率由两次 Mach tick 计数差计算；第一条读数或计数重置后显示 `—`。内存估算为 `(active_count + wire_count + compressor_page_count) × 系统页大小`，压缩内存采用压缩器实际占用；这与“活动监视器”的“已用内存”口径不同。电池侧 W 为电压×有符号电流，`+` 表示充电、`−` 表示放电；适配器 W 是报告的额定值，不能当作实际整机或充电功率。放电均值按已观察间隔加权，最多覆盖最近 5 分钟，充电、缺失读数或超过 60 秒的间断会清空。
+
+热状态采用系统公开的 nominal/fair/serious/critical 等级，**不代表 CPU 实测温度**。内存压力和电池 registry 属性可能不可用，此时显示 `—`。曲线按实际采样时间绘制、长间断不连线，只保留窗口当前会话最多 300 个点；关闭窗口后整个界面进程退出，没有长期记录、后台上传或外部运行时。
 
 “超充模式”沿用主题文案，**不代表实际检测到快充协议**。macOS IOPS 的容量通常是百分比，本项目不会把 100% 假装成 100mAh。Wh 只在系统另有原始物理容量和电压时推算，并以 **≈** 标注；这些 registry 字段并非稳定的公开接口，读不到时显示 `—`。根据当前电压估算的能量不能当作精确测量。充满提醒以系统已充满，或停止充电且 ≥99% 为准，并在重新消耗至 ≤95% 或拔电后重新允许提醒。
 
@@ -51,16 +59,21 @@ open "dist/Endfield Charge.app" --args --preview
 open "dist/Endfield Charge.app" --args --demo
 open "dist/Endfield Charge.app" --args --preview-unplug
 open "dist/Endfield Charge.app" --args --settings
+"dist/Endfield Charge.app/Contents/MacOS/EndfieldCharge" --telemetry
+"dist/Endfield Charge.app/Contents/MacOS/EndfieldCharge" --telemetry-snapshot
+"dist/Endfield Charge.app/Contents/MacOS/EndfieldCharge" --render-telemetry /tmp/terminal.png --tab compute --demo
 "dist/Endfield Charge.app/Contents/MacOS/EndfieldCharge" --render /tmp/hud.png --demo --stage 1.55
 ```
 
-`--snapshot` 输出实际电池 JSON；`--demo` / `--preview-unplug` 使用演示数据，`--preview` 使用实际数据。已有实例运行时再次打开应用会预览实际电量；要使用启动参数中的模拟模式，请先退出旧实例。导出 PNG 和读取 JSON 不会启动常驻进程。
+`--snapshot` 输出实际电池 JSON；`--telemetry-snapshot` 在间隔 1 秒的两次采集后输出实际遥测 JSON。`--render-telemetry` 支持 `--tab power|compute|thermal`、`--stage seconds` 和 `--reduce-motion`；`--demo` 会在图中明确标注演示数据。导出 PNG 和读取 JSON 不启动常驻进程。
+
+直接调用可执行文件时，`--telemetry`、`--settings`、`--preview`、`--demo`、`--preview-unplug` 会将固定动作转发给已有常驻实例。macOS `open … --args` 在应用已经运行时不能可靠传递参数，此时用菜单栏或直接调用可执行文件；普通双击重开依然预览实际电量。
 
 ## 项目结构
 
 ```text
-Sources/ChargeCore/          电池解析、电源事件、确定性动画时间线、偏好与通信模型
-Sources/EndfieldCharge/      AppKit HUD、IOKit 监听、菜单栏、快捷键、原生设置及进程生命周期
+Sources/ChargeCore/          电池/遥测模型、差分与均值、事件、动画时间线、偏好与通信
+Sources/EndfieldCharge/      原生采集/监听、AppKit HUD与遥测、菜单栏、快捷键、界面进程生命周期
 Tests/ChargeCoreTests/       电量、事件和动画测试
 Tests/RuntimeChecks/         需要图形桌面的原生生命周期与通信检查
 Resources/                  原项目应用图标
@@ -73,9 +86,21 @@ docs/                       设计、执行计划、验证记录与预览图
 
 ## 内存与体积
 
-设置界面使用原生 AppKit，并按需以同一可执行文件的独立进程打开；关闭窗口后该进程退出，释放系统控件与字体缓存。平时只有电池监听、菜单栏和快捷键常驻，无第三方运行时。设置消息通过私有管道传输，正常路径在最终状态确认后退出，保留当前会话的页签和窗口位置；主进程无响应时另有 2 秒退出兜底。
+设置和遥测界面使用原生 AppKit，并按需以同一可执行文件的独立进程打开；关闭窗口后进程退出，释放系统控件、字体和曲线缓存。常驻部分只有原电池监听/菜单栏/快捷键与低频遥测采集，无第三方运行时。私有管道只传单次采样和偏好，正常关闭在最终状态确认后退出，保留当前会话的页签和窗口位置；主进程无响应时另有 2 秒退出兜底。
 
-本机 MacBook Air M5、macOS 27 的三轮冷启动测量如下。采用进程 physical footprint，设置打开时合计主进程与设置进程；每项取采样末值的中位数。
+新版遥测的同机三轮冷启动测量如下，采用整个应用进程组的 physical footprint、采样末值中位数：
+
+| 场景 | 遥测加入前 | 新版 |
+| --- | ---: | ---: |
+| 空闲常驻 | 11.20 MiB | 11.44 MiB |
+| 设置打开 | 42.55 MiB | 42.03 MiB |
+| 原电量动画结束后 | 14.33 MiB | 14.63 MiB |
+| 遥测终端打开 | — | 54.39 MiB |
+| 遥测界面进程退出后 | — | 11.41 MiB |
+
+遥测窗口开场动画有短暂绘图缓存开销，三轮 200 ms 采样的最高观测值为 100.31 MiB。常驻增量约 0.24 MiB；关闭后界面进程退出。详细验证、测量口径和边界见 [遥测验证](docs/telemetry-validation.md)，汇总与完整压缩采样见 [测量数据](docs/telemetry-measurements.json)。应用未加入额外包或运行时；双架构可执行文件 980,288 B，ZIP 489,706 B。
+
+此前原生界面释放优化的三轮冷启动测量如下（源码 `599642c`，尚未加入遥测）。采用进程 physical footprint，设置打开时合计主进程与设置进程；每项取采样末值的中位数。
 
 | 场景 | 优化前 | 优化后 |
 | --- | ---: | ---: |
@@ -91,6 +116,7 @@ docs/                       设计、执行计划、验证记录与预览图
 
 ```bash
 python3 scripts/profile-memory.py "dist/Endfield Charge.app/Contents/MacOS/EndfieldCharge" /tmp/endfield-memory.json
+python3 scripts/profile-memory.py "dist/Endfield Charge.app/Contents/MacOS/EndfieldCharge" /tmp/endfield-telemetry-memory.json --telemetry
 ```
 
 需要 Python 3 和 Command Line Tools；脚本只用于开发测量，不随应用启动。物理占用、RSS、虚拟地址空间和 `.build` 编译缓存采用不同口径，不能混作软件运行内存。

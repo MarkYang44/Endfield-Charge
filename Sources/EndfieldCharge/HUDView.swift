@@ -2,7 +2,7 @@ import AppKit
 import ChargeCore
 
 enum HUDKind {
-    case power, lowBattery, fullyCharged, lowPowerEnabled, lowPowerDisabled
+    case power, lowBattery, fullyCharged, lowPowerEnabled, lowPowerDisabled, thermalWarning, thermalCritical
 }
 
 /// Reimplements upstream HUD geometry and its 560 × 60 → 90 → 60 silhouette.
@@ -102,6 +102,8 @@ final class HUDView: NSView {
         case .fullyCharged: return ("/// CHARGE COMPLETE", chinese ? "充能完成" : "CHARGE COMPLETE")
         case .lowPowerEnabled: return ("/// ENERGY SAVING MODE", chinese ? "节能模式" : "ENERGY SAVING")
         case .lowPowerDisabled: return ("/// STANDARD POWER MODE", chinese ? "标准供能模式" : "STANDARD POWER")
+        case .thermalWarning: return ("/// THERMAL PRESSURE", chinese ? "散热压力升高" : "THERMAL PRESSURE")
+        case .thermalCritical: return ("/// THERMAL CRITICAL", chinese ? "散热状态临界" : "THERMAL CRITICAL")
         case .power:
             if !snapshot.hasBattery { return ("/// POWER SOURCE", chinese ? "未检测到电池" : "NO BATTERY") }
             if snapshot.isCharged { return ("/// CHARGE COMPLETE", chinese ? "充能完成" : "CHARGE COMPLETE") }
@@ -137,7 +139,7 @@ final class HUDView: NSView {
         let badgeCenter = NSPoint(x: 562, y: 72)
         NSColor(rgb: 0x262425, alpha: alpha).setFill()
         NSBezierPath(ovalIn: NSRect(x: 539, y: 49, width: 46, height: 46)).fill()
-        let accent = NSColor(rgb: (snapshot.percent ?? 100) < 20 ? 0xFF4D4F : 0xC6CA4C, alpha: alpha)
+        let accent = NSColor(rgb: (snapshot.percent ?? 100) < 20 || kind == .thermalWarning || kind == .thermalCritical ? 0xFF4D4F : 0xC6CA4C, alpha: alpha)
         if let percent = snapshot.percent, percent > 0 {
             let arc = NSBezierPath()
             arc.appendArc(withCenter: badgeCenter, radius: 20.75, startAngle: -90,

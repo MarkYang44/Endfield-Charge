@@ -1,9 +1,15 @@
 import AppKit
 import ChargeCore
 
-/// Retains only a process, private pipe and tiny reopen state. Settings views live in the child.
+/// Retains only a process, private pipe and tiny reopen state. Native views live in the child.
 final class SettingsProcessController {
+    enum Role {
+        case settings, telemetry
+        var argument: String { self == .settings ? "--settings-ui" : "--telemetry-ui" }
+        var tabCount: Int { self == .settings ? 5 : 3 }
+    }
     private let settings: AppSettings
+    private let role: Role
     private let onPreview: (Bool?) -> Void
     private let onScreen: (UInt32?) -> Void
     private var process: Process?
@@ -16,9 +22,12 @@ final class SettingsProcessController {
     private var processExited = false
     private var tab = 0
     private var frame = "center"
+    private var latestTelemetry: TelemetrySnapshot?
+    private var panelVisible = false
+    var onVisibility: ((Bool) -> Void)?
 
-    init(settings: AppSettings, onPreview: @escaping (Bool?) -> Void, onScreen: @escaping (UInt32?) -> Void) {
-        self.settings = settings; self.onPreview = onPreview; self.onScreen = onScreen
+    init(settings: AppSettings, role: Role = .settings, onPreview: @escaping (Bool?) -> Void, onScreen: @escaping (UInt32?) -> Void) {
+        self.settings = settings; self.role = role; self.onPreview = onPreview; self.onScreen = onScreen
     }
 
     func open() {
@@ -30,7 +39,7 @@ final class SettingsProcessController {
         guard let executable = Bundle.main.executableURL else { return }
         let child = Process(), toChild = Pipe(), fromChild = Pipe()
         child.executableURL = executable
-        child.arguments = ["--settings-ui", String(ProcessInfo.processInfo.processIdentifier), String(tab), frame]
+        child.arguments = [role.argument, String(ProcessInfo.processInfo.processIdentifier), String(tab), frame]
         child.standardInput = toChild
         child.standardOutput = fromChild
         child.terminationHandler = { [weak self] completed in
@@ -54,6 +63,7 @@ final class SettingsProcessController {
                 self.pipeEnded = true
                 if self.processExited || self.process?.isRunning == false { self.finish(pid) }
             }
+            setVisibility(true)
         } catch { NSAlert(error: error).runModal() }
     }
 
@@ -61,16 +71,18 @@ final class SettingsProcessController {
         if let display = message.displayID { onScreen(display) }
         switch message.command {
         case .ready, .changed:
-            apply(message)
+            if role == .settings { apply(message) }
             sendState()
         case .preview: onPreview(nil)
         case .demoCharge: onPreview(true)
         case .demoBattery: onPreview(false)
         case .screen: break
+        case .visibility:
+            if role == .telemetry, !closing, let visible = message.visible { setVisibility(visible) }
         case .closed:
             closing = true
-            apply(message)
-            if let selected = message.tab, (0..<4).contains(selected) { tab = selected }
+            if role == .settings { apply(message) }
+            if let selected = message.tab, (0..<role.tabCount).contains(selected) { tab = selected }
             if let saved = message.frame, validFrame(saved) { frame = saved }
             onScreen(nil)
             channel?.send(SettingsMessage(.closeAck))
@@ -86,8 +98,25 @@ final class SettingsProcessController {
     }
 
     private func sendState(_ command: SettingsMessage.Command = .state) {
+        if role == .telemetry {
+            channel?.send(SettingsMessage(command == .state ? .telemetry : command,
+                preferences: settings.value, telemetry: latestTelemetry))
+            return
+        }
         // Feedback never overwrites the UI's newer preference model.
         channel?.send(SettingsMessage(command, revision: revision, shortcutMessage: settings.shortcutMessage))
+    }
+
+    func sendTelemetry(_ snapshot: TelemetrySnapshot) {
+        latestTelemetry = snapshot
+        guard role == .telemetry, !closing else { return }
+        sendState()
+    }
+
+    private func setVisibility(_ visible: Bool) {
+        guard visible != panelVisible else { return }
+        panelVisible = visible
+        onVisibility?(visible)
     }
 
     private func validFrame(_ value: String) -> Bool {
@@ -106,6 +135,7 @@ final class SettingsProcessController {
         guard process?.processIdentifier == pid else { return }
         process = nil; channel = nil; closing = false
         onScreen(nil)
+        setVisibility(false)
         if pendingReopen { pendingReopen = false; open() }
     }
 

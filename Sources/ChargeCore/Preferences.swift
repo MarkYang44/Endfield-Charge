@@ -28,6 +28,10 @@ public struct Preferences: Codable, Equatable {
     public var lowPowerAlert = true
     public var lowThreshold = 20
     public var ripplesEnabled = true
+    public var powerTelemetryEnabled = true
+    public var computeTelemetryEnabled = true
+    public var thermalTelemetryEnabled = true
+    public var thermalAlert = true
 
     public init() {}
 
@@ -35,6 +39,7 @@ public struct Preferences: Codable, Equatable {
         case scale, duration, position, displayID, language, showPercentage, shortcutEnabled
         case shortcutKey, shortcutModifiers, lowBatteryAlert, fullBatteryAlert, lowPowerAlert
         case lowThreshold, ripplesEnabled
+        case powerTelemetryEnabled, computeTelemetryEnabled, thermalTelemetryEnabled, thermalAlert
     }
 
     public init(from decoder: Decoder) throws {
@@ -54,5 +59,9 @@ public struct Preferences: Codable, Equatable {
         lowPowerAlert = try values.decodeIfPresent(Bool.self, forKey: .lowPowerAlert) ?? lowPowerAlert
         lowThreshold = try values.decodeIfPresent(Int.self, forKey: .lowThreshold) ?? lowThreshold
         ripplesEnabled = try values.decodeIfPresent(Bool.self, forKey: .ripplesEnabled) ?? ripplesEnabled
+        powerTelemetryEnabled = try values.decodeIfPresent(Bool.self, forKey: .powerTelemetryEnabled) ?? powerTelemetryEnabled
+        computeTelemetryEnabled = try values.decodeIfPresent(Bool.self, forKey: .computeTelemetryEnabled) ?? computeTelemetryEnabled
+        thermalTelemetryEnabled = try values.decodeIfPresent(Bool.self, forKey: .thermalTelemetryEnabled) ?? thermalTelemetryEnabled
+        thermalAlert = try values.decodeIfPresent(Bool.self, forKey: .thermalAlert) ?? thermalAlert
     }
 }

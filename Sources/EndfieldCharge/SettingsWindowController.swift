@@ -31,7 +31,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
     init(settings: AppSettings, selectedTab: Int, frame: NSRect?, onPreview: @escaping (Bool?) -> Void,
          onClose: @escaping (Int, NSRect) -> Void, onScreenChange: (() -> Void)? = nil) {
         self.settings = settings
-        self.selectedTab = selectedTab
+        self.selectedTab = (0..<5).contains(selectedTab) ? selectedTab : 0
         self.onPreview = onPreview
         self.onClose = onClose
         self.onScreenChange = onScreenChange
@@ -89,12 +89,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         window?.title = "Endfield Charge · " + t("设置", "Settings")
         content.subviews.forEach { $0.removeFromSuperview() }
         page = nil
-        let names = [t("通用", "General"), t("显示与动画", "HUD & Animation"), t("提醒", "Alerts"), t("关于", "About")]
+        let names = [t("通用", "General"), t("显示与动画", "HUD & Animation"), t("提醒", "Alerts"), t("遥测", "Telemetry"), t("关于", "About")]
         tabs.segmentCount = names.count
         for (index, name) in names.enumerated() { tabs.setLabel(name, forSegment: index); tabs.setWidth(0, forSegment: index) }
         tabs.selectedSegment = selectedTab
         tabs.setAccessibilityLabel(t("设置分类", "Settings sections"))
-        tabs.frame.size = NSSize(width: 420, height: 28)
+        tabs.frame.size = NSSize(width: 520, height: 28)
         let bolt = NSImageView(frame: NSRect(x: 24, y: 28, width: 28, height: 32))
         bolt.image = NSImage(systemSymbolName: "bolt.fill", accessibilityDescription: "Flash")
         bolt.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 26, weight: .regular)
@@ -124,7 +124,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         switch selectedTab {
         case 1: animationPage(page)
         case 2: alertsPage(page)
-        case 3: aboutPage(page)
+        case 3: telemetryPage(page)
+        case 4: aboutPage(page)
         default: generalPage(page)
         }
         // Footer controls are recreated with the page, so their action entries stay valid.

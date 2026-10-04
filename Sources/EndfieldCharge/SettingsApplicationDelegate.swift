@@ -15,7 +15,7 @@ final class SettingsApplicationDelegate: NSObject, NSApplicationDelegate {
 
     init(parentPID: Int32, tab: Int, frame: String) {
         self.parentPID = parentPID
-        self.tab = (0..<4).contains(tab) ? tab : 0
+        self.tab = (0..<5).contains(tab) ? tab : 0
         let rect = NSRectFromString(frame)
         self.frame = rect.width.isFinite && rect.height.isFinite && rect.width > 0 && rect.height > 0
             && rect.origin.x.isFinite && rect.origin.y.isFinite ? rect : nil
