@@ -20,6 +20,9 @@ else
   cp "$binary_dir/EndfieldCharge" "$app/Contents/MacOS/EndfieldCharge"
 fi
 
+# Strip only the packaged copy; SwiftPM products keep their symbols for diagnostics.
+strip -x "$app/Contents/MacOS/EndfieldCharge"
+
 iconset="dist/EndfieldCharge.iconset"
 mkdir -p "$iconset"
 for size in 16 32 128 256 512; do

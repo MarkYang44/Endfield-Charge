@@ -28,6 +28,16 @@ if let index = arguments.firstIndex(of: "--render") {
     exit(0)
 }
 
-let delegate = AppDelegate()
-app.delegate = delegate
-app.run()
+// The settings role bypasses battery monitoring, status item and exclusive hotkey registration.
+if let index = arguments.firstIndex(of: "--settings-ui") {
+    guard index + 3 < arguments.count, let parent = Int32(arguments[index + 1]), let tab = Int(arguments[index + 2]) else {
+        fputs("Invalid settings process arguments\n", stderr); exit(2)
+    }
+    let delegate = SettingsApplicationDelegate(parentPID: parent, tab: tab, frame: arguments[index + 3])
+    app.delegate = delegate
+    withExtendedLifetime(delegate) { app.run() }
+} else {
+    let delegate = AppDelegate()
+    app.delegate = delegate
+    withExtendedLifetime(delegate) { app.run() }
+}

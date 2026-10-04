@@ -6,7 +6,9 @@ Build a native macOS counterpart to QinAnze/zmd-charge: a menu bar utility that 
 
 ## Recommended implementation
 
-Swift + AppKit for the nonactivating floating panel and menu bar, SwiftUI for HUD drawing and settings, IOKit for battery snapshots and power-source notifications. Target macOS 13+; support Apple Silicon and Intel builds. No third-party runtime or network access during ordinary use.
+Swift + AppKit for vector HUD drawing, the nonactivating floating panel, menu bar and native settings; IOKit for battery snapshots and power-source notifications. Target macOS 13+; support Apple Silicon and Intel builds. No third-party runtime or network access during ordinary use.
+
+ChargeCore owns battery interpretation, event reduction, animation timing, preferences and the small settings-message schema. The resident application owns monitoring, exclusive shortcuts, reusable menu items and lazy HUD surfaces. Settings use an on-demand role of the same executable: only the current page is constructed, and the process exits on close to release AppKit caches. Private stdin/stdout pipes carry ordered changes, previews, screen context and close acknowledgment; the parent drains pending messages before releasing the child. A resident-only advisory lock avoids confusing the settings process with the resident instance. Closing settings clears future screen context without moving a HUD already displayed.
 
 Alternatives considered: porting Avalonia preserves framework familiarity but adds .NET and replaces all Windows-native services anyway; an Electron utility adds a large runtime for a small HUD. A native utility best matches the requested local macOS system.
 

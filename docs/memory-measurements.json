@@ -1,0 +1,122 @@
+{
+  "unit": "MiB (1048576 bytes)",
+  "metric": "Sum of ri_phys_footprint for resident and direct settings child",
+  "runs_per_scenario": 3,
+  "interval_seconds": 0.2,
+  "launch_settle_seconds": 0.3,
+  "settings_and_idle_samples": 25,
+  "animation_samples": 40,
+  "baseline": {
+    "binary_sha256": "77ed35d90bcc005d2a69f8f20f6a8aef1afca62bcd459d82026af61b096d31ef",
+    "scenarios": {
+      "idle": {
+        "last_samples_MiB": [
+          11.563,
+          11.735,
+          11.688
+        ],
+        "median_last_MiB": 11.688,
+        "sampled_peaks_MiB": [
+          11.657,
+          11.735,
+          11.782
+        ]
+      },
+      "settings": {
+        "last_samples_MiB": [
+          33.876,
+          34.876,
+          35.017
+        ],
+        "median_last_MiB": 34.876,
+        "sampled_peaks_MiB": [
+          35.079,
+          35.001,
+          35.11
+        ]
+      },
+      "animation": {
+        "last_samples_MiB": [
+          14.485,
+          14.595,
+          14.423
+        ],
+        "median_last_MiB": 14.485,
+        "sampled_peaks_MiB": [
+          16.063,
+          16.657,
+          16.517
+        ]
+      }
+    }
+  },
+  "optimized": {
+    "binary_sha256": "9716755b789de1a26de142e758bb794233822af16fb33d1d67499d019da2103b",
+    "scenarios": {
+      "idle": {
+        "last_samples_MiB": [
+          11.266,
+          11.376,
+          11.47
+        ],
+        "median_last_MiB": 11.376,
+        "sampled_peaks_MiB": [
+          11.266,
+          11.376,
+          11.47
+        ]
+      },
+      "settings": {
+        "last_samples_MiB": [
+          42.064,
+          42.486,
+          42.424
+        ],
+        "median_last_MiB": 42.424,
+        "sampled_peaks_MiB": [
+          42.83,
+          42.611,
+          42.424
+        ]
+      },
+      "animation": {
+        "last_samples_MiB": [
+          14.329,
+          14.36,
+          14.407
+        ],
+        "median_last_MiB": 14.36,
+        "sampled_peaks_MiB": [
+          16.251,
+          17.032,
+          15.938
+        ]
+      }
+    }
+  },
+  "single_session": {
+    "method": "SIGTERM on unchanged settings child; resident not restarted",
+    "resident_restarted_between_states": false,
+    "settings_open": {
+      "last_MiB": 42.518,
+      "sampled_peak_MiB": 42.893,
+      "process_count": 2
+    },
+    "after_settings_exit": {
+      "last_MiB": 11.204,
+      "sampled_peak_MiB": 11.204,
+      "process_count": 1
+    },
+    "after_live_preview": {
+      "last_MiB": 14.563,
+      "sampled_peak_MiB": 16.454,
+      "process_count": 1
+    }
+  },
+  "delivered_resident_single_sample": {
+    "launch": "LaunchServices with live preview; animation finished",
+    "physical_footprint_MiB": 13.767,
+    "sampled_cpu_percent": 0.0,
+    "process_count": 1
+  }
+}

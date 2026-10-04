@@ -1,8 +1,16 @@
 /// Deterministic timeline based on QinAnze/zmd-charge's six-second HUD cues.
-public struct HUDFrame {
+public struct HUDFrame: Equatable {
     public var pillOpacity, pillScale, pillHeight, cornerRadius: Double
     public var boltOpacity, boltScale, boltX, squareMix: Double
     public var titleOpacity, numbersOpacity, rippleProgress, rippleOpacity, overallScale: Double
+
+    public static func redrawDelay(after seconds: Double, duration: Double = 6, reduceMotion: Bool = false) -> Double? {
+        let duration = duration.isFinite ? min(10, max(3, duration)) : 6
+        guard seconds.isFinite, seconds < duration else { return nil }
+        let settled = reduceMotion ? 0.15 : 2.52
+        let closing = duration - 0.35
+        return seconds >= settled && seconds < closing ? closing - seconds : 1.0 / 60
+    }
 
     public static func at(seconds: Double, duration: Double = 6, reduceMotion: Bool = false) -> HUDFrame {
         let duration = duration.isFinite ? min(10, max(3, duration)) : 6

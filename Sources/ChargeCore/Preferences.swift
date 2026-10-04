@@ -13,7 +13,7 @@ public enum ShortcutModifier: String, Codable, CaseIterable {
     }
 }
 
-public struct Preferences: Codable {
+public struct Preferences: Codable, Equatable {
     public var scale = 0.8
     public var duration = 6.0
     public var position = "center"

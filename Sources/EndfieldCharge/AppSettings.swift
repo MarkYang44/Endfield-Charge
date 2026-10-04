@@ -1,14 +1,21 @@
 import AppKit
-import SwiftUI
 import ServiceManagement
 import ChargeCore
 
-final class AppSettings: ObservableObject {
-    @Published var value: Preferences { didSet { save(); onChange?() } }
-    @Published var loginEnabled = SMAppService.mainApp.status == .enabled
-    @Published var loginMessage = ""
-    @Published var shortcutMessage = ""
+final class AppSettings {
+    var value: Preferences {
+        didSet {
+            guard value != oldValue else { return }
+            if !readingPeer { save() }; onChange?(); onUIChange?()
+        }
+    }
+    private(set) var loginEnabled = false
+    private(set) var loginMessage = ""
+    var shortcutMessage = "" { didSet { if shortcutMessage != oldValue { onUIChange?() } } }
     var onChange: (() -> Void)?
+    // A visible settings window observes independently of the resident application's callback.
+    var onUIChange: (() -> Void)?
+    private var readingPeer = false
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -28,6 +35,12 @@ final class AppSettings: ObservableObject {
     }
     func text(_ zh: String, _ en: String) -> String { chinese ? zh : en }
 
+    func applyFromPeer(_ preferences: Preferences) {
+        readingPeer = true
+        defer { readingPeer = false }
+        value = preferences
+    }
+
     func save() {
         if let data = try? JSONEncoder().encode(value) { defaults.set(data, forKey: "preferences") }
     }
@@ -37,17 +50,19 @@ final class AppSettings: ObservableObject {
             if enabled { try SMAppService.mainApp.register() }
             else { try SMAppService.mainApp.unregister() }
             refreshLogin()
-            if SMAppService.mainApp.status == .requiresApproval {
-                loginMessage = text("请在系统设置 → 通用 → 登录项中允许。", "Allow this app in System Settings → General → Login Items.")
-            } else { loginMessage = "" }
         } catch {
             refreshLogin()
             loginMessage = error.localizedDescription
         }
+        onUIChange?()
     }
 
     func refreshLogin() {
-        loginEnabled = SMAppService.mainApp.status == .enabled
+        let status = SMAppService.mainApp.status
+        loginEnabled = status == .enabled
+        loginMessage = status == .requiresApproval
+            ? text("请在系统设置 → 通用 → 登录项中允许。", "Allow this app in System Settings → General → Login Items.") : ""
+        onUIChange?()
     }
 }
 
