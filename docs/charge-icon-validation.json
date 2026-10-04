@@ -1,0 +1,35 @@
+{
+  "version": "1.0.1",
+  "build": "2",
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "local_binary_sha256": "d9d017c19359381efcf7200d112c523fed6bc7030580fa86ac95496708099f78",
+  "local_zip_sha256": "a1efffc560cf9ccf60fcd2f89aa2d3f87459c65db6b210017e60935cd1975239",
+  "local_zip_bytes": 555788,
+  "packaged_files": 8,
+  "source_icon_sha256": {
+    "AppIcon.png": "ebde89ba7d4dffbfa90b8655c90e72bc6b0dc29f7144de264884f16ebce42112",
+    "MenuBarIcon.png": "d5be9d72656c7e7b733c3cb67a1e7caa90892f0fc72d790ba7ed02a14cedcacf",
+    "ChargeIcon.svg": "5a14de80f735dcce8468bdc528818c043750fa62689fe01fe4dbcb84631d9dbe",
+    "ChargeMenuIcon.svg": "b0c3efa6bb7957c82785d62b099fa84b4bf9bd9192704983d4eefe1dd69bc7d1"
+  },
+  "core_tests": 31,
+  "native_runtime_groups": 12,
+  "installed": true,
+  "published": true,
+  "source_commit": "08fbe27075bc7ea265d515bc26b653b939cb2016",
+  "preferences_unchanged": true,
+  "installed_files_identical": true,
+  "release_url": "https://github.com/MarkYang44/Endfield-Charge/releases/tag/v1.0.1",
+  "release_zip_bytes": 563707,
+  "release_zip_sha256": "b438d80cc7fdd3417a3db7af3f51930f3ce4ee46646e993736eb5b143de22c30",
+  "github_build_run": 37226878612,
+  "release_icon_pixels_equal": true,
+  "release_notes_match": true,
+  "original_svg_unchanged": true,
+  "installed_search_index_found": true,
+  "installed_resident_path": "/Applications/Endfield Charge.app/Contents/MacOS/EndfieldCharge",
+  "github_main_build_run": 37226774190
+}

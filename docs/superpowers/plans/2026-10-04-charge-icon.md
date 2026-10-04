@@ -34,6 +34,6 @@
 
 ### Task 3: Install and publish
 
-- [ ] Preserve a preference fingerprint and the prior installed bundle. Replace the installed app only after verification; register only this application with Launch Services/Spotlight, restart only its owned resident and confirm the installed path and unchanged preferences.
-- [ ] Complete independent whole-change review, commit source and push main. Create v1.0.1 only after source checks pass; wait for the tag build and Release publication.
-- [ ] Download the public asset; check digest, ZIP integrity, version, architecture, signature, icon/resource bytes and release-note content. Record validation and mark the plan complete.
+- [x] Preserve a preference fingerprint and the prior installed bundle. Replace the installed app only after verification; register only this application with Launch Services/Spotlight, restart only its owned resident and confirm the installed path and unchanged preferences.
+- [x] Complete independent whole-change review, commit source and push main. Create v1.0.1 only after source checks pass; wait for the tag build and Release publication.
+- [x] Download the public asset; check digest, ZIP integrity, version, architecture, signature, icon/resource bytes and release-note content. Record validation and mark the plan complete.

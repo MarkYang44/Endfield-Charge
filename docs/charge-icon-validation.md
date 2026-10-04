@@ -1,0 +1,15 @@
+# Icon v1.0.1 verification
+
+Approved design: a charcoal rounded-square App icon with an off-white broken inverted triangle, three restrained contour paths, and the original HUD's lime double-parallelogram bolt replacing the nail. The transparent monochrome menu variant omits contours and retains native 18 pt template rendering. The original supplied SVG is unchanged.
+
+The developer-only `scripts/render-icons.swift` exports SVG and PNG from shared vector definitions. PNG output uses an explicit sRGB context and transparent clearing. Artist verification confirmed exact opaque palette values `#262425`, `#E9E7E4`, `#C6CA4C`, transparent corners, black template RGB/alpha and identical output hashes across two exports. Parent review inspected the actual PNG scaling sheet at 16/18/32/64/128/256 pt and light/dark menu backgrounds. An independent whole-change review found no concrete issue.
+
+31 core tests and all 12 native runtime groups passed. The application changes outside artwork are limited to the About version label; the HUD, animation, telemetry, shortcut and preference code is unchanged. The universal macOS 13+ package contains arm64/x86_64, version 1.0.1/build 2. Strict ad-hoc signature, ZIP integrity, executable permissions, original-resource equality and every real archived App file's byte equality passed. Standard AppleDouble metadata entries are excluded from that real-file comparison.
+
+The previous installed v1.0.0 bundle was preserved before replacement. `/Applications/Endfield Charge.app` now matches the local verified package, one resident is running from that path, and Spotlight returns the installed application. The preference blob before/after installation is byte-identical, preserving this Mac's Command + Shift + E. Native visual inspection covered the exported assets, rather than an automated screenshot of the app launcher; an optional Quick Look bundle-thumbnail request did not return and was cancelled without resetting system caches.
+
+Published source: `08fbe27075bc7ea265d515bc26b653b939cb2016`. Both the [main build](https://github.com/MarkYang44/Endfield-Charge/actions/runs/37226774190) and [v1.0.1 tag build/release](https://github.com/MarkYang44/Endfield-Charge/actions/runs/37226878612) succeeded. The [public Release](https://github.com/MarkYang44/Endfield-Charge/releases/tag/v1.0.1) is neither a draft nor a prerelease; v1.0.0 is retained. Published release notes exactly match the checked-in notes.
+
+The public ZIP was downloaded and verified against GitHub's SHA256 digest. Its version, architecture, signature, original SVG, menu PNG and attribution matched the source. Its decoded 1024 px ICNS image equals the approved App PNG pixel-for-pixel, including palette and alpha.
+
+Local ZIP: 555,788 B. Public CI ZIP: 563,707 B, SHA256 `b438d80cc7fdd3417a3db7af3f51930f3ce4ee46646e993736eb5b143de22c30`. The native export script and preview remain developer artifacts and add no runtime dependency or sampling work. No new memory benchmark or physical Intel run is claimed. Artifact/source fingerprints and check results are in [charge-icon-validation.json](charge-icon-validation.json).
