@@ -12,7 +12,7 @@
 
 下载 [GitHub Actions 构建产物](https://github.com/MarkYang44/Endfield-Charge/actions)或 [Releases](https://github.com/MarkYang44/Endfield-Charge/releases) 中的 zip，解压后把 **Endfield Charge.app** 放入 Applications，双击启动。菜单栏会出现电标和电量。点击图标可预览、模拟插拔电源、打开设置或退出。
 
-默认全局快捷键 **Control + Option + H**，在设置中可关闭或改为 B / E / P。应用不需要辅助功能或录屏权限。默认关闭登录启动，移入 Applications 后可在设置中主动开启。
+默认全局快捷键 **Control + Option + H**。在「设置 → 通用」中可组合选择 ⌘ Command、⌃ Control、⌥ Option、⇧ Shift 和 A–Z 字母，例如 **Command + Shift + E**；至少选择 Command、Control 或 Option 中的一个。快捷键不可用时会在设置中提示，可随时关闭。升级会保留原有设置。应用不需要辅助功能或录屏权限。默认关闭登录启动，移入 Applications 后可在设置中主动开启。
 
 本地构建使用 ad-hoc 签名，尚未经过 Apple 公证。网络下载的副本可能需要通过 macOS 的“打开”或“隐私与安全性”流程确认。不要关闭 Gatekeeper。
 
@@ -22,6 +22,7 @@
 - 插电波纹向外扩散，拔电波纹向内收拢；HUD 不抢焦点、不挡鼠标，可见胶囊紧贴菜单栏和刘海下方（间距约 2 pt），展开时向下伸展。
 - IOKit 电源事件监听、400ms 去抖、30 秒刷新兜底和唤醒后刷新。动画计时器仅在 HUD 展示时运行。
 - 真实百分比、剩余时间和近似 Wh（一位小数）；正确区分接电未充电、正在充电、已充满及电池供电。
+- 菜单栏使用提供的终末地图标原始图案，并跟随 macOS 明暗主题；来源 SVG 一并保存。
 - 多显示器选择、顶部左/中/右、40–120% 缩放、3–10 秒时长、波纹开关、中文/英文/跟随系统、菜单栏百分比。
 - 低电量、充满和系统低电量模式切换提醒，阈值可调；首次启动不会补发历史提醒。
 - 跟随系统“减少动态效果”，使用简化淡入淡出。设置自动保存到应用的 UserDefaults 域。

@@ -20,5 +20,11 @@ available to reproduce. The MIT permission and warranty text is reproduced in
 LICENSE; that file's Mark Yang copyright applies to the new implementation,
 not to upstream contributions. Keep this attribution with redistributed builds.
 
+Resources/endfield-industries.svg is the Endfield logo artwork supplied by the
+user. Resources/MenuBarIcon.png is its transparent raster export, used only as
+the macOS menu bar template image. The supplied SVG contains no license notice;
+the project's MIT license does not grant rights to this brand artwork. Artwork
+and trademark rights remain with their respective owners.
+
 Arknights: Endfield is referenced only as visual inspiration. This utility is
 unofficial and is not affiliated with or endorsed by the game developer.

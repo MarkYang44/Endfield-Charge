@@ -40,6 +40,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func statusImage() -> NSImage {
+        if let url = Bundle.main.url(forResource: "MenuBarIcon", withExtension: "png"),
+           let image = NSImage(contentsOf: url) {
+            image.size = NSSize(width: 18, height: 18)
+            image.isTemplate = true
+            return image
+        }
         let image = NSImage(size: NSSize(width: 18, height: 18), flipped: true) { rect in
             NSColor.black.setFill()
             HUDView.boltPath(in: rect.insetBy(dx: 1, dy: 1)).fill()
@@ -65,12 +71,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func applySettings() {
-        let configuration = "\(settings.value.shortcutEnabled):\(settings.value.shortcutKey)"
+        let modifiers = settings.value.shortcutModifiers
+        let configuration = "\(settings.value.shortcutEnabled):\(settings.value.shortcutKey):\(modifiers.map(\.rawValue).sorted())"
         if configuration != shortcutConfiguration {
             shortcutConfiguration = configuration
-            let result = hotkey.configure(enabled: settings.value.shortcutEnabled, key: settings.value.shortcutKey)
-            settings.shortcutMessage = result == 0 ? "" : settings.text(
-                "快捷键已被占用，请换一个字母。", "This shortcut is unavailable. Choose another letter.")
+            let result = hotkey.configure(enabled: settings.value.shortcutEnabled, key: settings.value.shortcutKey, modifiers: modifiers)
+            if settings.value.shortcutEnabled && modifiers.isDisjoint(with: [.command, .control, .option]) {
+                settings.shortcutMessage = settings.text("请至少选择 Command、Control 或 Option。", "Choose at least Command, Control or Option.")
+            } else {
+                settings.shortcutMessage = result == 0 ? "" : settings.text(
+                    "快捷键不可用，请换一个组合。", "This shortcut is unavailable. Choose another combination.")
+            }
         }
         updateMenu()
         hud.position()

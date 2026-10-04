@@ -1,22 +1,7 @@
 import AppKit
 import SwiftUI
 import ServiceManagement
-
-struct Preferences: Codable {
-    var scale = 0.8
-    var duration = 6.0
-    var position = "center"
-    var displayID: UInt32 = 0
-    var language = "system"
-    var showPercentage = true
-    var shortcutEnabled = true
-    var shortcutKey = "H"
-    var lowBatteryAlert = true
-    var fullBatteryAlert = true
-    var lowPowerAlert = true
-    var lowThreshold = 20
-    var ripplesEnabled = true
-}
+import ChargeCore
 
 final class AppSettings: ObservableObject {
     @Published var value: Preferences { didSet { save(); onChange?() } }

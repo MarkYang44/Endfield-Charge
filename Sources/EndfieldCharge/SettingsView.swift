@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import ChargeCore
 
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
@@ -50,10 +51,27 @@ struct SettingsView: View {
             Toggle(t("菜单栏显示百分比", "Show percentage in menu bar"), isOn: $settings.value.showPercentage)
             Toggle(t("全局快捷键", "Global shortcut"), isOn: $settings.value.shortcutEnabled)
             row(t("快捷键组合", "Shortcut")) {
-                Text("⌃ Control + ⌥ Option +").foregroundStyle(.secondary)
+                ForEach(ShortcutModifier.allCases, id: \.self) { modifier in
+                    Toggle(modifier.symbol, isOn: Binding(
+                        get: { settings.value.shortcutModifiers.contains(modifier) },
+                        set: { enabled in
+                            if enabled { settings.value.shortcutModifiers.insert(modifier) }
+                            else { settings.value.shortcutModifiers.remove(modifier) }
+                        }
+                    ))
+                    .toggleStyle(.button)
+                    .tint(accent)
+                    .foregroundStyle(settings.value.shortcutModifiers.contains(modifier) ? accent : Color.secondary)
+                    .help(modifier.rawValue.capitalized)
+                    .accessibilityLabel(modifier.rawValue.capitalized)
+                    .disabled(!settings.value.shortcutEnabled)
+                }
+                Text("+").foregroundStyle(.secondary)
                 Picker("", selection: $settings.value.shortcutKey) {
-                    ForEach(["H", "B", "E", "P"], id: \.self) { Text($0).tag($0) }
-                }.labelsHidden().frame(width: 70).disabled(!settings.value.shortcutEnabled)
+                    ForEach(HotKey.availableKeys, id: \.self) { Text($0).tag($0) }
+                }.labelsHidden().frame(width: 70)
+                    .accessibilityLabel(t("快捷键字母", "Shortcut letter"))
+                    .disabled(!settings.value.shortcutEnabled)
             }
             if !settings.shortcutMessage.isEmpty { Text(settings.shortcutMessage).font(.caption).foregroundStyle(.orange) }
             Divider()
