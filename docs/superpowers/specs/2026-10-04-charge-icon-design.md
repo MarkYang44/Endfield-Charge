@@ -19,3 +19,7 @@ Release as v1.0.1 (bundle version 2), update About and attribution, include usef
 ## Acceptance
 
 Visually inspect 16/18/32/64/128/256 pt artwork, including a menu-bar preview on light and dark backgrounds. Verify transparent corners/background, source-logo fingerprint, original HUD source unchanged, package icon inclusion, universal architecture, strict signature, ZIP integrity, preserved preferences and the installed resident path. Verify the public v1.0.1 asset by downloading it and comparing its GitHub SHA256 digest.
+
+## Approved v1.0.2 amendment
+
+The user subsequently requested denser App-icon contour lines and the original ENDFIELD wordmark below the inverted triangle, while explicitly retaining the menu-bar icon. This supersedes the App-only three-curve/text-removal requirements above. See [the refinement plan](../plans/2026-10-04-charge-icon-wordmark.md); v1.0.1 verification remains a historical record.

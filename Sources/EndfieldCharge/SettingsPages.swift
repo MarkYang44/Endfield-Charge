@@ -98,7 +98,7 @@ extension SettingsWindowController {
     }
 
     func aboutPage(_ page: NSView) {
-        place(label("Endfield Charge 1.0.1", size: 21, weight: .bold), in: page, y: 0, width: 572, height: 30)
+        place(label("Endfield Charge 1.0.2", size: 21, weight: .bold), in: page, y: 0, width: 572, height: 30)
         place(label(t("终末地风格的 macOS 原生电量终端", "A native Endfield-inspired macOS battery HUD")), in: page, y: 46, width: 572)
         _ = caption(t("视觉、图案和动画参考 QinAnze/zmd-charge。原生实现：Mark Yang。", "Visuals, geometry and timing inspired by QinAnze/zmd-charge. Native implementation: Mark Yang."), in: page, y: 85)
         _ = caption(t("“超充模式”为主题文案，不代表检测到快充。Wh 为根据当前电压推算的近似能量。", "“Super charge” is theme copy, not fast-charge detection. Wh is approximate energy based on the current voltage."), in: page, y: 128)

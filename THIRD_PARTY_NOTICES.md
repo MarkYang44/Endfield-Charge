@@ -21,9 +21,11 @@ not to upstream contributions. Keep this attribution with redistributed builds.
 
 Resources/endfield-industries.svg is the Endfield logo artwork supplied by the
 user and remains unchanged. Resources/ChargeIcon.svg and ChargeMenuIcon.svg
-are simplified derived compositions: the original nail and lettering are removed,
-and the HUD bolt replaces the nail. AppIcon.png and MenuBarIcon.png are their
-static raster exports. The supplied SVG contains no license notice;
+are derived compositions: the HUD bolt replaces the original nail. The App
+composition reuses the original outlined ENDFIELD lettering below its triangle
+and adds denser contour curves; the unchanged menu composition omits lettering
+and contours. AppIcon.png and MenuBarIcon.png are their static raster exports.
+The supplied SVG contains no license notice;
 the project's MIT license does not grant rights to this brand artwork. Artwork
 and trademark rights remain with their respective owners.
 
