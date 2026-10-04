@@ -11,7 +11,7 @@
     "timebase_denom": 3
   },
   "baseline_binary_sha256": "9716755b789de1a26de142e758bb794233822af16fb33d1d67499d019da2103b",
-  "final_binary_sha256": "4be1c3ee7f26968ff82d267ac9ca186119fbe6fe1ceb6f1ed3a3437ee907bbfa",
+  "final_binary_sha256": "6f139849b3c37e728bd446108925811ef0966ce37f7c17ef46dfeb6781cdbd1e",
   "scenarios": {
     "baseline": {
       "idle": {
@@ -104,149 +104,149 @@
         "runs": [
           {
             "run": 1,
-            "last_MiB": 11.235267639160156,
-            "sampled_peak_MiB": 11.438392639160156,
-            "stable_cpu_percent_one_core": 0.04345043630308049,
-            "stable_cpu_window_seconds": 1.8307249999779742
+            "last_MiB": 11.188392639160156,
+            "sampled_peak_MiB": 11.422767639160156,
+            "stable_cpu_percent_one_core": 0.02622050262117604,
+            "stable_cpu_window_seconds": 1.8210939999844413
           },
           {
             "run": 2,
-            "last_MiB": 11.43841552734375,
-            "sampled_peak_MiB": 11.53216552734375,
-            "stable_cpu_percent_one_core": 0.02124920519327377,
-            "stable_cpu_window_seconds": 1.8384969999897294
+            "last_MiB": 11.360267639160156,
+            "sampled_peak_MiB": 11.454017639160156,
+            "stable_cpu_percent_one_core": 0.021717347378007235,
+            "stable_cpu_window_seconds": 1.8113400000147521
           },
           {
             "run": 3,
-            "last_MiB": 11.54779052734375,
-            "sampled_peak_MiB": 11.64154052734375,
-            "stable_cpu_percent_one_core": 0.019022427182538687,
-            "stable_cpu_window_seconds": 1.8388399999821559
+            "last_MiB": 11.391517639160156,
+            "sampled_peak_MiB": 11.485267639160156,
+            "stable_cpu_percent_one_core": 0.032578486650292865,
+            "stable_cpu_window_seconds": 1.8271260000183247
           }
         ],
-        "median_last_MiB": 11.43841552734375,
-        "maximum_sampled_peak_MiB": 11.64154052734375,
-        "median_stable_cpu_percent_one_core": 0.02124920519327377
+        "median_last_MiB": 11.360267639160156,
+        "maximum_sampled_peak_MiB": 11.485267639160156,
+        "median_stable_cpu_percent_one_core": 0.02622050262117604
       },
       "settings": {
         "runs": [
           {
             "run": 1,
-            "last_MiB": 42.47064971923828,
-            "sampled_peak_MiB": 43.29877471923828,
-            "stable_cpu_percent_one_core": 0.03586720402901061,
-            "stable_cpu_window_seconds": 1.838610000006156
+            "last_MiB": 41.97069549560547,
+            "sampled_peak_MiB": 43.23632049560547,
+            "stable_cpu_percent_one_core": 0.03229200727088344,
+            "stable_cpu_window_seconds": 1.8166259999852628
           },
           {
             "run": 2,
-            "last_MiB": 42.033172607421875,
-            "sampled_peak_MiB": 43.345672607421875,
-            "stable_cpu_percent_one_core": 0.04971788181484342,
-            "stable_cpu_window_seconds": 1.8423130000010133
+            "last_MiB": 42.470672607421875,
+            "sampled_peak_MiB": 42.892547607421875,
+            "stable_cpu_percent_one_core": 0.051061514940756156,
+            "stable_cpu_window_seconds": 1.8327580000041053
           },
           {
             "run": 3,
             "last_MiB": 41.923797607421875,
-            "sampled_peak_MiB": 43.361297607421875,
-            "stable_cpu_percent_one_core": 0.03477803190190662,
-            "stable_cpu_window_seconds": 1.8372460000100546
+            "sampled_peak_MiB": 43.126922607421875,
+            "stable_cpu_percent_one_core": 0.01931413367504396,
+            "stable_cpu_window_seconds": 1.8265949999913573
           }
         ],
-        "median_last_MiB": 42.033172607421875,
-        "maximum_sampled_peak_MiB": 43.361297607421875,
-        "median_stable_cpu_percent_one_core": 0.03586720402901061
+        "median_last_MiB": 41.97069549560547,
+        "maximum_sampled_peak_MiB": 43.23632049560547,
+        "median_stable_cpu_percent_one_core": 0.03229200727088344
       },
       "animation": {
         "runs": [
           {
             "run": 1,
-            "last_MiB": 14.625961303710938,
-            "sampled_peak_MiB": 16.15723419189453,
-            "stable_cpu_percent_one_core": 1.5811410835619082,
-            "stable_cpu_window_seconds": 4.884707999997772
+            "last_MiB": 14.469688415527344,
+            "sampled_peak_MiB": 16.391563415527344,
+            "stable_cpu_percent_one_core": 1.5051483690533476,
+            "stable_cpu_window_seconds": 4.880128000018885
           },
           {
             "run": 2,
-            "last_MiB": 14.735336303710938,
-            "sampled_peak_MiB": 16.141586303710938,
-            "stable_cpu_percent_one_core": 1.1653675595984347,
-            "stable_cpu_window_seconds": 4.873372999980347
+            "last_MiB": 14.438438415527344,
+            "sampled_peak_MiB": 16.250938415527344,
+            "stable_cpu_percent_one_core": 1.6863017924418633,
+            "stable_cpu_window_seconds": 4.881938000005903
           },
           {
             "run": 3,
-            "last_MiB": 14.579086303710938,
-            "sampled_peak_MiB": 16.125961303710938,
-            "stable_cpu_percent_one_core": 1.2056444522436578,
-            "stable_cpu_window_seconds": 4.87138500000583
+            "last_MiB": 14.282188415527344,
+            "sampled_peak_MiB": 15.891586303710938,
+            "stable_cpu_percent_one_core": 1.950516031180747,
+            "stable_cpu_window_seconds": 4.865016000025207
           }
         ],
-        "median_last_MiB": 14.625961303710938,
-        "maximum_sampled_peak_MiB": 16.15723419189453,
-        "median_stable_cpu_percent_one_core": 1.2056444522436578
+        "median_last_MiB": 14.438438415527344,
+        "maximum_sampled_peak_MiB": 16.391563415527344,
+        "median_stable_cpu_percent_one_core": 1.6863017924418633
       },
       "telemetry": {
         "runs": [
           {
             "run": 1,
-            "last_MiB": 57.220603942871094,
-            "sampled_peak_MiB": 100.3143310546875,
-            "stable_cpu_percent_one_core": 0.32765706531767286,
-            "stable_cpu_window_seconds": 1.8349849999940488
+            "last_MiB": 56.423728942871094,
+            "sampled_peak_MiB": 98.0487289428711,
+            "stable_cpu_percent_one_core": 0.3216689056378028,
+            "stable_cpu_window_seconds": 1.831942999997409
           },
           {
             "run": 2,
-            "last_MiB": 54.39250183105469,
-            "sampled_peak_MiB": 94.00187683105469,
-            "stable_cpu_percent_one_core": 0.3770050880864897,
-            "stable_cpu_window_seconds": 1.8319269999919925
+            "last_MiB": 55.626853942871094,
+            "sampled_peak_MiB": 94.8143539428711,
+            "stable_cpu_percent_one_core": 0.43517740420421935,
+            "stable_cpu_window_seconds": 1.8280570000060834
           },
           {
             "run": 3,
-            "last_MiB": 54.283103942871094,
-            "sampled_peak_MiB": 95.3143539428711,
-            "stable_cpu_percent_one_core": 0.3437052212400295,
-            "stable_cpu_window_seconds": 1.8270379999885336
+            "last_MiB": 54.0174560546875,
+            "sampled_peak_MiB": 94.8924560546875,
+            "stable_cpu_percent_one_core": 0.38663924069107847,
+            "stable_cpu_window_seconds": 1.8289229999936651
           }
         ],
-        "median_last_MiB": 54.39250183105469,
-        "maximum_sampled_peak_MiB": 100.3143310546875,
-        "median_stable_cpu_percent_one_core": 0.3437052212400295
+        "median_last_MiB": 55.626853942871094,
+        "maximum_sampled_peak_MiB": 98.0487289428711,
+        "median_stable_cpu_percent_one_core": 0.38663924069107847
       },
       "telemetry_helper_exited": {
         "runs": [
           {
             "run": 1,
-            "last_MiB": 11.454017639160156,
-            "sampled_peak_MiB": 11.454017639160156,
-            "stable_cpu_percent_one_core": 0.0,
-            "stable_cpu_window_seconds": 1.837269000010565
+            "last_MiB": 11.29779052734375,
+            "sampled_peak_MiB": 11.43841552734375,
+            "stable_cpu_percent_one_core": 0.012939951493341713,
+            "stable_cpu_window_seconds": 1.8228430000017397
           },
           {
             "run": 2,
-            "last_MiB": 11.40716552734375,
-            "sampled_peak_MiB": 11.54779052734375,
-            "stable_cpu_percent_one_core": 0.007454573345120704,
-            "stable_cpu_window_seconds": 1.838348000019323
+            "last_MiB": 11.51654052734375,
+            "sampled_peak_MiB": 11.51654052734375,
+            "stable_cpu_percent_one_core": 0.0,
+            "stable_cpu_window_seconds": 1.8251690000179224
           },
           {
             "run": 3,
-            "last_MiB": 11.360267639160156,
-            "sampled_peak_MiB": 11.407142639160156,
-            "stable_cpu_percent_one_core": 0.003913932404691325,
-            "stable_cpu_window_seconds": 1.844922000018414
+            "last_MiB": 11.282142639160156,
+            "sampled_peak_MiB": 11.454017639160156,
+            "stable_cpu_percent_one_core": 0.01753764373902625,
+            "stable_cpu_window_seconds": 1.8289229999936651
           }
         ],
-        "median_last_MiB": 11.40716552734375,
-        "maximum_sampled_peak_MiB": 11.54779052734375,
-        "median_stable_cpu_percent_one_core": 0.003913932404691325
+        "median_last_MiB": 11.29779052734375,
+        "maximum_sampled_peak_MiB": 11.51654052734375,
+        "median_stable_cpu_percent_one_core": 0.012939951493341713
       }
     }
   },
   "artifact": {
     "binary_bytes": 980288,
     "app_du_KiB": 1136,
-    "zip_bytes": 489706,
-    "zip_sha256": "4b17c024dc609bea3b09284eee14dcde85caf68b2adef0e3c53e7d2f3343e348"
+    "zip_bytes": 490449,
+    "zip_sha256": "78a735930da81c10a3567047ae6b6190cca23e15f4106a80dbc93ee169c7307e"
   },
   "checks": {
     "core_tests": 31,
@@ -261,7 +261,8 @@
     ],
     "already_running_cli_telemetry": true,
     "installed_preferences_byte_unchanged": true,
-    "strict_codesign_and_zip_byte_equality": true
+    "strict_codesign_and_zip_byte_equality": true,
+    "legacy_battery_updates_while_telemetry_disabled_without_new_graph_sample": true
   },
   "source_files_sha256": {
     "Package.swift": "840f8af85b8b7d595af1fb920373dfe6622ebd8142941dc37649c875831b9978",
@@ -274,7 +275,7 @@
     "Sources/ChargeCore/Preferences.swift": "72ad0674d9e0950a9a06a84474013efd87019dfa666926009dcc7d518d8bf0de",
     "Sources/ChargeCore/SettingsMessage.swift": "95899114d91031f13fd0527ef14feb53e6f9823f0d550f53a72f874e883de282",
     "Sources/ChargeCore/Telemetry.swift": "a70da9ab2141c99ad3eb65231a1ec0ab2e0d952e548e16c45887963366034fd7",
-    "Sources/EndfieldCharge/AppDelegate.swift": "271d8d80cb65f06bd3015d818e03e8b9dcbde437578891e4ec7f47eda8411a5d",
+    "Sources/EndfieldCharge/AppDelegate.swift": "83ce2fec2a81b31acb1aba1854ce31b382fb10db2556c08d33ad32800063593d",
     "Sources/EndfieldCharge/AppSettings.swift": "a8b9b77f37d8b0633092dcd70c9e82b3b8da85c19e8c257ae42bfd3781103a89",
     "Sources/EndfieldCharge/BatteryReader.swift": "ad74974efd111fe3636043897b0777cf8b0f3f3359f41a9c7d1a6910a8ccc2d0",
     "Sources/EndfieldCharge/HUDController.swift": "3325c9a37856ad5a8fe17ec2360bb29dbbd6a6b31fd3929d80c866e11f7b5401",
@@ -287,7 +288,7 @@
     "Sources/EndfieldCharge/SettingsChannel.swift": "bfb224840ed0156cc75079ad71c76a40311724ba008e61ab7fb4e6966496cbce",
     "Sources/EndfieldCharge/SettingsControls.swift": "7fbbfc90fd0fd17ec9f69bc03f084564e224efb46780a5b6296044e4b4918485",
     "Sources/EndfieldCharge/SettingsPages.swift": "363254fafd0a901196538249846f5a23f6b6c6bd7ebc6ef75764664b7e2b920e",
-    "Sources/EndfieldCharge/SettingsProcessController.swift": "08056c63c250fa321470143c295f30bc786f087441ff48611056f323ed1e997a",
+    "Sources/EndfieldCharge/SettingsProcessController.swift": "9513ae733998320fe6431bcece28113d038776dffeb49e566a32143462830259",
     "Sources/EndfieldCharge/SettingsWindowController.swift": "96924fdd34c1deb7787d93eab9b99206a23bbf7b91bdce829327bf0d87e7079e",
     "Sources/EndfieldCharge/StatusMenuController.swift": "0884758393397bc1f77c134fea5125ad8374de128478e6589fdf4161315320dd",
     "Sources/EndfieldCharge/TelemetryApplicationDelegate.swift": "a42b3b3cfea3db0fe6217475a8a1f09336c2aa803fe8c4fdb112f0f559c9136c",

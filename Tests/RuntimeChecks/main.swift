@@ -40,7 +40,8 @@ if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry
         }
         if telemetryRole {
             guard let view = window.contentView as? TelemetryView,
-                  view.header.snapshot.percent == 68, view.header.preferences.scale == 0.75 else {
+                  view.header.snapshot.percent == 68, view.header.preferences.scale == 0.75,
+                  !view.header.preferences.powerTelemetryEnabled, view.graphSampleCount == 1 else {
                 fputs("FAIL: telemetry did not receive resident snapshot/preferences\n", stderr); exit(1)
             }
             if tab == 0 {
@@ -321,6 +322,9 @@ for record in exits {
 }
 settingsProcess?.stop(); settingsProcess = nil
 settings.value.scale = 0.75
+settings.value.powerTelemetryEnabled = false
+settings.value.computeTelemetryEnabled = false
+settings.value.thermalTelemetryEnabled = false
 var telemetryProcess: SettingsProcessController?
 var telemetryPreviews = 0
 var visibility: [Bool] = []
@@ -329,8 +333,14 @@ telemetryProcess = SettingsProcessController(settings: settings, role: .telemetr
     if telemetryPreviews == 1 { telemetryProcess?.open() }
 }, onScreen: { displayContext = $0 })
 telemetryProcess?.onVisibility = { visibility.append($0) }
-telemetryProcess?.sendTelemetry(telemetrySample)
+var olderTelemetry = telemetrySample
+olderTelemetry.battery.percent = 67
+olderTelemetry.power = nil; olderTelemetry.compute = nil; olderTelemetry.thermal = nil
+telemetryProcess?.sendTelemetry(olderTelemetry)
 telemetryProcess?.open()
+_ = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { _ in
+    telemetryProcess?.updateBattery(telemetrySample.battery)
+}
 let telemetryReopenDeadline = Date(timeIntervalSinceNow: 7)
 while telemetryPreviews < 2 && Date() < telemetryReopenDeadline { spin(0.05) }
 spin(0.3)

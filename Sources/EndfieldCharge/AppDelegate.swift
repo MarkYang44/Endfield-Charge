@@ -94,6 +94,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func receive(_ value: BatterySnapshot) {
         snapshot = value
         menu.update(snapshot)
+        telemetryProcess.updateBattery(value)
         for event in reducer.consume(value, lowThreshold: settings.value.lowThreshold) {
             switch event {
             case .connected, .disconnected: hud.show(value)

@@ -113,6 +113,13 @@ final class SettingsProcessController {
         sendState()
     }
 
+    func updateBattery(_ battery: BatterySnapshot) {
+        guard role == .telemetry, var cached = latestTelemetry, cached.battery != battery else { return }
+        cached.battery = battery
+        // Keep the telemetry timestamp: a legacy battery event is not a new CPU/power sample.
+        sendTelemetry(cached)
+    }
+
     private func setVisibility(_ visible: Bool) {
         guard visible != panelVisible else { return }
         panelVisible = visible
