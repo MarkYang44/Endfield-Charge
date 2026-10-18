@@ -33,9 +33,10 @@ int main(int argc, char **argv) {
                 return 1;
             }
             if (alive++) printf(",");
-            printf("{\"pid\":%d,\"footprint_bytes\":%llu,\"cpu_nanoseconds\":%llu}",
+            printf("{\"pid\":%d,\"footprint_bytes\":%llu,\"cpu_nanoseconds\":%llu,\"package_idle_wakeups\":%llu,\"interrupt_wakeups\":%llu}",
                 pids[index], usage.ri_phys_footprint, (unsigned long long)(
-                    ((long double)usage.ri_user_time + usage.ri_system_time) * timebase.numer / timebase.denom));
+                    ((long double)usage.ri_user_time + usage.ri_system_time) * timebase.numer / timebase.denom),
+                (unsigned long long)usage.ri_pkg_idle_wkups, (unsigned long long)usage.ri_interrupt_wkups);
             total += usage.ri_phys_footprint;
         }
         struct timespec time = {0};

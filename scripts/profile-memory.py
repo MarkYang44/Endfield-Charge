@@ -21,7 +21,7 @@ binary = arguments.binary.resolve()
 result = {"binary": str(binary), "sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
           "metric": "sum of ri_phys_footprint for parent and direct children", "interval_seconds": 0.2,
           "cpu_time_unit": "nanoseconds converted from Mach absolute time; 100% means one core",
-          "launch_settle_seconds": 0.3, "runs": []}
+          "launch_settle_seconds": 0.3, "wakeups": "cumulative kernel package-idle and interrupt wakeup counters; use per-process deltas", "runs": []}
 with tempfile.TemporaryDirectory(prefix="endfield-memory-") as directory:
     probe = Path(directory) / "probe"
     subprocess.run(["clang", "-O2", str(Path(__file__).with_suffix(".c")), "-o", str(probe)], check=True)

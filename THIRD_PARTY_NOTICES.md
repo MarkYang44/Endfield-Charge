@@ -31,3 +31,22 @@ and trademark rights remain with their respective owners.
 
 Arknights: Endfield is referenced only as visual inspiration. This utility is
 unofficial and is not affiliated with or endorsed by the game developer.
+
+## Endfield Charge Plus for macOS
+
+Network interface counter collection/differencing, APFS Data volume capacity
+semantics, bounded profile configuration and threshold-rule/cooldown ideas are
+adapted from GlacierGlimmer/zmd-charge-plus-for-macos at commit
+`b743c59d871ead486c840167d2d4cb0e159f0f6f`:
+
+- native/ecpmac.m (network and disk collectors)
+- Customization/MacVariableProvider.cs (counter differencing)
+- Customization/HudTriggerRule.cs (rule baseline and cooldown)
+- Customization/Models.cs (profile/configuration concepts)
+
+Copyright (c) 2026 GlacierGlimmer_冰川雪貓. These contributions use MIT; the full
+copyright, permission and warranty text is retained in
+LICENSES/zmd-charge-plus-MIT.txt and packaged as zmd-charge-plus-MIT.txt.
+This native Swift adaptation does not bundle that project's Avalonia/.NET
+runtime, LibreHardwareMonitor, fonts, or additional game assets. Existing
+upstream and brand-art notices above remain applicable.
