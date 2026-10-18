@@ -7,12 +7,13 @@ final class TelemetryReader {
     private let host = mach_host_self()
     private var cpu = CPUTickSampler()
     private var discharge = RecentDischargeAverage()
+    private let network = NetworkReader()
 
     /// Start/wake and re-enabling a module must not integrate stale counters or power.
-    func reset() { cpu.reset(); discharge.reset() }
+    func reset() { cpu.reset(); discharge.reset(); network.reset() }
 
     func read(battery: BatterySnapshot, powerEnabled: Bool, computeEnabled: Bool,
-              thermalEnabled: Bool) -> TelemetrySnapshot {
+              thermalEnabled: Bool, networkEnabled: Bool = false, storageEnabled: Bool = false) -> TelemetrySnapshot {
         let uptime = ProcessInfo.processInfo.systemUptime
         let power: PowerTelemetry?
         if powerEnabled { power = readPower(battery: battery, at: uptime) }
@@ -20,8 +21,12 @@ final class TelemetryReader {
         let compute: ComputeTelemetry?
         if computeEnabled { compute = readCompute() }
         else { cpu.reset(); compute = nil }
+        let networkValue: NetworkTelemetry?
+        if networkEnabled { networkValue = network.read(at: uptime) }
+        else { network.reset(); networkValue = nil }
         return TelemetrySnapshot(sampledAt: uptime, battery: battery, power: power,
-            compute: compute, thermal: thermalEnabled ? Self.thermalLevel() : nil)
+            compute: compute, thermal: thermalEnabled ? Self.thermalLevel() : nil,
+            network: networkValue, storage: storageEnabled ? StorageReader.read() : nil)
     }
 
     private func readPower(battery: BatterySnapshot, at uptime: Double) -> PowerTelemetry {

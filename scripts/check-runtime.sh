@@ -9,6 +9,7 @@ swiftc -I "$binary_dir/Modules" \
   Sources/EndfieldCharge/AppSettings.swift Sources/EndfieldCharge/HotKey.swift \
   Sources/EndfieldCharge/SettingsChannel.swift Sources/EndfieldCharge/ResidentInstance.swift \
   Sources/EndfieldCharge/SettingsProcessController.swift Sources/EndfieldCharge/SettingsApplicationDelegate.swift \
+  Sources/EndfieldCharge/NetworkReader.swift Sources/EndfieldCharge/StorageReader.swift \
   Sources/EndfieldCharge/TelemetryReader.swift Sources/EndfieldCharge/TelemetryMonitor.swift \
   Sources/EndfieldCharge/BatteryReader.swift Sources/EndfieldCharge/TelemetryApplicationDelegate.swift \
   Sources/EndfieldCharge/TelemetryView.swift Sources/EndfieldCharge/TelemetryWindowController.swift \
