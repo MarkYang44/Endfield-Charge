@@ -10,7 +10,14 @@ final class TelemetryReader {
     private let network = NetworkReader()
 
     /// Start/wake and re-enabling a module must not integrate stale counters or power.
-    func reset() { cpu.reset(); discharge.reset(); network.reset() }
+    func reset() { resetDisabled(power: true, compute: true, network: true) }
+
+    /// Worker-side reset epochs preserve disabled transitions even when requests coalesce.
+    func resetDisabled(power: Bool, compute: Bool, network: Bool) {
+        if power { discharge.reset() }
+        if compute { cpu.reset() }
+        if network { self.network.reset() }
+    }
 
     func read(battery: BatterySnapshot, powerEnabled: Bool, computeEnabled: Bool,
               thermalEnabled: Bool, networkEnabled: Bool = false, storageEnabled: Bool = false) -> TelemetrySnapshot {
