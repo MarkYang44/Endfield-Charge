@@ -42,6 +42,11 @@ final class SettingsApplicationDelegate: NSObject, NSApplicationDelegate {
             // Parent acknowledgment guarantees final settings/tab/frame were received before exit.
             self.closeTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in NSApp.terminate(nil) }
         }, onScreenChange: { [weak self] in self?.send(.screen) })
+        controller?.onCapsulePreview = { [weak self] id in
+            guard let self else { return }
+            self.channel?.send(SettingsMessage(.previewCapsule, revision: self.revision,
+                displayID: self.controller?.window?.screen.map(screenID), profileID: id))
+        }
         controller?.present()
         send(.ready, preferences: settings.value)
     }

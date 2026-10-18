@@ -2,10 +2,11 @@ import Foundation
 
 /// Small local requests keep CLI entry points useful when the menu-bar resident already owns the lock.
 enum ResidentRequest: String {
-    case preview, settings, telemetry, chargeDemo, batteryDemo
+    case preview, capsulePreview, settings, telemetry, chargeDemo, batteryDemo
     static let name = Notification.Name("com.markyang.endfieldcharge.request")
 
     static func action(arguments: [String]) -> ResidentRequest {
+        if arguments.contains("--capsule-preview") { return .capsulePreview }
         if arguments.contains("--telemetry") { return .telemetry }
         if arguments.contains("--settings") { return .settings }
         if arguments.contains("--demo") { return .chargeDemo }

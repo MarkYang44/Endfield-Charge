@@ -46,7 +46,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         telemetryMonitor = TelemetryMonitor(settings: settings, battery: { [weak self] in
             self?.snapshot ?? BatterySnapshot(hasBattery: false)
         })
-        telemetryMonitor.onSnapshot = { [weak self] in self?.telemetryProcess.sendTelemetry($0) }
+        telemetryMonitor.onSnapshot = { [weak self] snapshot in
+            self?.telemetryProcess.sendTelemetry(snapshot)
+            self?.hud.updateTelemetry(snapshot)
+        }
+        telemetryMonitor.onRuleAlert = { [weak self] rule, snapshot in self?.hud.showRule(rule, snapshot: snapshot) }
+        telemetryMonitor.onWake = { [weak self] in self?.hud.dismiss() }
+        hud.onCapsuleDemand = { [weak self] in self?.telemetryMonitor.setCapsuleMetrics($0) }
+        settingsProcess.onCapsulePreview = { [weak self] in self?.previewCapsule(id: $0) }
+        telemetryProcess.onCapsulePreview = { [weak self] in self?.previewCapsule(id: $0) }
         telemetryMonitor.onThermalAlert = { [weak self] level in
             guard let self else { return }
             self.hud.show(self.snapshot, kind: level == .critical ? .thermalCritical : .thermalWarning, queued: true)
@@ -54,6 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         telemetryProcess.onVisibility = { [weak self] in self?.telemetryMonitor.setPanelVisible($0) }
         menu = StatusMenuController(settings: settings, target: self, entries: [
             ("", "", nil, ""),
+            ("预览当前胶囊", "Preview Selected Capsule", #selector(previewSelectedCapsule), ""),
             ("预览本机电量", "Preview Battery", #selector(preview), ""),
             ("模拟插电动画", "Charging Demo", #selector(chargingDemo), ""),
             ("模拟拔电动画", "Battery Demo", #selector(batteryDemo), ""),
@@ -65,7 +74,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ("退出 Endfield Charge", "Quit Endfield Charge", #selector(quit), "q")
         ])
         menu.onRefresh = { [weak self] in self?.monitor.scheduleRefresh() }
-        hotkey.onPress = { [weak self] in self?.preview() }
+        menu.onProfileSelected = { [weak self] in self?.previewCapsule(id: $0) }
+        hotkey.onPress = { [weak self] in self?.previewSelectedCapsule() }
         settings.onChange = { [weak self] in self?.applySettings() }
         monitor.onSnapshot = { [weak self] in self?.receive($0) }
         monitor.start()
@@ -77,6 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                       let request = ResidentRequest(rawValue: raw), let self else { return }
                 switch request {
                 case .preview: self.preview()
+                case .capsulePreview: self.previewSelectedCapsule()
                 case .settings: self.openSettings()
                 case .telemetry: self.openTelemetry()
                 case .chargeDemo: self.chargingDemo()
@@ -86,6 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let arguments = CommandLine.arguments
         if arguments.contains("--demo") { chargingDemo() }
         else if arguments.contains("--preview-unplug") { batteryDemo() }
+        else if arguments.contains("--capsule-preview") { previewSelectedCapsule() }
         else if arguments.contains("--preview") { preview() }
         else if arguments.contains("--settings") { openSettings() }
         else if arguments.contains("--telemetry") { openTelemetry() }
@@ -122,6 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menu.update(snapshot)
         hud.position()
+        hud.preferencesChanged()
         telemetryMonitor.preferencesChanged()
     }
 
@@ -129,6 +142,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         preview(); return false
     }
 
+    @objc private func previewSelectedCapsule() { previewCapsule(id: settings.value.selectedCapsuleID) }
+    private func previewCapsule(id: String) {
+        guard let profile = settings.value.capsuleProfiles.first(where: { $0.id == id }) else { return }
+        if profile.isDefaultBattery { preview(); return }
+        hud.showProfile(profile, snapshot: telemetryMonitor.latestSnapshot)
+    }
     @objc private func preview() { hud.show(BatteryReader.read()) }
     @objc private func chargingDemo() { hud.show(demoSnapshot(charging: true)) }
     @objc private func batteryDemo() { hud.show(demoSnapshot(charging: false)) }
@@ -140,7 +159,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func openSettings() { settingsProcess.open() }
     @objc private func openTelemetry() { telemetryProcess.open() }
     func applicationWillTerminate(_ notification: Notification) {
-        telemetryMonitor?.stop(); settingsProcess?.stop(); telemetryProcess?.stop()
+        hud?.dismiss(); telemetryMonitor?.stop(); settingsProcess?.stop(); telemetryProcess?.stop()
         if let requestObserver { DistributedNotificationCenter.default().removeObserver(requestObserver) }
     }
 }

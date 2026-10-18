@@ -14,7 +14,17 @@ final class HUDController {
     private var isPresenting = false
     private var startTime = 0.0
     private var observer: NSObjectProtocol?
-    private var queue: [(BatterySnapshot, HUDKind)] = []
+    private struct Content {
+        let battery: BatterySnapshot
+        let kind: HUDKind
+        let profile: CapsuleProfile?
+        let rule: TelemetryAlertRule?
+        let createdAt: Double
+    }
+    private var queue: [Content] = []
+    private var current: Content?
+    private var latestTelemetry: TelemetrySnapshot?
+    var onCapsuleDemand: ((Set<TelemetryMetric>) -> Void)?
     var contextDisplayID: UInt32?
     private let settings: AppSettings
 
@@ -43,17 +53,75 @@ final class HUDController {
     }
 
     func show(_ snapshot: BatterySnapshot, kind: HUDKind = .power, queued: Bool = false) {
+        present(Content(battery: snapshot, kind: kind, profile: nil, rule: nil,
+            createdAt: ProcessInfo.processInfo.systemUptime), queued: queued)
+    }
+
+    func showProfile(_ profile: CapsuleProfile, snapshot: TelemetrySnapshot?) {
+        if profile.isDefaultBattery { show(snapshot?.battery ?? BatteryReader.read()); return }
+        latestTelemetry = snapshot
+        present(Content(battery: snapshot?.battery ?? BatterySnapshot(hasBattery: false), kind: .power,
+            profile: profile, rule: nil, createdAt: ProcessInfo.processInfo.systemUptime), queued: false)
+    }
+
+    func showRule(_ rule: TelemetryAlertRule, snapshot: TelemetrySnapshot) {
+        latestTelemetry = snapshot
+        let profile = CapsuleProfile(id: "rule.\(rule.id)", title: rule.name, primaryMetric: rule.metric)
+        present(Content(battery: snapshot.battery, kind: .power, profile: profile, rule: rule,
+            createdAt: ProcessInfo.processInfo.systemUptime), queued: true)
+    }
+
+    func updateTelemetry(_ snapshot: TelemetrySnapshot) {
+        latestTelemetry = snapshot
+        guard let content = current, let profile = content.profile else { return }
+        view?.capsule = CapsulePresentation(profile: profile, snapshot: displaySnapshot(snapshot), alert: content.rule != nil)
+        view?.needsDisplay = true
+    }
+
+    private func displaySnapshot(_ snapshot: TelemetrySnapshot?) -> TelemetrySnapshot? {
+        guard var snapshot else { return nil }
+        let p = settings.value
+        if !p.powerTelemetryEnabled { snapshot.power = nil }
+        if !p.computeTelemetryEnabled { snapshot.compute = nil }
+        if !p.networkTelemetryEnabled { snapshot.network = nil }
+        if !p.storageTelemetryEnabled { snapshot.storage = nil }
+        return snapshot
+    }
+
+    private func valid(_ content: Content) -> Bool {
+        guard ProcessInfo.processInfo.systemUptime - content.createdAt <= 30 else { return false }
+        if let rule = content.rule { return settings.value.telemetryAlertRules.contains(rule) && rule.enabled }
+        if let profile = content.profile { return settings.value.capsuleProfiles.contains(profile) }
+        return true
+    }
+
+    func preferencesChanged() {
+        queue.removeAll()
+        if current?.profile != nil { dismiss() }
+    }
+
+    func dismiss() {
+        timer?.invalidate(); timer = nil
+        queue.removeAll(); current = nil; isPresenting = false
+        panel?.orderOut(nil); panel?.contentView = nil; panel?.close()
+        panel = nil; view = nil
+        onCapsuleDemand?([])
+    }
+
+    private func present(_ content: Content, queued: Bool) {
         if queued && isPresenting {
-            if queue.count < 4 { queue.append((snapshot, kind)) }
+            if queue.count < 4 { queue.append(content) }
             return
         }
         timer?.invalidate()
         if !queued { queue.removeAll() }
         preparePanel()
         guard let view, let panel else { return }
+        current = content
         isPresenting = true
-        view.snapshot = snapshot
-        view.kind = kind
+        view.snapshot = content.battery
+        view.kind = content.kind
+        view.capsule = content.profile.map { CapsulePresentation(profile: $0, snapshot: displaySnapshot(latestTelemetry), alert: content.rule != nil) }
         view.preferences = settings.value
         view.chinese = settings.chinese
         view.reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
@@ -61,6 +129,9 @@ final class HUDController {
         position()
         panel.orderFrontRegardless()
         startTime = ProcessInfo.processInfo.systemUptime
+        if let profile = content.profile {
+            onCapsuleDemand?(Set([profile.primaryMetric, profile.secondaryMetric, profile.ringMetric].compactMap { $0 }))
+        } else { onCapsuleDemand?([]) }
         animate()
         tick()
     }
@@ -80,16 +151,10 @@ final class HUDController {
             timer?.invalidate(); timer = nil
             panel?.orderOut(nil)
             isPresenting = false
-            if !queue.isEmpty {
-                let next = queue.removeFirst()
-                show(next.0, kind: next.1, queued: true)
-            } else {
-                // Release the backing surface and view; no hidden HUD remains resident.
-                panel?.contentView = nil
-                panel?.close()
-                panel = nil
-                self.view = nil
-            }
+            current = nil
+            queue.removeAll { !valid($0) }
+            if !queue.isEmpty { present(queue.removeFirst(), queued: true) }
+            else { dismiss() }
             return
         }
         if delay > 1.0 / 60 {
@@ -124,7 +189,7 @@ final class HUDController {
     }
 
     deinit {
-        timer?.invalidate()
+        dismiss()
         if let observer { NotificationCenter.default.removeObserver(observer) }
     }
 }

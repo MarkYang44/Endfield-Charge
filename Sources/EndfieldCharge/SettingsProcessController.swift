@@ -25,6 +25,7 @@ final class SettingsProcessController {
     private var latestTelemetry: TelemetrySnapshot?
     private var panelVisible = false
     var onVisibility: ((Bool) -> Void)?
+    var onCapsulePreview: ((String) -> Void)?
 
     init(settings: AppSettings, role: Role = .settings, onPreview: @escaping (Bool?) -> Void, onScreen: @escaping (UInt32?) -> Void) {
         self.settings = settings; self.role = role; self.onPreview = onPreview; self.onScreen = onScreen
@@ -74,6 +75,10 @@ final class SettingsProcessController {
             if role == .settings { apply(message) }
             sendState()
         case .preview: onPreview(nil)
+        case .previewCapsule:
+            if let id = message.profileID, settings.value.capsuleProfiles.contains(where: { $0.id == id }) {
+                onCapsulePreview?(id)
+            }
         case .demoCharge: onPreview(true)
         case .demoBattery: onPreview(false)
         case .screen: break

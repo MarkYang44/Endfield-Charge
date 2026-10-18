@@ -9,6 +9,7 @@ enum HUDKind {
 final class HUDView: NSView {
     static let topInset: CGFloat = 27
     override var isFlipped: Bool { true }
+    var capsule: CapsulePresentation?
     var snapshot = BatterySnapshot(hasBattery: false)
     var preferences = Preferences()
     var chinese = true
@@ -117,6 +118,14 @@ final class HUDView: NSView {
     }
 
     private func drawTitle(_ f: HUDFrame) {
+        if let capsule {
+            guard f.titleOpacity > 0 else { return }
+            drawFitted(capsule.alert ? "/// TELEMETRY ALERT" : "/// ENDFIELD TELEMETRY", rect: NSRect(x: 125, y: 45, width: 370, height: 14),
+                size: 9, alpha: f.titleOpacity * 0.4, centered: true)
+            drawFitted(capsule.title, rect: NSRect(x: 175, y: 62, width: 365, height: 32), size: 26,
+                alpha: f.titleOpacity, centered: true)
+            return
+        }
         guard f.titleOpacity > 0 else { return }
         drawText(titles.0, at: NSPoint(x: center.x, y: 45), size: 9, alpha: f.titleOpacity * 0.4,
                  centered: true, spacing: 2)
@@ -125,6 +134,7 @@ final class HUDView: NSView {
     }
 
     private func drawNumbers(_ f: HUDFrame) {
+        if let capsule { drawCapsule(capsule, f); return }
         guard f.numbersOpacity > 0 else { return }
         let alpha = f.numbersOpacity
         let current = snapshot.energyWh.map { String(format: "≈%.1f", $0) } ?? "—"
@@ -156,6 +166,45 @@ final class HUDView: NSView {
         accent.setFill()
         NSBezierPath(roundedRect: NSRect(x: 550, y: 77.5, width: 24, height: 3), xRadius: 1.5, yRadius: 1.5).fill()
         NSBezierPath(roundedRect: NSRect(x: 557.5, y: 63.5, width: 9, height: 3), xRadius: 1, yRadius: 1).fill()
+    }
+
+    private func drawCapsule(_ capsule: CapsulePresentation, _ f: HUDFrame) {
+        guard f.numbersOpacity > 0 else { return }
+        let alpha = f.numbersOpacity
+        drawFitted(TelemetryFormatting.name(capsule.profile.primaryMetric, chinese: chinese),
+            rect: NSRect(x: 94, y: 44, width: 238, height: 12), size: 8, alpha: alpha * 0.4)
+        drawFitted(capsule.primary + " " + capsule.primaryUnit,
+            rect: NSRect(x: 94, y: 56, width: 238, height: 35), size: 26, alpha: alpha)
+        if let metric = capsule.profile.secondaryMetric {
+            drawFitted(TelemetryFormatting.name(metric, chinese: chinese),
+                rect: NSRect(x: 344, y: 47, width: 165, height: 12), size: 8, alpha: alpha * 0.4)
+        }
+        drawFitted(capsule.secondary + (capsule.secondary.isEmpty ? "" : " " + capsule.secondaryUnit),
+            rect: NSRect(x: 344, y: 61, width: 165, height: 29), size: 20, alpha: alpha * 0.75)
+        let badgeCenter = NSPoint(x: 562, y: 72)
+        NSColor(rgb: 0x262425, alpha: alpha).setFill()
+        NSBezierPath(ovalIn: NSRect(x: 539, y: 49, width: 46, height: 46)).fill()
+        let accent = NSColor(rgb: capsule.alert ? 0xFF4D4F : 0xC6CA4C, alpha: alpha)
+        if let fraction = capsule.ringFraction, fraction > 0 {
+            let arc = NSBezierPath()
+            arc.appendArc(withCenter: badgeCenter, radius: 20.75, startAngle: -90,
+                endAngle: -90 + CGFloat(fraction) * 360, clockwise: false)
+            accent.setStroke(); arc.lineWidth = 4.5; arc.lineCapStyle = .round; arc.stroke()
+        }
+        let laptop = NSBezierPath(roundedRect: NSRect(x: 553.5, y: 63.5, width: 17, height: 11.5), xRadius: 1.5, yRadius: 1.5)
+        accent.setStroke(); laptop.lineWidth = 2; laptop.stroke(); accent.setFill()
+        NSBezierPath(roundedRect: NSRect(x: 550, y: 77.5, width: 24, height: 3), xRadius: 1.5, yRadius: 1.5).fill()
+        NSBezierPath(roundedRect: NSRect(x: 557.5, y: 63.5, width: 9, height: 3), xRadius: 1, yRadius: 1).fill()
+    }
+
+    private func drawFitted(_ text: String, rect: NSRect, size: CGFloat, alpha: Double, centered: Bool = false) {
+        NSGraphicsContext.saveGraphicsState()
+        NSBezierPath(rect: rect).addClip()
+        let width = max(1, textWidth(text, size: size))
+        let fitted = max(8, min(size, size * rect.width / width))
+        drawText(text, at: NSPoint(x: centered ? rect.midX : rect.minX, y: rect.minY), size: fitted,
+            alpha: alpha, centered: centered)
+        NSGraphicsContext.restoreGraphicsState()
     }
 
     private func textWidth(_ text: String, size: CGFloat) -> CGFloat {

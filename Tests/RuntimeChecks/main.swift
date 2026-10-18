@@ -66,7 +66,11 @@ if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry
                 fputs("FAIL: telemetry preview control missing\n", stderr); exit(1)
             }
             app.sendAction(action, to: button.target, from: button)
-        } else { _ = delegate.applicationShouldHandleReopen?(app, hasVisibleWindows: true) }
+        } else {
+            (window.windowController as? SettingsWindowController)?.onCapsulePreview?(CapsuleProfile.cpuID)
+            (window.windowController as? SettingsWindowController)?.onCapsulePreview?("unknown-profile")
+            _ = delegate.applicationShouldHandleReopen?(app, hasVisibleWindows: true)
+        }
         closedAt = ProcessInfo.processInfo.systemUptime
         window.close()
     }
@@ -234,6 +238,12 @@ sampler?.setPanelVisible(true)
 spin(2.4)
 check(telemetryUpdates >= 3, "Visible terminal enables 2-second native sampling")
 sampler?.setPanelVisible(false)
+check(lastTelemetry?.network == nil && lastTelemetry?.storage == nil,
+    "Hiding terminal without profile/rule drops both on-demand snapshots")
+sampler?.setCapsuleMetrics([.networkDownloadBytesPerSecond])
+check(lastTelemetry?.network?.downloadBytesPerSecond == nil && lastTelemetry?.network?.receivedBytes == 0,
+    "Reenabled capsule starts fresh observation-session totals and unknown rate")
+sampler?.setCapsuleMetrics([])
 let backgroundUpdates = telemetryUpdates
 spin(2.4)
 check(telemetryUpdates == backgroundUpdates, "Hidden terminal cancels the old 2-second timer")
@@ -248,6 +258,63 @@ check(telemetryUpdates == stoppedUpdates && lastTelemetry?.power == nil && lastT
 sampler?.stop(); sampler = nil
 check(releasedSampler == nil, "Stopped native monitor releases observers and reader")
 print("PASS: native sampler cadence, disabled modules and owner release")
+
+// Demand and rule integration use a deterministic clock and actual resident routing.
+var demandPreferences = Preferences()
+demandPreferences.powerTelemetryEnabled = false
+demandPreferences.computeTelemetryEnabled = false
+demandPreferences.thermalTelemetryEnabled = false
+check(!TelemetryDemand(preferences: demandPreferences, panelVisible: false, capsuleMetrics: []).hasWork,
+    "Enabled on-demand modules alone never start polling")
+check(TelemetryDemand(preferences: demandPreferences, panelVisible: true, capsuleMetrics: []).network,
+    "Visible terminal requests network")
+check(TelemetryDemand(preferences: demandPreferences, panelVisible: false,
+    capsuleMetrics: [.networkDownloadBytesPerSecond]).highFrequency, "Visible network capsule requests fast shared cadence")
+demandPreferences.telemetryAlertRules = [TelemetryAlertRule(id: "net-rule", name: "Network", enabled: true,
+    metric: .networkDownloadBytesPerSecond, threshold: 100)]
+check(TelemetryDemand(preferences: demandPreferences, panelVisible: false, capsuleMetrics: []).network,
+    "Only a network rule still requests its enabled collector")
+demandPreferences.networkTelemetryEnabled = false
+check(!TelemetryDemand(preferences: demandPreferences, panelVisible: false, capsuleMetrics: []).hasWork,
+    "Rules cannot force disabled modules on")
+check(TelemetryDemand(preferences: demandPreferences, panelVisible: false, capsuleMetrics: [.batteryPercent]).hasWork,
+    "Battery capsule uses existing power-monitor snapshot independently of telemetry toggles")
+check(TelemetryFormatting.value(nil, metric: .networkDownloadBytesPerSecond) == "—",
+    "Unknown metric is an em dash")
+check(TelemetryFormatting.displayValue(1_048_576, metric: .networkDownloadBytesPerSecond) == 1,
+    "Threshold editors convert base bytes per second to MiB per second")
+let demandSettings = AppSettings(defaults: defaults)
+demandSettings.value = demandPreferences
+var ruleClock = 1.0
+var ruleRate = 200.0
+let ruleMonitor = TelemetryMonitor(settings: demandSettings, battery: { telemetrySample.battery },
+    clock: { ruleClock }, read: { _, _ in TelemetrySnapshot(sampledAt: ruleClock,
+        battery: telemetrySample.battery, power: nil, compute: nil, thermal: nil,
+        network: NetworkTelemetry(downloadBytesPerSecond: ruleRate,
+        uploadBytesPerSecond: nil, receivedBytes: 0, sentBytes: 0, interfaces: ["en0"])) })
+var firedRules: [String] = []
+ruleMonitor.onRuleAlert = { rule, _ in firedRules.append(rule.id) }
+ruleMonitor.start()
+check(ruleMonitor.samplingInterval == nil && ruleMonitor.latestSnapshot?.network == nil,
+    "All disabled stops timer and strips unavailable routing")
+demandSettings.value.networkTelemetryEnabled = true
+ruleMonitor.preferencesChanged()
+check(ruleMonitor.samplingInterval == 30 && firedRules.isEmpty, "Rule-only demand is background; startup does not alert")
+ruleClock = 2; ruleRate = 0; ruleMonitor.refresh()
+ruleClock = 3; ruleRate = 200; ruleMonitor.refresh()
+check(firedRules == ["net-rule"], "Recovered crossing routes one resident rule alert")
+ruleClock = 4; ruleRate = 0; ruleMonitor.refresh()
+ruleClock = 5; ruleRate = 200; ruleMonitor.refresh()
+check(firedRules.count == 1, "Resident respects evaluator cooldown")
+ruleMonitor.setCapsuleMetrics([.networkDownloadBytesPerSecond])
+check(ruleMonitor.samplingInterval == 2, "Capsule uses same visible shared timer")
+ruleMonitor.setCapsuleMetrics([])
+check(ruleMonitor.samplingInterval == 30, "Dismissed capsule restores background rule cadence")
+ruleMonitor.resetAfterWake()
+ruleClock = 40; ruleMonitor.refresh()
+check(firedRules.count == 1, "Wake clears rule baseline without replay")
+ruleMonitor.stop()
+print("PASS: demand transitions, unit scaling, disabled routing and resident rule lifecycle")
 
 settings.value.duration = 4
 let hud = HUDController(settings: settings)
@@ -278,12 +345,76 @@ check(visibleHUD() == nil, "Finished HUD is no longer visible")
 check(releasedHUD == nil, "Finished HUD view/backing owner deallocates")
 print("PASS: static-hold queue, preview interruption and HUD release")
 
+let networkProfile = CapsuleProfile.defaults.first { $0.id == CapsuleProfile.networkID }!
+var capsuleDemand: Set<TelemetryMetric> = []
+hud.onCapsuleDemand = { capsuleDemand = $0 }
+hud.showProfile(networkProfile, snapshot: telemetrySample)
+check(capsuleDemand.contains(.networkDownloadBytesPerSecond), "Profile requests metric while visible")
+check(visibleHUD()?.capsule?.primary == "—" && visibleHUD()?.capsule?.ringFraction == nil,
+    "Missing profile sample keeps unknown text and ring")
+var networkSample = telemetrySample
+networkSample.network = NetworkTelemetry(downloadBytesPerSecond: 1_048_576, uploadBytesPerSecond: 0,
+    receivedBytes: 0, sentBytes: 0, interfaces: ["en0"])
+hud.updateTelemetry(networkSample)
+check(visibleHUD()?.capsule?.primary == "1.0", "Resident samples update the actual visible payload during hold")
+hud.show(alert, kind: .lowBattery, queued: true)
+hud.show(initial)
+check(capsuleDemand.isEmpty && visibleHUD()?.capsule == nil, "Power interruption clears demand and queued custom content")
+hud.dismiss()
+check(visibleHUD() == nil && capsuleDemand.isEmpty, "Dismissal releases profile view and demand immediately")
+let customRule = TelemetryAlertRule(id: "queued-native-rule", name: "Storage warning", enabled: true,
+    metric: .storageAvailableBytes, comparison: .below, threshold: 1_073_741_824)
+settings.value.telemetryAlertRules = [customRule]
+hud.showRule(customRule, snapshot: networkSample)
+check(visibleHUD()?.capsule?.alert == true, "Generic rule uses the capsule alert presentation")
+settings.value.telemetryAlertRules = []
+hud.preferencesChanged()
+check(visibleHUD() == nil && capsuleDemand.isEmpty, "Deleting a rule releases active alert and demand")
+settings.value.networkTelemetryEnabled = false
+hud.showProfile(networkProfile, snapshot: networkSample)
+check(visibleHUD()?.capsule?.primary == "—", "Disabled network renders unknown despite cached resident values")
+hud.dismiss()
+settings.value.networkTelemetryEnabled = true
+var replayAtRelease = false
+hud.onCapsuleDemand = { metrics in
+    capsuleDemand = metrics
+    if metrics.isEmpty && replayAtRelease { replayAtRelease = false; hud.show(initial) }
+}
+hud.showProfile(networkProfile, snapshot: networkSample)
+replayAtRelease = true
+spin(4.15)
+check(visibleHUD() != nil, "A synchronous fresh event during demand release retains its new HUD owner")
+hud.dismiss()
+let longProfile = CapsuleProfile(id: "long-render", title: String(repeating: "终末测量", count: 8),
+    primaryMetric: .storageAvailableBytes, secondaryMetric: .networkDownloadBytesPerSecond, ringMetric: .cpuPercent)
+try FileManager.default.createDirectory(atPath: "/private/tmp/endfield-plus-task2-hud", withIntermediateDirectories: true)
+let renderCapsule = HUDView(frame: NSRect(x: 0, y: 0, width: 620, height: 144))
+renderCapsule.capsule = CapsulePresentation(profile: longProfile, snapshot: networkSample)
+for stage in [1.55, 3.0] {
+    renderCapsule.elapsed = stage
+    try renderCapsule.writePNG(to: URL(fileURLWithPath: "/private/tmp/endfield-plus-task2-hud/custom-\(stage).png"))
+}
+renderCapsule.reduceMotion = true; renderCapsule.elapsed = 0.15
+try renderCapsule.writePNG(to: URL(fileURLWithPath: "/private/tmp/endfield-plus-task2-hud/custom-reduced.png"))
+print("PASS: profile unknown/live payload, power interruption and demand release")
+
 settings.value.duration = 3
 for _ in 0..<3 {
     autoreleasepool { hud.show(initial) }
     spin(3.2)
     check(visibleHUD() == nil, "Repeated HUD has no lingering visible panel")
 }
+weak var releasedActiveHUD: HUDView?
+var activeDemand: Set<TelemetryMetric> = []
+autoreleasepool {
+    var transient: HUDController? = HUDController(settings: settings)
+    transient?.onCapsuleDemand = { activeDemand = $0 }
+    transient?.showProfile(networkProfile, snapshot: networkSample)
+    releasedActiveHUD = visibleHUD()
+    transient = nil
+}
+spin(0.1)
+check(releasedActiveHUD == nil && activeDemand.isEmpty, "Releasing active HUD owner clears its surface and demand")
 print("PASS: repeated animation lifecycle")
 
 // A bare test executable has a separate defaults domain from the installed application.
@@ -293,6 +424,7 @@ fixture.scale = 0.85; fixture.duration = 3; fixture.showPercentage = false
 UserDefaults.standard.set(try JSONEncoder().encode(fixture), forKey: "preferences")
 UserDefaults.standard.synchronize()
 var previews = 0
+var profilePreviews: [String] = []
 var settingsProcess: SettingsProcessController?
 var displayContext: UInt32?
 let exitsURL = FileManager.default.temporaryDirectory.appendingPathComponent("endfield-runtime-exits-\(UUID().uuidString)")
@@ -305,11 +437,14 @@ settingsProcess = SettingsProcessController(settings: settings, onPreview: { _ i
     // The closing child must flush its reopen request and parent must drain EOF before release.
     if previews == 1 { settingsProcess?.open() }
 }, onScreen: { displayContext = $0 })
+settingsProcess?.onCapsulePreview = { profilePreviews.append($0) }
 settingsProcess?.open()
 let reopenDeadline = Date(timeIntervalSinceNow: 7)
 while previews < 2 && Date() < reopenDeadline { spin(0.05) }
 spin(0.3)
 check(previews == 2, "Immediate show/closeAck must reopen a fresh settings process")
+check(profilePreviews == [CapsuleProfile.cpuID, CapsuleProfile.cpuID],
+    "Typed child profile preview forwards valid resident IDs and rejects unknown IDs")
 check(settings.value == fixture, "Child preferences survive ready/close/reopen without stale overwrite")
 check(displayContext == nil, "Closed child clears context for future previews")
 let exits = try String(contentsOf: exitsURL, encoding: .utf8).split(separator: "\n").map {
@@ -373,4 +508,4 @@ UserDefaults.standard.set(standardPreferences, forKey: "preferences")
 print("PASS: actual child process, preview, close acknowledgment, rapid reopen and tab/frame preservation")
 print("PASS: telemetry delivery, preference direction, visibility, acknowledged close and rapid reopen")
 print("PASS: telemetry child exits on parent EOF without fallback")
-print("All 12 native runtime check groups passed")
+print("All 14 native runtime check groups passed")

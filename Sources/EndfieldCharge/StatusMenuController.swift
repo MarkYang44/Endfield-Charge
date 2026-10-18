@@ -10,6 +10,11 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private let timeItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private var labels: [(NSMenuItem, String, String)] = []
     var onRefresh: (() -> Void)?
+    var onProfileSelected: ((String) -> Void)?
+    private let profilesItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+    private let profilesMenu = NSMenu()
+    private var profileItems: [String: NSMenuItem] = [:]
+    private var profileOrder: [String] = []
 
     init(settings: AppSettings, target: AnyObject, entries: [(String, String, Selector?, String)]) {
         self.settings = settings
@@ -30,6 +35,8 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             menu.addItem(item)
             labels.append((item, zh, en))
         }
+        profilesItem.submenu = profilesMenu
+        menu.insertItem(profilesItem, at: 3)
         status.menu = menu
     }
 
@@ -50,6 +57,27 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             timeItem.title = "\(minutes / 60)h \(minutes % 60)m \(suffix)"
         }
         for (item, zh, en) in labels { item.title = settings.text(zh, en) }
+        profilesItem.title = settings.text("选择胶囊", "Select Capsule")
+        let profiles = settings.value.capsuleProfiles
+        if profileOrder != profiles.map(\.id) {
+            profilesMenu.removeAllItems(); profileItems.removeAll()
+            profileOrder = profiles.map(\.id)
+            for profile in profiles {
+                let item = NSMenuItem(title: profile.title, action: #selector(selectProfile(_:)), keyEquivalent: "")
+                item.target = self; item.representedObject = profile.id; item.isEnabled = true
+                profileItems[profile.id] = item; profilesMenu.addItem(item)
+            }
+        }
+        for profile in profiles {
+            profileItems[profile.id]?.title = profile.title
+            profileItems[profile.id]?.state = settings.value.selectedCapsuleID == profile.id ? .on : .off
+        }
+    }
+
+    @objc private func selectProfile(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        settings.value.selectedCapsuleID = id
+        onProfileSelected?(id)
     }
 
     func menuWillOpen(_ menu: NSMenu) { onRefresh?() }

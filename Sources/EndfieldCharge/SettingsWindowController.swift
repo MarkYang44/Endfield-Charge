@@ -15,6 +15,7 @@ private final class SettingsBackground: NSView {
 final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSToolbarDelegate {
     let settings: AppSettings
     let onPreview: (Bool?) -> Void
+    var onCapsulePreview: ((String) -> Void)?
     private let onClose: (Int, NSRect) -> Void
     private let onScreenChange: (() -> Void)?
     var selectedTab: Int
