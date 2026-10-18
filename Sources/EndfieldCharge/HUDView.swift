@@ -200,9 +200,17 @@ final class HUDView: NSView {
     private func drawFitted(_ text: String, rect: NSRect, size: CGFloat, alpha: Double, centered: Bool = false) {
         NSGraphicsContext.saveGraphicsState()
         NSBezierPath(rect: rect).addClip()
-        let width = max(1, textWidth(text, size: size))
-        let fitted = max(8, min(size, size * rect.width / width))
-        drawText(text, at: NSPoint(x: centered ? rect.midX : rect.minX, y: rect.minY), size: fitted,
+        // CJK fallback advances can change after font-size rounding. Measure with the
+        // exact drawing attributes again at the fitted size, leaving glyph-edge padding.
+        func width(at pointSize: CGFloat) -> CGFloat {
+            (text as NSString).size(withAttributes: [
+                .font: NSFont.monospacedDigitSystemFont(ofSize: pointSize, weight: .medium), .kern: CGFloat(0)
+            ]).width
+        }
+        let available = max(1, rect.width - 4)
+        var fitted = max(8, min(size, size * available / max(1, width(at: size))))
+        while fitted > 8 && width(at: fitted) > available { fitted = max(8, fitted - 0.25) }
+        drawText(text, at: NSPoint(x: centered ? rect.midX : rect.minX + 2, y: rect.minY), size: fitted,
             alpha: alpha, centered: centered)
         NSGraphicsContext.restoreGraphicsState()
     }
