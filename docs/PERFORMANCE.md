@@ -40,4 +40,3 @@ python3 scripts/profile-memory.py "dist/Endfield Charge.app/Contents/MacOS/Endfi
 ```
 
 需要 Python 3 和 Command Line Tools；脚本只用于开发测量，不随应用启动。物理占用、RSS、虚拟地址空间和 `.build` 编译缓存采用不同口径，不能混作软件运行内存。
-
