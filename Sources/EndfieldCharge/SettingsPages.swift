@@ -90,15 +90,17 @@ extension SettingsWindowController {
 
     func telemetryPage(_ page: NSView) {
         toggle(t("电源遥测", "Power telemetry"), \.powerTelemetryEnabled, in: page, y: 0)
-        toggle(t("CPU 与内存遥测", "CPU and memory telemetry"), \.computeTelemetryEnabled, in: page, y: 42)
-        toggle(t("系统散热状态", "System thermal state"), \.thermalTelemetryEnabled, in: page, y: 84)
-        toggle(t("散热压力提醒", "Thermal pressure alerts"), \.thermalAlert, in: page, y: 126)
-        _ = caption(t("从菜单栏打开「遥测终端」。窗口打开时每 2 秒采样，后台每 30 秒。", "Open Telemetry Terminal from the menu. Samples every 2 s while open, 30 s in the background."), in: page, y: 174)
-        _ = caption(t("关闭模块会停止额外采集。功率、内存为估算；散热状态不是温度读数。", "Disabled modules stop collection. Power and memory are estimates; thermal state is not a temperature."), in: page, y: 226)
+        toggle(t("CPU 与内存遥测", "CPU and memory telemetry"), \.computeTelemetryEnabled, in: page, y: 33)
+        toggle(t("系统散热状态", "System thermal state"), \.thermalTelemetryEnabled, in: page, y: 66)
+        toggle(t("网络流量（已启用 en* 接口）", "Network traffic (enabled en* interfaces)"), \.networkTelemetryEnabled, in: page, y: 99)
+        toggle(t("存储容量（共享 APFS 容器）", "Storage capacity (shared APFS container)"), \.storageTelemetryEnabled, in: page, y: 132)
+        toggle(t("散热压力提醒", "Thermal pressure alerts"), \.thermalAlert, in: page, y: 165)
+        _ = caption(t("可见终端/胶囊每 2 秒，后台规则每 30 秒。网络/存储仅按需采样。", "Visible terminal/capsule: 2 s; background rules: 30 s. Network/storage sample on demand."), in: page, y: 204)
+        _ = caption(t("停用模块不额外采集，规则输入不可用。电池电量仍可读取。", "Disabled modules provide unavailable rule input. Battery charge remains available."), in: page, y: 254)
     }
 
     func aboutPage(_ page: NSView) {
-        place(label("Endfield Charge 1.0.2", size: 21, weight: .bold), in: page, y: 0, width: 572, height: 30)
+        place(label("Endfield Charge 1.1.0", size: 21, weight: .bold), in: page, y: 0, width: 572, height: 30)
         place(label(t("终末地风格的 macOS 原生电量终端", "A native Endfield-inspired macOS battery HUD")), in: page, y: 46, width: 572)
         _ = caption(t("视觉、图案和动画参考 QinAnze/zmd-charge。原生实现：Mark Yang。", "Visuals, geometry and timing inspired by QinAnze/zmd-charge. Native implementation: Mark Yang."), in: page, y: 85)
         _ = caption(t("“超充模式”为主题文案，不代表检测到快充。Wh 为根据当前电压推算的近似能量。", "“Super charge” is theme copy, not fast-charge detection. Wh is approximate energy based on the current voltage."), in: page, y: 128)

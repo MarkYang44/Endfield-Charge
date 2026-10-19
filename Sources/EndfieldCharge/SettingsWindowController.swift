@@ -12,7 +12,7 @@ private final class SettingsBackground: NSView {
     }
 }
 
-final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSToolbarDelegate {
+final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSToolbarDelegate, NSTextFieldDelegate {
     let settings: AppSettings
     let onPreview: (Bool?) -> Void
     var onCapsulePreview: ((String) -> Void)?
@@ -25,6 +25,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
     private let tabs = NSSegmentedControl()
     private let content = SettingsBackground(frame: NSRect(x: 0, y: 0, width: 620, height: 480))
     private var page: NSView?
+    var draftText: [String: String] = [:]
+    var textEdits: [ObjectIdentifier: (key: String, field: NSTextField, save: (SettingsWindowController, String) -> Bool)] = [:]
+    var selectedRuleID: String?
+    var validationMessage: NSTextField?
+
     private var renderedChinese: Bool
     private var screenObserver: NSObjectProtocol?
     private static let tabsID = NSToolbarItem.Identifier("settings.tabs")
@@ -32,7 +37,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
     init(settings: AppSettings, selectedTab: Int, frame: NSRect?, onPreview: @escaping (Bool?) -> Void,
          onClose: @escaping (Int, NSRect) -> Void, onScreenChange: (() -> Void)? = nil) {
         self.settings = settings
-        self.selectedTab = (0..<5).contains(selectedTab) ? selectedTab : 0
+        self.selectedTab = (0..<7).contains(selectedTab) ? selectedTab : 0
         self.onPreview = onPreview
         self.onClose = onClose
         self.onScreenChange = onScreenChange
@@ -73,6 +78,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
     }
 
     func windowWillClose(_ notification: Notification) {
+        commitEditing()
         settings.onUIChange = nil
         if let window { onClose(selectedTab, window.frame) }
     }
@@ -90,12 +96,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         window?.title = "Endfield Charge · " + t("设置", "Settings")
         content.subviews.forEach { $0.removeFromSuperview() }
         page = nil
-        let names = [t("通用", "General"), t("显示与动画", "HUD & Animation"), t("提醒", "Alerts"), t("遥测", "Telemetry"), t("关于", "About")]
+        let names = [t("通用", "General"), t("显示", "Display"), t("提醒", "Alerts"), t("遥测", "Telemetry"), t("胶囊", "Capsules"), t("规则", "Rules"), t("关于", "About")]
         tabs.segmentCount = names.count
         for (index, name) in names.enumerated() { tabs.setLabel(name, forSegment: index); tabs.setWidth(0, forSegment: index) }
         tabs.selectedSegment = selectedTab
         tabs.setAccessibilityLabel(t("设置分类", "Settings sections"))
-        tabs.frame.size = NSSize(width: 520, height: 28)
+        tabs.font = .systemFont(ofSize: 11)
+        tabs.frame.size = NSSize(width: 550, height: 28)
         let bolt = NSImageView(frame: NSRect(x: 24, y: 28, width: 28, height: 32))
         bolt.image = NSImage(systemSymbolName: "bolt.fill", accessibilityDescription: "Flash")
         bolt.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 26, weight: .regular)
@@ -114,7 +121,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         buildPage()
     }
 
-    private func buildPage() {
+    func buildPage() {
+        commitEditing()
+        textEdits.removeAll()
+        validationMessage = nil
         page?.removeFromSuperview()
         // Bindings own only controls on the currently selected page, never a hidden page tree.
         actions.removeAll(keepingCapacity: true)
@@ -126,7 +136,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         case 1: animationPage(page)
         case 2: alertsPage(page)
         case 3: telemetryPage(page)
-        case 4: aboutPage(page)
+        case 4: capsulesPage(page)
+        case 5: rulesPage(page)
+        case 6: aboutPage(page)
         default: generalPage(page)
         }
         // Footer controls are recreated with the page, so their action entries stay valid.
@@ -138,7 +150,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         let hint = label(t("设置自动保存并即时生效", "Changes save automatically"), size: 10)
         hint.textColor = .secondaryLabelColor
         place(hint, in: footer, x: 24, y: 17, width: 350, height: 18)
-        button(t("预览本机电量", "Preview Battery"), in: footer, x: 461, y: 10, width: 135) { c, _ in c.onPreview(nil) }
+        button(t("预览本机电量", "Preview Battery"), in: footer, x: 461, y: 10, width: 135) { c, _ in c.commitEditing(); c.onPreview(nil) }
         refresh()
     }
 
@@ -148,6 +160,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
     }
 
     @objc private func selectTab(_ sender: NSSegmentedControl) {
+        commitEditing()
         selectedTab = sender.selectedSegment
         buildPage()
     }

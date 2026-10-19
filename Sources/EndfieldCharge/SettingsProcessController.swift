@@ -6,7 +6,7 @@ final class SettingsProcessController {
     enum Role {
         case settings, telemetry
         var argument: String { self == .settings ? "--settings-ui" : "--telemetry-ui" }
-        var tabCount: Int { self == .settings ? 5 : 3 }
+        var tabCount: Int { self == .settings ? 7 : 5 }
     }
     private let settings: AppSettings
     private let role: Role

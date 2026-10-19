@@ -45,19 +45,19 @@ if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry
                 fputs("FAIL: telemetry did not receive resident snapshot/preferences\n", stderr); exit(1)
             }
             if tab == 0 {
-                view.selectedTab = 2
+                view.selectedTab = 4
                 window.setFrameOrigin(NSPoint(x: 120, y: 220))
-            } else if tab != 2 || window.frame.origin != NSPoint(x: 120, y: 220) {
+            } else if tab != 4 || window.frame.origin != NSPoint(x: 120, y: 220) {
                 fputs("FAIL: telemetry reopen lost tab/position\n", stderr); exit(1)
             }
         } else if tab == 0 {
             guard let tabs = window.toolbar?.items.compactMap({ $0.view as? NSSegmentedControl }).first else {
                 fputs("FAIL: child settings tabs missing\n", stderr); exit(1)
             }
-            tabs.selectedSegment = 3
+            tabs.selectedSegment = 6
             app.sendAction(tabs.action!, to: tabs.target, from: tabs)
             window.setFrameOrigin(NSPoint(x: 100, y: 200))
-        } else if tab != 3 || window.frame.origin != NSPoint(x: 100, y: 200) {
+        } else if tab != 6 || window.frame.origin != NSPoint(x: 100, y: 200) {
             fputs("FAIL: child reopen lost tab/position\n", stderr); exit(1)
         }
         if telemetryRole {
@@ -169,18 +169,183 @@ check(releasedController == nil && releasedWindow == nil, "Closed settings contr
 check(settings.onUIChange == nil && settings.onChange != nil, "Closing UI detaches only the UI callback")
 print("PASS: settings window release and preserved reopen state")
 
-for tab in 0..<5 {
+autoreleasepool {
+    let controller = SettingsWindowController(settings: settings, selectedTab: 6, frame: nil,
+        onPreview: { _ in }, onClose: { _, _ in })
+    check(controller.selectedTab == 6, "Seven settings tabs accept About at index six")
+    let tabs = controller.window?.toolbar?.items.compactMap { $0.view as? NSSegmentedControl }.first
+    check(tabs?.segmentCount == 7, "Seven native settings segments are present")
+    let terminal = TelemetryView(settings: settings, selectedTab: 4)
+    check(terminal.selectedTab == 4, "Five terminal tabs accept Storage at index four")
+    controller.window?.close()
+}
+autoreleasepool {
+    let languageDefaults = UserDefaults(suiteName: domain + ".language")!
+    defer { languageDefaults.removePersistentDomain(forName: domain + ".language") }
+    let languageSettings = AppSettings(defaults: languageDefaults)
+    languageSettings.value.language = "en"
+    let terminal = TelemetryWindowController(settings: languageSettings, selectedTab: 3, frame: nil,
+        onPreview: {}, onClose: { _, _ in })
+    let tabs = terminal.view.subviews.compactMap { $0 as? NSSegmentedControl }.first!
+    check(tabs.label(forSegment: 3) == "NETWORK", "English telemetry tabs preserve the terminal theme")
+    languageSettings.value.language = "zh"
+    check((0..<5).map { tabs.label(forSegment: $0) ?? "" } == ["电源", "计算", "散热", "网络", "存储"],
+        "Live language changes relabel all five existing telemetry tabs")
+    check(!terminal.view.headerTimerActive && terminal.selectedTab == 3, "Language switching preserves selected page without starting sampling or animation")
+    languageSettings.value.language = "en"
+    check(tabs.label(forSegment: 4) == "STORAGE", "Existing telemetry controls switch back to English")
+    terminal.window?.close()
+}
+for tab in 0..<7 {
     autoreleasepool {
         let controller = SettingsWindowController(settings: settings, selectedTab: tab, frame: savedFrame,
             onPreview: { _ in }, onClose: { _, _ in })
         controller.present()
         check(controller.window?.frame == savedFrame, "Reopened frame remains identical")
-        check(!controller.bindings.isEmpty || tab == 4, "Current page controls are bound")
+        check(!controller.bindings.isEmpty || tab == 6 || tab == 5, "Current page controls are bound")
         controller.window?.close()
     }
 }
 spin(0.1)
-print("PASS: all five lazy settings pages can open/close")
+print("PASS: all seven lazy settings pages can open/close")
+
+func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+func press(_ control: NSControl) {
+    check(control.isEnabled, "Requested native control is enabled")
+    guard let action = control.action else { check(false, "Native action exists"); return }
+    app.sendAction(action, to: control.target, from: control)
+}
+func field(_ controller: SettingsWindowController, _ key: String) -> NSTextField {
+    guard let content = controller.window?.contentView,
+          let field = descendants(content).compactMap({ $0 as? NSTextField }).first(where: { $0.identifier?.rawValue == key }) else {
+        check(false, "Editor field exists: \(key)"); fatalError()
+    }
+    return field
+}
+func input(_ controller: SettingsWindowController, key: String, text: String) {
+    let field = field(controller, key)
+    controller.window?.makeFirstResponder(field)
+    guard let editor = field.currentEditor() as? NSTextView else { check(false, "Actual AppKit field editor is active"); return }
+    editor.selectAll(nil)
+    editor.insertText(text, replacementRange: editor.selectedRange())
+    field.validateEditing()
+    controller.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: field))
+}
+func button(_ controller: SettingsWindowController, title: String) -> NSButton {
+    descendants(controller.window!.contentView!).compactMap { $0 as? NSButton }.first { $0.title == title }!
+}
+var editorPreferences = Preferences()
+editorPreferences.language = "en"
+let editorDefaults = UserDefaults(suiteName: domain + ".editors")!
+defer { editorDefaults.removePersistentDomain(forName: domain + ".editors") }
+let editorSettings = AppSettings(defaults: editorDefaults)
+editorSettings.value = editorPreferences
+let exactReference = 100.1234567890123
+editorSettings.value.capsuleProfiles[0].referenceMaximum = exactReference
+autoreleasepool {
+    let untouched = SettingsWindowController(settings: editorSettings, selectedTab: 4, frame: nil,
+        onPreview: { _ in }, onClose: { _, _ in })
+    untouched.present(); untouched.window?.close()
+}
+check(editorSettings.value.capsuleProfiles[0].referenceMaximum == exactReference,
+    "Opening and closing a numeric editor must not round an untouched persisted value")
+weak var releasedEditorField: NSTextField?
+autoreleasepool {
+    var controller: SettingsWindowController? = SettingsWindowController(settings: editorSettings, selectedTab: 4,
+        frame: nil, onPreview: { _ in }, onClose: { _, _ in })
+    controller!.present()
+    press(button(controller!, title: "Add"))
+    let id = editorSettings.value.selectedCapsuleID
+    check(editorSettings.value.capsuleProfiles.count == 6 && !id.hasPrefix("builtin."), "Add creates/selects a custom profile")
+    let titleKey = "profile.\(id).title"
+    input(controller!, key: titleKey, text: "Pending native title")
+    editorSettings.shortcutMessage = "Refresh while editing"
+    check(field(controller!, titleKey).currentEditor()?.string == "Pending native title", "Binding refresh preserves active text")
+    let title = field(controller!, titleKey)
+    let editor = title.currentEditor() as! NSTextView
+    editor.selectAll(nil)
+    editor.setMarkedText("输入中", selectedRange: NSRange(location: 3, length: 0), replacementRange: editor.selectedRange())
+    title.validateEditing()
+    controller!.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: title))
+    editorSettings.shortcutMessage = "Refresh with marked composition"
+    check(editor.hasMarkedText() && editor.string == "输入中", "Peer refresh keeps IME composition intact")
+    controller!.commitEditing()
+    check(editorSettings.value.capsuleProfiles.first { $0.id == id }?.title == "输入中", "Composition commits at navigation boundary")
+    let popups = descendants(controller!.window!.contentView!).compactMap { $0 as? NSPopUpButton }
+    let ring = popups.first { $0.accessibilityLabel() == "Ring metric" }!
+    ring.select(ring.itemArray.first { $0.representedObject as? String == TelemetryMetric.memoryUsedBytes.rawValue })
+    press(ring)
+    check(editorSettings.value.capsuleProfiles.first { $0.id == id }?.referenceMaximum == 16 * 1_073_741_824, "Ring metric change chooses meaningful GiB default")
+    let changedRing = descendants(controller!.window!.contentView!).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Ring metric" }!
+    changedRing.select(changedRing.itemArray.first { $0.representedObject as? String == TelemetryMetric.networkDownloadBytesPerSecond.rawValue })
+    press(changedRing)
+    check(editorSettings.value.capsuleProfiles.first { $0.id == id }?.referenceMaximum == 10 * 1_048_576, "Changing an existing ring does not replay an old-unit text field")
+    let restoredRing = descendants(controller!.window!.contentView!).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Ring metric" }!
+    restoredRing.select(restoredRing.itemArray.first { $0.representedObject as? String == TelemetryMetric.memoryUsedBytes.rawValue })
+    press(restoredRing)
+    input(controller!, key: "profile.\(id).maximum", text: "24")
+    check(editorSettings.value.capsuleProfiles.first { $0.id == id }?.referenceMaximum == 24 * 1_073_741_824, "GiB editor stores bytes")
+    for invalid in ["", "nan", "inf", "1e309", "-1", "0"] {
+        input(controller!, key: "profile.\(id).maximum", text: invalid)
+        check(editorSettings.value.capsuleProfiles.first { $0.id == id }?.referenceMaximum == 24 * 1_073_741_824, "Invalid reference does not mutate persisted profile: \(invalid)")
+    }
+    let profileSelector = descendants(controller!.window!.contentView!).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Active capsule" }!
+    profileSelector.selectItem(at: 0); press(profileSelector)
+    let reselect = descendants(controller!.window!.contentView!).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Active capsule" }!
+    reselect.select(reselect.itemArray.first { $0.representedObject as? String == id }); press(reselect)
+    check(field(controller!, "profile.\(id).maximum").stringValue == "0", "Invalid draft survives profile switch without persisting")
+    let tabControl = controller!.window!.toolbar!.items.compactMap { $0.view as? NSSegmentedControl }.first!
+    tabControl.selectedSegment = 0; press(tabControl)
+    tabControl.selectedSegment = 4; press(tabControl)
+    check(field(controller!, "profile.\(id).maximum").stringValue == "0", "Invalid draft survives lazy tab destruction")
+    input(controller!, key: "profile.\(id).maximum", text: "32")
+    var previewID: String?
+    controller!.onCapsulePreview = { previewID = $0 }
+    press(button(controller!, title: "Preview Active Capsule"))
+    check(previewID == id, "Preview routes the edited typed profile ID")
+    press(button(controller!, title: "Duplicate"))
+    check(editorSettings.value.capsuleProfiles.count == 7 && editorSettings.value.selectedCapsuleID != id, "Duplicate uses a fresh stable ID")
+    press(button(controller!, title: "Delete"))
+    check(editorSettings.value.capsuleProfiles.count == 6 && editorSettings.value.selectedCapsuleID == CapsuleProfile.batteryID, "Delete selects the retained default battery")
+    let tabs = controller!.window!.toolbar!.items.compactMap { $0.view as? NSSegmentedControl }.first!
+    tabs.selectedSegment = 5; press(tabs)
+    press(button(controller!, title: "Add"))
+    let ruleID = editorSettings.value.telemetryAlertRules[0].id
+    check(!editorSettings.value.telemetryAlertRules[0].enabled, "New rules are disabled")
+    let metric = descendants(controller!.window!.contentView!).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Metric" }!
+    metric.select(metric.itemArray.first { $0.representedObject as? String == TelemetryMetric.networkUploadBytesPerSecond.rawValue })
+    press(metric)
+    input(controller!, key: "rule.\(ruleID).threshold", text: "2.5")
+    check(editorSettings.value.telemetryAlertRules[0].threshold == 2.5 * 1_048_576, "MiB/s threshold stores bytes per second")
+    input(controller!, key: "rule.\(ruleID).hold", text: "301")
+    input(controller!, key: "rule.\(ruleID).cooldown", text: "9")
+    check(editorSettings.value.telemetryAlertRules[0].holdSeconds == 0 && editorSettings.value.telemetryAlertRules[0].cooldownSeconds == 30, "Out-of-range hold/cooldown stay unsaved")
+    input(controller!, key: "rule.\(ruleID).hold", text: "12.5")
+    input(controller!, key: "rule.\(ruleID).cooldown", text: "120")
+    button(controller!, title: "Enable this rule").performClick(nil)
+    check(editorSettings.value.telemetryAlertRules[0].enabled, "Native checkbox enables only the selected user rule")
+    input(controller!, key: "rule.\(ruleID).name", text: "Close commits pending")
+    let pendingName = field(controller!, "rule.\(ruleID).name")
+    let pendingEditor = pendingName.currentEditor() as! NSTextView
+    pendingEditor.selectAll(nil)
+    pendingEditor.setMarkedText("关闭时保存", selectedRange: NSRange(location: 5, length: 0), replacementRange: pendingEditor.selectedRange())
+    pendingName.validateEditing()
+    controller!.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: pendingName))
+    check(editorSettings.value.telemetryAlertRules[0].name == "Close commits pending", "Unfinished IME composition stays unsaved before close")
+    releasedEditorField = pendingName
+    controller!.window?.close()
+    controller = nil
+    let restored = AppSettings(defaults: editorDefaults)
+    check(restored.value.telemetryAlertRules[0].name == "关闭时保存"
+        && restored.value.telemetryAlertRules[0].holdSeconds == 12.5
+        && restored.value.telemetryAlertRules[0].cooldownSeconds == 120, "Native pending edits survive close and disk reload")
+}
+spin(0.1)
+check(releasedEditorField == nil, "Editor text field/delegate/actions release with lazy page owner")
+for invalid in ["nan", "inf", "-inf", "", ".", "1e308"] {
+    check(SettingsNumeric.parse(invalid, metric: .memoryUsedBytes, positive: true) == nil, "Finite unit conversion rejects malformed/overflow values")
+}
+print("PASS: native capsule/rule editing, human units, malformed numbers, pending text/IME, preview, persistence and release")
 
 let telemetrySample = TelemetrySnapshot(sampledAt: 100,
     battery: BatterySnapshot(hasBattery: true, percent: 68, currentMAh: 3400, fullMAh: 5000, voltageMV: 12000),
@@ -193,7 +358,7 @@ check(telemetryBytes.count < 16_384, "A telemetry IPC frame fits the private pip
 let decodedTelemetry = try JSONDecoder().decode(SettingsMessage.self, from: telemetryBytes)
 check(decodedTelemetry.telemetry == telemetrySample,
     "Typed telemetry survives the actual IPC encoder")
-for tab in 0..<3 {
+for tab in 0..<5 {
     weak var releasedTerminal: TelemetryWindowController?
     weak var releasedView: TelemetryView?
     autoreleasepool {
@@ -205,9 +370,9 @@ for tab in 0..<3 {
         check(terminal?.selectedTab == tab && terminal?.view.header.snapshot.percent == 68, "Every telemetry page accepts actual data")
         if let view = terminal?.view, let tabs = view.subviews.compactMap({ $0 as? NSSegmentedControl }).first,
            let action = tabs.action {
-            tabs.selectedSegment = (tab + 1) % 3
+            tabs.selectedSegment = (tab + 1) % 5
             app.sendAction(action, to: tabs.target, from: tabs)
-            check(terminal?.selectedTab == (tab + 1) % 3, "Palette-rendered native page control still dispatches selection")
+            check(terminal?.selectedTab == (tab + 1) % 5, "Palette-rendered native page control still dispatches selection")
             terminal?.selectedTab = tab
         } else { check(false, "Native telemetry page selector exists") }
         spin(2.7)
@@ -222,7 +387,7 @@ for tab in 0..<3 {
     spin(0.1)
     check(releasedTerminal == nil && releasedView == nil, "Closed terminal releases view, history and animation owner")
 }
-print("PASS: three telemetry pages, bounded graph, stopped header timer and complete release")
+print("PASS: five telemetry pages, bounded graph, stopped header timer and complete release")
 autoreleasepool {
     let view = TelemetryView(settings: settings)
     view.header.reduceMotion = true
@@ -631,4 +796,4 @@ UserDefaults.standard.set(standardPreferences, forKey: "preferences")
 print("PASS: actual child process, preview, close acknowledgment, rapid reopen and tab/frame preservation")
 print("PASS: telemetry delivery, preference direction, visibility, acknowledged close and rapid reopen")
 print("PASS: telemetry child exits on parent EOF without fallback")
-print("All 15 native runtime check groups passed")
+print("All 16 native runtime check groups passed")

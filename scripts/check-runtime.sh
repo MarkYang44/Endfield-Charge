@@ -15,6 +15,7 @@ swiftc -I "$binary_dir/Modules" \
   Sources/EndfieldCharge/TelemetryView.swift Sources/EndfieldCharge/TelemetryWindowController.swift \
   Sources/EndfieldCharge/HUDView.swift Sources/EndfieldCharge/HUDController.swift \
   Sources/EndfieldCharge/SettingsControls.swift Sources/EndfieldCharge/SettingsPages.swift \
+  Sources/EndfieldCharge/SettingsCapsules.swift Sources/EndfieldCharge/SettingsRules.swift \
   Sources/EndfieldCharge/SettingsWindowController.swift Tests/RuntimeChecks/main.swift \
   "$binary_dir"/ChargeCore.build/*.o -o "$check_dir/check-runtime"
 "$check_dir/check-runtime"
