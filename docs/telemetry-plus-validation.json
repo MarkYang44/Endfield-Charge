@@ -432,7 +432,116 @@
     "All three runs and sampled peaks are retained without removing outliers.",
     "CPU and wakeups are proxies, not direct Wh energy readings.",
     "Runtime tested on M5/macOS27.0.1. Both macOS13-target slices linked and signed; Intel/macOS13 execution not tested (Rosetta absent).",
-    "Inherited native SwiftPM build-engine deprecation and host arm-only libswiftCompatibilityPacks.a x86_64 linker warning retained.",
-    "CI/public archive verification is a subsequent delivery step and will be added after publication."
-  ]
+    "Inherited native SwiftPM build-engine deprecation and host arm-only libswiftCompatibilityPacks.a x86_64 linker warning retained."
+  ],
+  "delivery": {
+    "release_source_commit": "d78f39e1dc217c307cd6b06567dc8c464b9395ae",
+    "tag": "v1.1.0",
+    "release_url": "https://github.com/MarkYang44/Endfield-Charge/releases/tag/v1.1.0",
+    "published_at": "2026-10-19T19:53:27Z",
+    "draft": false,
+    "prerelease": false,
+    "release_notes_match_source": true,
+    "workflow_runs": [
+      {
+        "id": 39314453751,
+        "ref": "v1.1.0",
+        "conclusion": "success",
+        "source_commit": "d78f39e1dc217c307cd6b06567dc8c464b9395ae",
+        "url": "https://github.com/MarkYang44/Endfield-Charge/actions/runs/39314453751"
+      },
+      {
+        "id": 39314453507,
+        "ref": "main",
+        "conclusion": "success",
+        "source_commit": "d78f39e1dc217c307cd6b06567dc8c464b9395ae",
+        "url": "https://github.com/MarkYang44/Endfield-Charge/actions/runs/39314453507"
+      }
+    ],
+    "public_asset_id": 657272632,
+    "github_asset_digest": "sha256:1a09026808963b4767847043fb533142e2e7124de47e49263de32bfe69ab5d4d",
+    "public_package": {
+      "version": "1.1.0",
+      "build": "4",
+      "architectures": [
+        "x86_64",
+        "arm64"
+      ],
+      "archive_sha256": "1a09026808963b4767847043fb533142e2e7124de47e49263de32bfe69ab5d4d",
+      "archive_bytes": 948435,
+      "executable_bytes": 1595104,
+      "executable_sha256": "5cae1633c2cb4b058b0b481fb3e5519ca5689c91216acfb400cc5ac579ad32b4",
+      "real_file_count": 10,
+      "bundle_sha256": {
+        "Contents/Info.plist": "385abd004f1e6f680c9ded809aca8690afdd287e574c2b8bb8dd982f2bbcb8fd",
+        "Contents/_CodeSignature/CodeResources": "302a9dba24dd62773acdabd7078f56d50fea377a54bf634f2011e39976b230f1",
+        "Contents/MacOS/EndfieldCharge": "5cae1633c2cb4b058b0b481fb3e5519ca5689c91216acfb400cc5ac579ad32b4",
+        "Contents/Resources/MenuBarIcon.png": "d5be9d72656c7e7b733c3cb67a1e7caa90892f0fc72d790ba7ed02a14cedcacf",
+        "Contents/Resources/LICENSE": "f6983e04cb915170a0c1f8a02543825f6c9628b9e8395c7d9b51780e34ec8c0f",
+        "Contents/Resources/endfield-industries.svg": "3e2af120ec6c86d2132448e7fbd4264b50e7258276c1beabb2bf3fa666200025",
+        "Contents/Resources/zmd-charge-plus-MIT.txt": "3eceb1bfb9ffcf6be37ab073aaa98be1cb1842f3072112b0ab4a2aca2cb3505d",
+        "Contents/Resources/AppIcon.icns": "47a01a58407a2e8bcf1d07dbbae5cfbc2eeb760de79982b9d05ea6a4a694c435",
+        "Contents/Resources/THIRD_PARTY_NOTICES.md": "9083a02e3337a1b0a383ab5c10daf0853f62078bbbad8bcfd3e6a94301aaa713",
+        "Contents/Resources/PrivacyInfo.xcprivacy": "64d109fa1210672b3221a4c5fe0dbb424580f9ed51e439296c2bc4e8cb8b2620"
+      },
+      "signature_verified": true,
+      "zip_integrity_and_bytes_verified": true,
+      "privacy_manifest_verified": true
+    },
+    "public_binary_smoke": {
+      "actual_public_binary_all_five_modules_valid": true,
+      "default_hud_png_sha256": {
+        "title": "86250dc770e1b1a14751bd40e1f9ea59eda1db82f4e05950e0f0f42aab4d55ab",
+        "numbers": "206f83823493a18d9793e505b781b3a748695fd0480b25e8d713815459443696",
+        "reduced": "206f83823493a18d9793e505b781b3a748695fd0480b25e8d713815459443696"
+      },
+      "app_icon_exact_source_pixels": true,
+      "both_slices_minimum_macos13": true
+    },
+    "installed": {
+      "version": "1.1.0",
+      "build": "4",
+      "installed_bundle_byte_match": true,
+      "strict_signature_verified": true,
+      "resident_count": 1,
+      "resident_parent_launchservices": true,
+      "legacy_preference_keys_preserved": [
+        "displayID",
+        "duration",
+        "fullBatteryAlert",
+        "language",
+        "lowBatteryAlert",
+        "lowPowerAlert",
+        "lowThreshold",
+        "position",
+        "ripplesEnabled",
+        "scale",
+        "shortcutEnabled",
+        "shortcutKey",
+        "shortcutModifiers",
+        "showPercentage"
+      ],
+      "shortcut_key": "E",
+      "shortcut_modifiers": [
+        "command",
+        "shift"
+      ],
+      "resident_preview_forwarding_exit_zero": true
+    },
+    "installed_entrypoints": {
+      "--settings": {
+        "actual_installed_child_started": true,
+        "parent_is_resident": true,
+        "owned_helper_exit_verified": true
+      },
+      "--telemetry": {
+        "actual_installed_child_started": true,
+        "parent_is_resident": true,
+        "owned_helper_exit_verified": true
+      }
+    },
+    "spotlight_application_path_verified": true,
+    "managed_worktree_archived": true,
+    "project_build_artifacts_preserved": true
+  }
 }

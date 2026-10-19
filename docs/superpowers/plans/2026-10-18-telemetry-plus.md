@@ -48,4 +48,4 @@
 - [x] Record source provenance and full MIT text; package attribution file; About/bundle 1.1.0/build 4.
 - [x] Run complete core/native checks and universal build; compare immutable image hashes, sample real collector outputs without publishing personal addresses, verify signatures and ZIP files.
 - [x] Measure comparable baseline/new physical footprint and process CPU/wakeup proxies, including idle, terminal and after UI exit. Inspect screenshots and independent final review; fix findings and rerun affected checks.
-- [ ] Fast-forward main, preserve artifacts, install/restart only the owned app, verify old preferences, push source/tag, inspect successful CI/public Release and actual downloaded ZIP. Save verified evidence, clean/archive worktree.
+- [x] Fast-forward main, preserve artifacts, install/restart only the owned app, verify old preferences, push source/tag, inspect successful CI/public Release and actual downloaded ZIP. Save verified evidence, clean/archive worktree.

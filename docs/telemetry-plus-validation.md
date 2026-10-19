@@ -2,9 +2,9 @@
 
 ## Result / 结果
 
-Local validation completed for implementation `a4451eb`: **54 core tests in 7 suites, 18 native runtime groups**, universal packaging, bilingual exports, real network/storage samples and original-artwork regressions passed. Publication and downloaded-release checks will be recorded after delivery. Machine-readable evidence and all per-run aggregates are in [telemetry-plus-validation.json](telemetry-plus-validation.json).
+Local validation completed for implementation `a4451eb`: **54 core tests in 7 suites, 18 native runtime groups**, universal packaging, bilingual exports, real network/storage samples and original-artwork regressions passed. The release and downloaded public archive also passed the delivery checks below. Machine-readable evidence and all per-run aggregates are in [telemetry-plus-validation.json](telemetry-plus-validation.json).
 
-本地验证已通过：54 项核心测试、18 组原生检查、双架构打包、中英文界面导出、真实网络／存储采样及原图案回归。公开发布与下载包检查在交付后补充，未执行的步骤不计为已通过。
+本地验证已通过：54 项核心测试、18 组原生检查、双架构打包、中英文界面导出、真实网络／存储采样及原图案回归。公开发布及实际下载包的检查也已完成，详见下方交付记录。
 
 ## Scope / 覆盖范围
 
@@ -64,6 +64,22 @@ The following are baseline/candidate medians from same-PID deltas over the last 
 - Strict ad-hoc signature, executable permission, archive integrity/safe paths, all-file byte equality, privacy manifest and bundled licenses verified.
 - A real packaged-executable snapshot supplied all five modules; network rates were finite/nonnegative and `0≤available≤free≤total` held for storage. Personal readings are not published.
 
-Runtime validation used the local M5/macOS 27.0.1 host. Both target slices linked and signed, but Intel/macOS 13 execution was not performed; Rosetta is absent. Local CLT emits an inherited native-build-engine deprecation and an arm-only compatibility-archive warning for the x86_64 link. These are retained as build limitations rather than hidden as clean output. CI/public archive verification follows publication.
+Runtime validation used the local M5/macOS 27.0.1 host. Both target slices linked and signed, but Intel/macOS 13 execution was not performed; Rosetta is absent. Local CLT emits an inherited native-build-engine deprecation and an arm-only compatibility-archive warning for the x86_64 link. These are retained as build limitations rather than hidden as clean output. The public CI archive was separately verified below.
 
-本地安装包已验证双架构、签名、权限、ZIP 完整性、逐文件一致性、隐私声明与许可；不发布本机原始遥测。Intel/macOS 13 尚无实机执行验证，本机未安装 Rosetta。现有工具链警告如实保留；公开CI产物检查另行记录。
+本地安装包已验证双架构、签名、权限、ZIP 完整性、逐文件一致性、隐私声明与许可；不发布本机原始遥测。Intel/macOS 13 尚无实机执行验证，本机未安装 Rosetta。现有工具链警告如实保留；公开 CI 产物检查见下方记录。
+
+## Delivery / 交付验证
+
+- Published **[v1.1.0](https://github.com/MarkYang44/Endfield-Charge/releases/tag/v1.1.0)** from source `d78f39e1dc217c307cd6b06567dc8c464b9395ae`; main and tag workflows both succeeded: [tag build/release](https://github.com/MarkYang44/Endfield-Charge/actions/runs/39314453751), [main build](https://github.com/MarkYang44/Endfield-Charge/actions/runs/39314453507). Bilingual release notes match the committed file; the release is public, non-draft and stable.
+
+- The **actual downloaded public ZIP** is **948,435 B**, SHA256 `1a09026808963b4767847043fb533142e2e7124de47e49263de32bfe69ab5d4d`. It matches GitHub's asset digest. Archive integrity, safe paths/no symlinks, executable mode, all 10 extracted bundle files, strict signature, arm64+x86_64, en+zh-Hans, licenses, privacy metadata and source resources passed checks.
+- Public executable: **1,595,104 B**, SHA256 `5cae1633c2cb4b058b0b481fb3e5519ca5689c91216acfb400cc5ac579ad32b4`. Actual execution on the M5 supplied valid five-module telemetry; the original three default PNGs and 1024-pixel app icon remained exact. Both slice deployment minimums are 13.0.
+
+- The installed `/Applications/Endfield Charge.app` is 1.1.0/build 4 and byte-matches the verified **local build** used for performance measurements. The local and CI executables are distinct builds; their hashes are recorded separately. Performance figures apply to the measured local binary, not an assumed byte-identical CI executable.
+- Exactly one LaunchServices resident was confirmed. All 14 pre-upgrade preference values survived, including **Command+Shift+E**. Actual installed Settings/Telemetry actions opened the correct direct helper and the owned helper exited afterward. UI-window close/acknowledgment semantics are covered separately by the 18 native groups. Spotlight lists the installed Applications path.
+
+正式发布、main／标签 CI、双语发行说明以及实际下载包均已验证。本机安装保持14项旧设置与⌘⇧E；公开包另行执行了真实遥测、图案与签名检查。公开 CI 二进制与本地测量二进制分别记录哈希，不将二者混作同一个构建；Intel/macOS 13 实机执行仍未声称已验证。
+
+The managed implementation worktree was archived after preserving the verified app and ZIP in the main project. The release tag stays on its tested source commit; later validation-only commits update the evidence.
+
+临时实现工作树已归档，已验证的 App 和 ZIP 保留在主项目中。发布标签固定于已测试源码，后续仅更新验证文档。
