@@ -249,6 +249,48 @@ autoreleasepool {
 }
 check(editorSettings.value.capsuleProfiles[0].referenceMaximum == exactReference,
     "Opening and closing a numeric editor must not round an untouched persisted value")
+autoreleasepool {
+    let reviewDomain = domain + ".review"
+    let reviewDefaults = UserDefaults(suiteName: reviewDomain)!
+    defer { reviewDefaults.removePersistentDomain(forName: reviewDomain) }
+    let reviewSettings = AppSettings(defaults: reviewDefaults)
+    reviewSettings.value.language = "en"
+    let controller = SettingsWindowController(settings: reviewSettings, selectedTab: 4, frame: nil,
+        onPreview: { _ in }, onClose: { _, _ in })
+    controller.present()
+    var findings: [String] = []
+    func expect(_ value: Bool, _ message: String) { if !value { findings.append(message) } }
+    press(button(controller, title: "Add"))
+    let customID = reviewSettings.value.selectedCapsuleID
+    input(controller, key: "profile.\(customID).title", text: "")
+    let selector = descendants(controller.window!.contentView!).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Active capsule" }!
+    selector.selectItem(at: 0); press(selector)
+    let batteryPrefix = "profile.\(CapsuleProfile.batteryID)."
+    input(controller, key: batteryPrefix + "title", text: "")
+    input(controller, key: batteryPrefix + "maximum", text: "nan")
+    press(button(controller, title: "Restore Built-ins"))
+    expect(reviewSettings.value.capsuleProfiles.first == CapsuleProfile.defaults[0], "Restore persists the original battery profile")
+    expect(field(controller, batteryPrefix + "title").stringValue == "BATTERY", "Restore clears invalid built-in title draft")
+    expect(field(controller, batteryPrefix + "maximum").stringValue == "100", "Restore clears invalid built-in maximum draft")
+    expect(!controller.draftText.keys.contains { $0.hasPrefix(batteryPrefix) }, "Restored built-in fields have no stale draft keys")
+    expect(controller.draftText["profile.\(customID).title"] == "", "Restore preserves unrelated custom draft text")
+    reviewSettings.value.networkTelemetryEnabled = false
+    controller.editProfile(CapsuleProfile.batteryID) { $0.ringMetric = .networkDownloadBytesPerSecond }
+    controller.buildPage()
+    let labels = descendants(controller.window!.contentView!).compactMap { $0 as? NSTextField }.map(\.stringValue)
+    expect(labels.contains { $0.hasPrefix("Selected metric module is disabled") }, "An available primary with disabled ring reports unavailable input")
+    reviewSettings.value.language = "zh"
+    press(button(controller, title: "复制"))
+    let copy = reviewSettings.value.capsuleProfiles.first { $0.id == reviewSettings.value.selectedCapsuleID }
+    expect(copy?.title == "BATTERY 副本", "Chinese native duplicate generates a localized suffix")
+    let terminal = TelemetryView(settings: reviewSettings, selectedTab: 1)
+    let rowLabels = descendants(terminal).compactMap { $0 as? NSTextField }.map(\.stringValue)
+    expect(rowLabels.contains("交换空间") && !rowLabels.contains("Swap"), "Chinese Compute page localizes the Swap row")
+    controller.window?.close()
+    check(findings.isEmpty, "Review regressions: " + findings.joined(separator: "; "))
+}
+print("PASS: restore clears only built-in drafts, disabled ring availability, Chinese Swap and duplicate suffix")
+
 weak var releasedEditorField: NSTextField?
 autoreleasepool {
     var controller: SettingsWindowController? = SettingsWindowController(settings: editorSettings, selectedTab: 4,
@@ -796,4 +838,4 @@ UserDefaults.standard.set(standardPreferences, forKey: "preferences")
 print("PASS: actual child process, preview, close acknowledgment, rapid reopen and tab/frame preservation")
 print("PASS: telemetry delivery, preference direction, visibility, acknowledged close and rapid reopen")
 print("PASS: telemetry child exits on parent EOF without fallback")
-print("All 16 native runtime check groups passed")
+print("All 17 native runtime check groups passed")

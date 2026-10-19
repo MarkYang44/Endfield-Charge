@@ -193,15 +193,16 @@ extension SettingsWindowController {
         let message = caption(draftText.isEmpty ? "" : t("有未保存的无效输入。", "Invalid input remains unsaved."), in: page, y: y, warning: true)
         validationMessage = message
     }
-    func metricAvailability(_ metric: TelemetryMetric) -> String {
-        let available: Bool
+    func metricEnabled(_ metric: TelemetryMetric) -> Bool {
         switch metric {
-        case .batteryEnergyWh, .batteryPercent: available = true
-        case .cpuPercent, .memoryUsedBytes, .memoryPercent: available = settings.value.computeTelemetryEnabled
-        case .networkDownloadBytesPerSecond, .networkUploadBytesPerSecond: available = settings.value.networkTelemetryEnabled
-        case .storageAvailableBytes, .storageUsedPercent: available = settings.value.storageTelemetryEnabled
+        case .batteryEnergyWh, .batteryPercent: return true
+        case .cpuPercent, .memoryUsedBytes, .memoryPercent: return settings.value.computeTelemetryEnabled
+        case .networkDownloadBytesPerSecond, .networkUploadBytesPerSecond: return settings.value.networkTelemetryEnabled
+        case .storageAvailableBytes, .storageUsedPercent: return settings.value.storageTelemetryEnabled
         }
-        return available ? t("— 表示暂不可用；可在“遥测”页管理模块。", "— means unavailable; manage modules in Telemetry.")
+    }
+    func metricAvailability(_ metric: TelemetryMetric) -> String {
+        return metricEnabled(metric) ? t("— 表示暂不可用；可在“遥测”页管理模块。", "— means unavailable; manage modules in Telemetry.")
             : t("所选指标模块已停用，输入不可用。请在“遥测”页启用。", "Selected metric module is disabled; input unavailable. Enable it in Telemetry.")
     }
 }

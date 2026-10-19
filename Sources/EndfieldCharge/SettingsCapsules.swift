@@ -48,7 +48,7 @@ extension SettingsWindowController {
             guard c.settings.value.capsuleProfiles.count < 12,
                   var copy = c.settings.value.capsuleProfiles.first(where: { $0.id == id }) else { return }
             copy.id = UUID().uuidString
-            copy.title = String((copy.title + " COPY").prefix(32))
+            copy.title = String((copy.title + c.t(" 副本", " COPY")).prefix(32))
             c.settings.value.capsuleProfiles.append(copy)
             c.settings.value.selectedCapsuleID = copy.id
             c.buildPage()
@@ -65,6 +65,8 @@ extension SettingsWindowController {
         button(t("恢复内置", "Restore Built-ins"), in: page, x: 303, y: 38, width: 242) { c, _ in
             c.commitEditing()
             let custom = c.settings.value.capsuleProfiles.filter { !$0.id.hasPrefix("builtin.") }
+            let restoredPrefixes = CapsuleProfile.defaults.map { "profile.\($0.id)." }
+            c.draftText = c.draftText.filter { key, _ in !restoredPrefixes.contains { key.hasPrefix($0) } }
             c.settings.value.capsuleProfiles = CapsuleProfile.defaults + custom.prefix(7)
             c.settings.value.normalizeTelemetryConfiguration()
             c.buildPage()
@@ -102,9 +104,8 @@ extension SettingsWindowController {
         }
         place(label("\(profiles.count) / 12", size: 11, mono: true), in: page, x: 475, y: 281, width: 70)
         let metrics = [profile.primaryMetric] + [profile.secondaryMetric, profile.ringMetric].compactMap { $0 }
-        let availability = metrics.map(metricAvailability).first { $0.contains(settings.chinese ? "已停用" : "disabled") }
-            ?? metricAvailability(profile.primaryMetric)
-        _ = caption(availability, in: page, y: 317)
+        let unavailableMetric = metrics.first { !metricEnabled($0) } ?? profile.primaryMetric
+        _ = caption(metricAvailability(unavailableMetric), in: page, y: 317)
         _ = caption(t("内置 ID 固定；恢复可找回原始电池样式。数值以本机读数为准。", "Built-in IDs stay stable. Restore recovers the original battery style. Values use local readings."), in: page, y: 355)
         editorValidation(in: page, y: 390)
     }

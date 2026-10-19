@@ -276,7 +276,7 @@ final class TelemetryView: NSView {
         let names: [String]
         switch selectedTab {
         case 1: names = [t("CPU 使用率", "CPU usage"), t("内存使用（估算）", "Memory used (approx.)"),
-            t("压缩内存", "Compressed memory"), "Swap", t("内存压力", "Memory pressure")]
+            t("压缩内存", "Compressed memory"), t("交换空间", "Swap"), t("内存压力", "Memory pressure")]
         case 2: names = [t("系统热状态", "System thermal state"), t("正常", "Nominal"), t("稍热", "Fair"),
             t("严重", "Serious"), t("临界", "Critical")]
         case 3: names = [t("下载速率", "Download rate"), t("上传速率", "Upload rate"),
