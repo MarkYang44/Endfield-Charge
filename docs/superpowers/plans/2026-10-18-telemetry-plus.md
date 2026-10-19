@@ -29,23 +29,23 @@
 ### Task 2: Demand scheduling, profiles and rule/HUD integration
 **Files:** Sources/EndfieldCharge/{TelemetryMonitor.swift,AppDelegate.swift,HUDController.swift,HUDView.swift,StatusMenuController.swift}; optional focused CapsulePresentation.swift helper; Tests/RuntimeChecks/main.swift, scripts/check-runtime.sh for new sources.
 **Interfaces:** Consume Task 1 snapshot/profile/rule types; add explicit profile preview and HUD-demand lifecycle. Deliver native settings-facing actions used by Task 3.
-- [ ] Add native regression checks for collector demands, rule reset/disabled state, profile presentation without affecting battery animation and release after dismissal; confirm failures before implementation.
-- [ ] Extend one shared scheduler: active terminal/HUD demand -> 2 s; hidden only rule-required network/storage -> 30 s; no rules/new HUD -> no new hidden collection. Existing power/compute/thermal behavior retained.
-- [ ] Render configurable primary/secondary/ring data with original geometry and static-hold scheduling; keep explicit battery preview; selected profile hotkey preview, power events interrupt queued telemetry; bounded alert queue with stale snapshot avoidance.
-- [ ] Run core/native checks, inspect lifecycle and commit owned files; report API additions for Task 3.
-- [ ] Independent task review, resolve findings and record ledger.
+- [x] Add native regression checks for collector demands, rule reset/disabled state, profile presentation without affecting battery animation and release after dismissal; confirm failures before implementation.
+- [x] Extend one shared scheduler: active terminal/HUD demand -> 2 s; hidden only rule-required network/storage -> 30 s; no rules/new HUD -> no new hidden collection. Existing power/compute/thermal behavior retained.
+- [x] Render configurable primary/secondary/ring data with original geometry and static-hold scheduling; keep explicit battery preview; selected profile hotkey preview, power events interrupt queued telemetry; bounded alert queue with stale snapshot avoidance.
+- [x] Run core/native checks, inspect lifecycle and commit owned files; report API additions for Task 3.
+- [x] Independent task review, resolve findings and record ledger.
 
 ### Task 3: Native settings, telemetry pages and render coverage
 **Files:** Sources/EndfieldCharge/{SettingsWindowController.swift,SettingsPages.swift,SettingsControls.swift,TelemetryView.swift,TelemetryWindowController.swift,TelemetryApplicationDelegate.swift,main.swift}; new focused SettingsCapsules.swift/SettingsRules.swift/TelemetryPages.swift as needed; Tests/RuntimeChecks/main.swift and scripts/check-runtime.sh.
 **Interfaces:** Consume Task 1 model IDs/metrics and Task 2 preview/snapshot delivery; preserve existing private pipe behavior and actual preference direction.
-- [ ] Add regression checks for five telemetry tabs, additional lazy settings pages, complete profile/rule editing roundtrips and reopen/close behavior.
-- [ ] Provide add/edit/duplicate/delete/select/preview profile controls and add/edit/delete/enable rule controls, finite numeric validation, clear disabled/unavailable labels and scrollable layouts without clipping. All labels Chinese/English.
-- [ ] Extend NETWORK/STORAGE cards and bounded time graphs; update CLI snapshot/render tabs and capsule demo renders. Mark demonstration data in exported telemetry scenes.
-- [ ] Run core/native checks and render all new pages plus original three stages at normal/reduced motion. Parent visually inspects screenshots before release. Commit and independent review.
+- [x] Add regression checks for five telemetry tabs, additional lazy settings pages, complete profile/rule editing roundtrips and reopen/close behavior.
+- [x] Provide add/edit/duplicate/delete/select/preview profile controls and add/edit/delete/enable rule controls, finite numeric validation, clear disabled/unavailable labels and scrollable layouts without clipping. All labels Chinese/English.
+- [x] Extend NETWORK/STORAGE cards and bounded time graphs; update CLI snapshot/render tabs and capsule demo renders. Mark demonstration data in exported telemetry scenes.
+- [x] Run core/native checks and render all new pages plus original three stages at normal/reduced motion. Parent visually inspects screenshots before release. Commit and independent review.
 
 ### Task 4: Integration, measurements and release
 **Files:** README.md, THIRD_PARTY_NOTICES.md, LICENSES/zmd-charge-plus-MIT.txt, scripts/build-app.sh, docs/releases/v1.1.0.md, docs/telemetry-plus-validation.{md,json}, documentation/progress ledger.
-- [ ] Record source provenance and full MIT text; package attribution file; About/bundle 1.1.0/build 4.
-- [ ] Run complete core/native checks and universal build; compare immutable image hashes, sample real collector outputs without publishing personal addresses, verify signatures and ZIP files.
+- [x] Record source provenance and full MIT text; package attribution file; About/bundle 1.1.0/build 4.
+- [x] Run complete core/native checks and universal build; compare immutable image hashes, sample real collector outputs without publishing personal addresses, verify signatures and ZIP files.
 - [ ] Measure comparable baseline/new physical footprint and process CPU/wakeup proxies, including idle, terminal and after UI exit. Inspect screenshots and independent final review; fix findings and rerun affected checks.
 - [ ] Fast-forward main, preserve artifacts, install/restart only the owned app, verify old preferences, push source/tag, inspect successful CI/public Release and actual downloaded ZIP. Save verified evidence, clean/archive worktree.

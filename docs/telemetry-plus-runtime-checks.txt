@@ -1,0 +1,18 @@
+PASS: preference guard, peer updates and independent app/UI callbacks
+PASS: resident-only locking and release
+PASS: 200 ordered pipe messages, fragmented frame and flushed final write before EOF
+PASS: settings window release and preserved reopen state
+PASS: all seven lazy settings pages can open/close
+PASS: restore clears only built-in drafts, disabled ring availability, Chinese Swap and duplicate suffix
+PASS: native capsule/rule editing, human units, malformed numbers, pending text/IME, preview, persistence and release
+PASS: five telemetry pages, bounded graph, stopped header timer and complete release
+PASS: native sampler cadence, disabled modules and owner release
+PASS: demand transitions, unit scaling, disabled routing and resident rule lifecycle
+PASS: blocked asynchronous collector responsiveness, bounded coalescing, stale generations and owner release
+PASS: static-hold queue, preview interruption and HUD release
+PASS: profile unknown/live payload, power interruption and demand release
+PASS: repeated animation lifecycle
+PASS: actual child process, preview, close acknowledgment, rapid reopen and tab/frame preservation
+PASS: telemetry delivery, preference direction, visibility, acknowledged close and rapid reopen
+PASS: telemetry child exits on parent EOF without fallback
+All 17 native runtime check groups passed
