@@ -60,13 +60,15 @@ struct ConfigurationTextTests {
             TelemetryAlertRule(id: String(format: "%06d", $0) + idSuffix, name: name)
         }
         preferences.selectedCapsuleID = preferences.capsuleProfiles[11].id
+        let storage = try #require(StorageTelemetry(totalBytes: 1000, freeBytes: 100, availableBytes: 100,
+            path: "/", fileSystem: "apfs"))
         let snapshot = TelemetrySnapshot(sampledAt: 100, battery: BatterySnapshot(hasBattery: true, percent: 68),
             power: PowerTelemetry(batteryWatts: -12, averageDischargeWatts: 10, adapterWatts: 60, cycleCount: 26),
             compute: ComputeTelemetry(cpuFraction: 0.25, memoryUsedBytes: 123456, memoryTotalBytes: 987654,
                 compressedBytes: 1234, swapUsedBytes: 123, pressure: .normal), thermal: .fair,
             network: NetworkTelemetry(downloadBytesPerSecond: 123, uploadBytesPerSecond: 456,
                 receivedBytes: UInt64.max, sentBytes: UInt64.max, interfaces: ["en0", "en1"]),
-            storage: StorageTelemetry(totalBytes: 1000, freeBytes: 100, availableBytes: 200, path: "/", fileSystem: "apfs"))
+            storage: storage)
         let message = SettingsMessage(.telemetry, preferences: preferences, revision: Int.max,
             shortcutMessage: "Shortcut registered", tab: 6, frame: "{{100,200},{620,520}}",
             displayID: UInt32.max, telemetry: snapshot, visible: true, profileID: preferences.selectedCapsuleID)
