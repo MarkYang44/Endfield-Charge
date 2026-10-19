@@ -1,7 +1,9 @@
 import Foundation
 
-/// The private pipe protocol is small and contains no runtime history or image data.
+/// The private pipe protocol carries bounded configuration and snapshots, without runtime history or image data.
 public struct SettingsMessage: Codable {
+    /// Maximum encoded payload per frame, excluding its newline. Shared by both pipe endpoints.
+    public static let maximumPayloadBytes = 131_072
     public enum Command: String, Codable {
         case ready, changed, state, show, preview, demoCharge, demoBattery, screen, closed, closeAck, reopen, telemetry, visibility, previewCapsule
     }

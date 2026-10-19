@@ -48,7 +48,7 @@ extension SettingsWindowController {
             guard c.settings.value.capsuleProfiles.count < 12,
                   var copy = c.settings.value.capsuleProfiles.first(where: { $0.id == id }) else { return }
             copy.id = UUID().uuidString
-            copy.title = String((copy.title + c.t(" 副本", " COPY")).prefix(32))
+            copy.title = ConfigurationTextLimit.name.bounded(copy.title + c.t(" 副本", " COPY"))
             c.settings.value.capsuleProfiles.append(copy)
             c.settings.value.selectedCapsuleID = copy.id
             c.buildPage()
@@ -73,8 +73,7 @@ extension SettingsWindowController {
         }
         textField(t("标题（1–32 字）", "Title (1–32 characters)"), key: "profile.\(id).title", in: page, y: 83,
             value: { c in c.settings.value.capsuleProfiles.first { $0.id == id }?.title ?? "" }) { c, text in
-                let title = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !title.isEmpty, title.count <= 32 else { return false }
+                guard let title = ConfigurationTextLimit.name.accepted(text) else { return false }
                 c.editProfile(id) { $0.title = title }; return true
             }
         metricPopup(t("主数值", "Primary metric"), metric: profile.primaryMetric, optional: false, in: page, y: 121) { c, metric in

@@ -7,6 +7,7 @@ final class SettingsChannel {
     private let input: FileHandle
     private let output: FileHandle
     private var buffer = Data()
+    private var discardingFrame = false
     private let writer = DispatchQueue(label: "com.markyang.endfieldcharge.settings-pipe")
     var onMessage: ((SettingsMessage) -> Void)?
     var onEnd: (() -> Void)?
@@ -28,7 +29,8 @@ final class SettingsChannel {
     }
 
     func send(_ message: SettingsMessage) {
-        guard var bytes = try? JSONEncoder().encode(message) else { return }
+        guard var bytes = try? JSONEncoder().encode(message),
+              bytes.count <= SettingsMessage.maximumPayloadBytes else { return }
         bytes.append(0x0A)
         writer.async { [weak self] in try? self?.output.write(contentsOf: bytes) }
     }
@@ -38,14 +40,27 @@ final class SettingsChannel {
     }
 
     private func receive(_ bytes: Data) {
-        buffer.append(bytes)
-        while let end = buffer.firstIndex(of: 0x0A) {
-            let line = Data(buffer[..<end])
-            buffer.removeSubrange(...end)
-            if let message = try? JSONDecoder().decode(SettingsMessage.self, from: line) { onMessage?(message) }
+        var start = bytes.startIndex
+        while start < bytes.endIndex {
+            let newline = bytes[start...].firstIndex(of: 0x0A)
+            let end = newline ?? bytes.endIndex
+            if !discardingFrame {
+                if end - start <= SettingsMessage.maximumPayloadBytes - buffer.count {
+                    buffer.append(contentsOf: bytes[start..<end])
+                } else {
+                    buffer.removeAll(keepingCapacity: true)
+                    discardingFrame = true
+                }
+            }
+            guard let newline else { return }
+            // Expanded Unicode configuration can span many reads. Budget each frame separately;
+            // after an oversized frame, drain through its newline before accepting the next one.
+            if !discardingFrame,
+               let message = try? JSONDecoder().decode(SettingsMessage.self, from: buffer) { onMessage?(message) }
+            buffer.removeAll(keepingCapacity: true)
+            discardingFrame = false
+            start = bytes.index(after: newline)
         }
-        // Bound a malformed/incomplete frame; ordinary messages are below 1 KB.
-        if buffer.count > 16_384 { buffer.removeAll(keepingCapacity: false) }
     }
 
     deinit {

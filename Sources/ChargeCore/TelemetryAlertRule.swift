@@ -23,8 +23,8 @@ public struct TelemetryAlertRule: Codable, Equatable, Identifiable {
     }
     public static func custom(name: String = "ALERT") -> Self { Self(id: UUID().uuidString, name: name) }
     public mutating func normalize() {
-        id = String(id.trimmingCharacters(in: .whitespacesAndNewlines).prefix(64))
-        name = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(32))
+        id = ConfigurationTextLimit.identifier.bounded(id)
+        name = ConfigurationTextLimit.name.bounded(name)
         if name.isEmpty { name = "ALERT" }
         if !threshold.isFinite { threshold = 0 }
         holdSeconds = holdSeconds.isFinite ? min(300, max(0, holdSeconds)) : 0

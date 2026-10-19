@@ -61,8 +61,7 @@ extension SettingsWindowController {
         bindings.append { c in enabled.state = c.settings.value.telemetryAlertRules.first { $0.id == id }?.enabled == true ? .on : .off }
         textField(t("名称（1–32 字）", "Name (1–32 characters)"), key: "rule.\(id).name", in: page, y: 77,
             value: { c in c.settings.value.telemetryAlertRules.first { $0.id == id }?.name ?? "" }) { c, text in
-                let name = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !name.isEmpty, name.count <= 32 else { return false }
+                guard let name = ConfigurationTextLimit.name.accepted(text) else { return false }
                 c.editRule(id) { $0.name = name }; return true
             }
         metricPopup(t("指标", "Metric"), metric: rule.metric, optional: false, in: page, y: 115) { c, metric in
@@ -99,7 +98,7 @@ extension SettingsWindowController {
     private func ruleExplanation(in page: NSView, y: CGFloat) {
         let message = NSTextField(wrappingLabelWithString: t(
             "首次采样只建立基线，不重播启动前提醒。触发后需先恢复正常才重新布防；后台每 30 秒检查，短暂越界可能被跳过。停用模块不强制采集。电池/散热已有默认提醒，仅按需要启用自定义规则。",
-            "First sample establishes a baseline; no startup replay. Recover to rearm after firing. Background checks run every 30 s and can miss brief crossings. Disabled modules stay unavailable. Enable custom battery/thermal rules only when wanted; built-in alerts already exist."))
+            "First sample establishes a baseline; no startup replay. Recover to rearm after firing. Background checks run every 30 s and can miss brief crossings. Disabled modules stay unavailable. Built-in battery/thermal alerts already exist; enable custom rules only as needed."))
         message.font = .systemFont(ofSize: 11)
         message.textColor = .secondaryLabelColor
         place(message, in: page, y: y, width: 545, height: 94)

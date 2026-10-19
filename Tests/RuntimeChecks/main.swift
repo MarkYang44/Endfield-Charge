@@ -5,6 +5,14 @@ import ChargeCore
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 // The same executable hosts the real child role, allowing an actual pipe/exit/reopen regression.
+let unicodeName = String(repeating: "👨‍👩‍👧‍👦", count: 32)
+func maximumUnicodePreferences() -> Preferences {
+    var value = Preferences()
+    for index in value.capsuleProfiles.indices { value.capsuleProfiles[index].title = unicodeName }
+    for _ in 0..<7 { value.capsuleProfiles.append(.custom(title: unicodeName)) }
+    value.telemetryAlertRules = (0..<16).map { _ in .custom(name: unicodeName) }
+    return value
+}
 let telemetryRole = CommandLine.arguments.contains("--telemetry-ui")
 if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry-ui" : "--settings-ui") {
     let args = CommandLine.arguments
@@ -51,6 +59,13 @@ if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry
                 fputs("FAIL: telemetry reopen lost tab/position\n", stderr); exit(1)
             }
         } else if tab == 0 {
+            guard let controller = window.windowController as? SettingsWindowController,
+                  controller.settings.value.capsuleProfiles.count == 12,
+                  controller.settings.value.capsuleProfiles.allSatisfy({ $0.title == unicodeName }),
+                  controller.settings.value.telemetryAlertRules.count == 16,
+                  controller.settings.value.telemetryAlertRules.allSatisfy({ $0.name == unicodeName }) else {
+                fputs("FAIL: child lost maximum Unicode configuration\n", stderr); exit(1)
+            }
             guard let tabs = window.toolbar?.items.compactMap({ $0.view as? NSSegmentedControl }).first else {
                 fputs("FAIL: child settings tabs missing\n", stderr); exit(1)
             }
@@ -67,6 +82,13 @@ if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry
             }
             app.sendAction(action, to: button.target, from: button)
         } else {
+            guard let controller = window.windowController as? SettingsWindowController,
+                  controller.settings.value.capsuleProfiles.count == 12,
+                  controller.settings.value.capsuleProfiles.allSatisfy({ $0.title == unicodeName }),
+                  controller.settings.value.telemetryAlertRules.count == 16,
+                  controller.settings.value.telemetryAlertRules.allSatisfy({ $0.name == unicodeName }) else {
+                fputs("FAIL: reopened child lost maximum Unicode configuration\n", stderr); exit(1)
+            }
             (window.windowController as? SettingsWindowController)?.onCapsulePreview?(CapsuleProfile.cpuID)
             (window.windowController as? SettingsWindowController)?.onCapsulePreview?("unknown-profile")
             _ = delegate.applicationShouldHandleReopen?(app, hasVisibleWindows: true)
@@ -147,6 +169,57 @@ while !pipeEnded && Date() < endDeadline { spin(0.05) }
 check(pipeEnded && received.last == 201, "Final queued write must arrive before pipe EOF")
 parentChannel = nil
 print("PASS: 200 ordered pipe messages, fragmented frame and flushed final write before EOF")
+
+// Use real pipes and the production channel: neither pre-split lines nor a substitute parser.
+do {
+    let incoming = Pipe(), outgoing = Pipe()
+    let channel = SettingsChannel(input: incoming.fileHandleForReading, output: outgoing.fileHandleForWriting)
+    var messages: [SettingsMessage] = []
+    channel.onMessage = { messages.append($0) }
+    func line(_ message: SettingsMessage) throws -> Data { try JSONEncoder().encode(message) + Data([10]) }
+    func write(_ bytes: Data, fragmentSize: Int = 8192) throws {
+        for offset in stride(from: 0, to: bytes.count, by: fragmentSize) {
+            try incoming.fileHandleForWriting.write(contentsOf: bytes[offset..<min(offset + fragmentSize, bytes.count)])
+            spin(0.01)
+        }
+        spin(0.03)
+    }
+    let maximum = maximumUnicodePreferences()
+    let unicodeFrame = try line(SettingsMessage(.changed, preferences: maximum, revision: 1))
+    check(unicodeFrame.count > 16_384, "Unicode regression exercises the former incomplete-frame cap")
+    try write(unicodeFrame)
+    check(messages.count == 1 && messages[0].preferences == maximum,
+        "Maximum 12-profile/16-rule Unicode configuration survives actual 8192-byte pipe fragments")
+    // Each frame is valid even when their combined write is larger than one frame's budget.
+    let coalesced = try (2...7).reduce(into: Data()) { $0.append(try line(SettingsMessage(.changed, preferences: maximum, revision: $1))) }
+    try write(coalesced, fragmentSize: coalesced.count)
+    check(messages.compactMap(\.revision) == Array(1...7), "Coalesced valid frames are budgeted individually")
+    let budget = SettingsMessage.maximumPayloadBytes
+    var exact = SettingsMessage(.screen, frame: "")
+    exact.frame = String(repeating: "x", count: budget - (try JSONEncoder().encode(exact)).count)
+    let exactFrame = try line(exact)
+    check(exactFrame.count == budget + 1, "Boundary frame payload excludes its newline")
+    try write(exactFrame)
+    check(messages.count == 8 && messages.last?.frame == exact.frame, "Exactly budget-sized inbound frame is accepted")
+    let oversized = try line(SettingsMessage(.screen, frame: String(repeating: "x", count: budget + 1)))
+    try write(oversized + line(SettingsMessage(.preview, revision: 8)), fragmentSize: oversized.count + 100)
+    check(messages.count == 9 && messages.last?.revision == 8, "Complete oversized frame is rejected and following valid frame recovers")
+    try write(oversized.dropLast())
+    check(messages.count == 9, "Fragmented oversized frame remains discarded before its terminator")
+    try write(Data([10]) + line(SettingsMessage(.preview, revision: 9)))
+    check(messages.count == 10 && messages.last?.revision == 9, "Fragmented oversized frame drains through newline then resumes")
+    let returnChannel = SettingsChannel(input: outgoing.fileHandleForReading, output: incoming.fileHandleForWriting)
+    var outbound: [SettingsMessage] = []
+    returnChannel.onMessage = { outbound.append($0) }
+    channel.send(SettingsMessage(.screen, frame: String(repeating: "x", count: budget + 1)))
+    channel.send(exact)
+    channel.send(SettingsMessage(.closed, revision: 10))
+    var flushed = false
+    channel.flush { flushed = true }
+    awaitCondition({ flushed && outbound.last?.revision == 10 }, "Outbound oversize rejection preserves ordered final-close flush")
+    check(outbound.count == 2 && outbound[0].frame == exact.frame, "Outbound queue rejects overbudget payload and accepts exact limit")
+}
+print("PASS: maximum Unicode pipe configuration, coalescing, exact wire boundary, oversized drain/recovery and outbound budget")
 
 var owner: SettingsWindowController?
 var savedTab = -1
@@ -303,6 +376,17 @@ autoreleasepool {
     input(controller!, key: titleKey, text: "Pending native title")
     editorSettings.shortcutMessage = "Refresh while editing"
     check(field(controller!, titleKey).currentEditor()?.string == "Pending native title", "Binding refresh preserves active text")
+    let overbyteName = "e" + String(repeating: "\u{301}", count: 600)
+    input(controller!, key: titleKey, text: overbyteName)
+    check(editorSettings.value.capsuleProfiles.first { $0.id == id }?.title == "Pending native title"
+        && controller!.draftText[titleKey] == overbyteName && field(controller!, titleKey).textColor == .systemOrange,
+        "Character-valid overbyte capsule name stays orange and unsaved")
+    check(field(controller!, titleKey).toolTip?.contains("1024") == true, "Invalid-input hint discloses UTF-8 byte bound")
+    input(controller!, key: titleKey, text: unicodeName)
+    controller!.commitEditing()
+    check(editorSettings.value.capsuleProfiles.first { $0.id == id }?.title == unicodeName,
+        "Valid 32-family-emoji capsule title saves without truncation")
+    input(controller!, key: titleKey, text: "Pending native title")
     let title = field(controller!, titleKey)
     let editor = title.currentEditor() as! NSTextView
     editor.selectAll(nil)
@@ -366,11 +450,17 @@ autoreleasepool {
     input(controller!, key: "rule.\(ruleID).cooldown", text: "120")
     button(controller!, title: "Enable this rule").performClick(nil)
     check(editorSettings.value.telemetryAlertRules[0].enabled, "Native checkbox enables only the selected user rule")
+    input(controller!, key: "rule.\(ruleID).name", text: overbyteName)
+    check(editorSettings.value.telemetryAlertRules[0].name == "ALERT"
+        && field(controller!, "rule.\(ruleID).name").textColor == .systemOrange,
+        "Character-valid overbyte rule name stays orange and unsaved")
+    input(controller!, key: "rule.\(ruleID).name", text: unicodeName)
+    check(editorSettings.value.telemetryAlertRules[0].name == unicodeName, "Valid 32-family-emoji rule name saves whole")
     input(controller!, key: "rule.\(ruleID).name", text: "Close commits pending")
     let pendingName = field(controller!, "rule.\(ruleID).name")
     let pendingEditor = pendingName.currentEditor() as! NSTextView
     pendingEditor.selectAll(nil)
-    pendingEditor.setMarkedText("关闭时保存", selectedRange: NSRange(location: 5, length: 0), replacementRange: pendingEditor.selectedRange())
+    pendingEditor.setMarkedText(unicodeName, selectedRange: NSRange(location: (unicodeName as NSString).length, length: 0), replacementRange: pendingEditor.selectedRange())
     pendingName.validateEditing()
     controller!.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: pendingName))
     check(editorSettings.value.telemetryAlertRules[0].name == "Close commits pending", "Unfinished IME composition stays unsaved before close")
@@ -378,7 +468,7 @@ autoreleasepool {
     controller!.window?.close()
     controller = nil
     let restored = AppSettings(defaults: editorDefaults)
-    check(restored.value.telemetryAlertRules[0].name == "关闭时保存"
+    check(restored.value.telemetryAlertRules[0].name == unicodeName
         && restored.value.telemetryAlertRules[0].holdSeconds == 12.5
         && restored.value.telemetryAlertRules[0].cooldownSeconds == 120, "Native pending edits survive close and disk reload")
 }
@@ -396,7 +486,7 @@ let telemetrySample = TelemetrySnapshot(sampledAt: 100,
         memoryTotalBytes: 24 * 1_073_741_824, compressedBytes: 1_073_741_824,
         swapUsedBytes: 0, pressure: .normal), thermal: .fair)
 let telemetryBytes = try JSONEncoder().encode(SettingsMessage(.telemetry, preferences: settings.value, telemetry: telemetrySample))
-check(telemetryBytes.count < 16_384, "A telemetry IPC frame fits the private pipe bound")
+check(telemetryBytes.count <= SettingsMessage.maximumPayloadBytes, "A telemetry IPC frame fits the private pipe bound")
 let decodedTelemetry = try JSONDecoder().decode(SettingsMessage.self, from: telemetryBytes)
 check(decodedTelemetry.telemetry == telemetrySample,
     "Typed telemetry survives the actual IPC encoder")
@@ -749,7 +839,7 @@ print("PASS: repeated animation lifecycle")
 
 // A bare test executable has a separate defaults domain from the installed application.
 let standardPreferences = UserDefaults.standard.data(forKey: "preferences")
-var fixture = Preferences()
+var fixture = maximumUnicodePreferences()
 fixture.scale = 0.85; fixture.duration = 3; fixture.showPercentage = false
 UserDefaults.standard.set(try JSONEncoder().encode(fixture), forKey: "preferences")
 UserDefaults.standard.synchronize()
@@ -838,4 +928,4 @@ UserDefaults.standard.set(standardPreferences, forKey: "preferences")
 print("PASS: actual child process, preview, close acknowledgment, rapid reopen and tab/frame preservation")
 print("PASS: telemetry delivery, preference direction, visibility, acknowledged close and rapid reopen")
 print("PASS: telemetry child exits on parent EOF without fallback")
-print("All 17 native runtime check groups passed")
+print("All 18 native runtime check groups passed")

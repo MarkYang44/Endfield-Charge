@@ -152,7 +152,7 @@ extension SettingsWindowController {
         let valid = edit.save(self, field.stringValue)
         if valid { draftText.removeValue(forKey: edit.key) } else { draftText[edit.key] = field.stringValue }
         field.textColor = valid ? .labelColor : .systemOrange
-        field.toolTip = valid ? nil : t("输入无效：请输入指定范围内的有限数值，名称为 1–32 字。", "Invalid input: use a finite value in range, or a name of 1–32 characters.")
+        field.toolTip = valid ? nil : t("输入无效：请输入指定范围内的有限数值，名称为 1–32 字且不超过 1024 个 UTF-8 字节。", "Invalid input: use a finite value in range, or a name of 1–32 characters and at most 1024 UTF-8 bytes.")
         validationMessage?.stringValue = draftText.isEmpty ? "" : t("有未保存的无效输入，请修正橙色字段。", "Invalid input remains unsaved; correct the orange field.")
     }
     func commitEditing() {

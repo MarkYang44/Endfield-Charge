@@ -53,8 +53,8 @@ public struct CapsuleProfile: Codable, Equatable, Identifiable {
         Self(id: UUID().uuidString, title: title, primaryMetric: primaryMetric)
     }
     public mutating func normalize() {
-        id = String(id.trimmingCharacters(in: .whitespacesAndNewlines).prefix(64))
-        title = String(title.trimmingCharacters(in: .whitespacesAndNewlines).prefix(32))
+        id = ConfigurationTextLimit.identifier.bounded(id)
+        title = ConfigurationTextLimit.name.bounded(title)
         if title.isEmpty { title = "CUSTOM" }
         if !referenceMaximum.isFinite || referenceMaximum <= 0 { referenceMaximum = 100 }
     }
