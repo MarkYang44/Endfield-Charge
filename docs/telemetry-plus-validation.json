@@ -1,6 +1,6 @@
 {
   "date": "2026-10-19",
-  "implementation_commit": "3f6408de7c6151342c667007751812b4c7d2c5d3",
+  "implementation_commit": "a4451eb38bcfc917d579b6aa2b79dd51505294fd",
   "host": {
     "model": "Mac17,3",
     "chip": "Apple M5",
@@ -9,15 +9,24 @@
     "build": "26A434"
   },
   "tests": {
-    "core_tests": 49,
-    "core_suites": 6,
-    "native_groups": 17,
+    "core_tests": 54,
+    "core_suites": 7,
+    "native_groups": 18,
     "commands": [
       "bash scripts/test.sh",
       "bash scripts/check-runtime.sh",
       "bash scripts/build-app.sh --universal"
     ],
     "all_passed": true
+  },
+  "configuration_limits": {
+    "name_characters": 32,
+    "name_utf8_bytes": 1024,
+    "id_characters": 64,
+    "id_utf8_bytes": 256,
+    "ipc_payload_bytes_excluding_newline": 131072,
+    "fragmented_27182_byte_message_delivered": true,
+    "max_unicode_child_close_reopen_agreement": true
   },
   "local_package": {
     "version": "1.1.0",
@@ -26,15 +35,15 @@
       "x86_64",
       "arm64"
     ],
-    "archive_sha256": "af6c09578510debd43a40d7f147993a861ae091bdd4110ca5ee7a93972af02f3",
-    "archive_bytes": 930203,
-    "executable_bytes": 1537696,
-    "executable_sha256": "48d73d6f350dc33889145abfdb9f517aa268abafe85ef922cf06b015ea927d48",
+    "archive_sha256": "f7ef6495275ee26c7eb87c370e45d716eaf03a11724eae85baff74446da3950d",
+    "archive_bytes": 932231,
+    "executable_bytes": 1539184,
+    "executable_sha256": "f78d89b0f99fa05161ad86f37b72cd1cb543ef4b8c521362c5d2abfead81ebd8",
     "real_file_count": 10,
     "bundle_sha256": {
       "Contents/Info.plist": "385abd004f1e6f680c9ded809aca8690afdd287e574c2b8bb8dd982f2bbcb8fd",
       "Contents/_CodeSignature/CodeResources": "302a9dba24dd62773acdabd7078f56d50fea377a54bf634f2011e39976b230f1",
-      "Contents/MacOS/EndfieldCharge": "48d73d6f350dc33889145abfdb9f517aa268abafe85ef922cf06b015ea927d48",
+      "Contents/MacOS/EndfieldCharge": "f78d89b0f99fa05161ad86f37b72cd1cb543ef4b8c521362c5d2abfead81ebd8",
       "Contents/Resources/MenuBarIcon.png": "d5be9d72656c7e7b733c3cb67a1e7caa90892f0fc72d790ba7ed02a14cedcacf",
       "Contents/Resources/LICENSE": "f6983e04cb915170a0c1f8a02543825f6c9628b9e8395c7d9b51780e34ec8c0f",
       "Contents/Resources/endfield-industries.svg": "3e2af120ec6c86d2132448e7fbd4264b50e7258276c1beabb2bf3fa666200025",
@@ -242,7 +251,7 @@
       }
     },
     "candidate": {
-      "binary_sha256": "48d73d6f350dc33889145abfdb9f517aa268abafe85ef922cf06b015ea927d48",
+      "binary_sha256": "f78d89b0f99fa05161ad86f37b72cd1cb543ef4b8c521362c5d2abfead81ebd8",
       "metric": "resident plus direct UI children physical footprint; three cold starts",
       "interval_seconds": 0.2,
       "stable_rate_interval": "last12 samples, about2.2seconds",
@@ -252,166 +261,166 @@
           "runs": [
             {
               "run": 1,
-              "last_MiB": 12.00091552734375,
-              "sampled_peak_MiB": 12.09466552734375,
-              "cpu_percent_one_core": 0.0,
+              "last_MiB": 11.532142639160156,
+              "sampled_peak_MiB": 11.532142639160156,
+              "cpu_percent_one_core": 0.019663692289079986,
               "package_idle_wakeups_per_second": 0.0,
-              "interrupt_wakeups_per_second": 0.0
+              "interrupt_wakeups_per_second": 0.44626819379472316
             },
             {
               "run": 2,
-              "last_MiB": 11.532142639160156,
-              "sampled_peak_MiB": 12.016517639160156,
-              "cpu_percent_one_core": 0.07245161293231477,
-              "package_idle_wakeups_per_second": 0.0,
-              "interrupt_wakeups_per_second": 0.8934302943483902
+              "last_MiB": 11.750892639160156,
+              "sampled_peak_MiB": 11.750892639160156,
+              "cpu_percent_one_core": 0.022849285290931196,
+              "package_idle_wakeups_per_second": 0.44507982061711604,
+              "interrupt_wakeups_per_second": 0.44507982061711604
             },
             {
               "run": 3,
-              "last_MiB": 16.67279052734375,
-              "sampled_peak_MiB": 16.76654052734375,
-              "cpu_percent_one_core": 0.011702569657154828,
-              "package_idle_wakeups_per_second": 0.44723139169841164,
-              "interrupt_wakeups_per_second": 0.44723139169841164
+              "last_MiB": 11.532142639160156,
+              "sampled_peak_MiB": 11.532142639160156,
+              "cpu_percent_one_core": 0.023560303332301958,
+              "package_idle_wakeups_per_second": 0.0,
+              "interrupt_wakeups_per_second": 0.44618237436230374
             }
           ],
-          "median_last_MiB": 12.00091552734375,
-          "maximum_sampled_peak_MiB": 16.76654052734375,
-          "median_cpu_percent_one_core": 0.011702569657154828,
+          "median_last_MiB": 11.532142639160156,
+          "maximum_sampled_peak_MiB": 11.750892639160156,
+          "median_cpu_percent_one_core": 0.022849285290931196,
           "median_package_idle_wakeups_per_second": 0.0,
-          "median_interrupt_wakeups_per_second": 0.44723139169841164
+          "median_interrupt_wakeups_per_second": 0.44618237436230374
         },
         "settings": {
           "runs": [
             {
               "run": 1,
-              "last_MiB": 43.26757049560547,
-              "sampled_peak_MiB": 53.31444549560547,
-              "cpu_percent_one_core": 0.1730924091649523,
-              "package_idle_wakeups_per_second": 0.8983450687201956,
-              "interrupt_wakeups_per_second": 1.7966901374403912
+              "last_MiB": 43.955047607421875,
+              "sampled_peak_MiB": 43.955047607421875,
+              "cpu_percent_one_core": 0.03451005855360271,
+              "package_idle_wakeups_per_second": 0.4456504736542723,
+              "interrupt_wakeups_per_second": 0.8913009473085446
             },
             {
               "run": 2,
-              "last_MiB": 42.86132049560547,
-              "sampled_peak_MiB": 44.09569549560547,
-              "cpu_percent_one_core": 0.032331863798838276,
-              "package_idle_wakeups_per_second": 0.8875784286358154,
-              "interrupt_wakeups_per_second": 0.8875784286358154
+              "last_MiB": 43.53319549560547,
+              "sampled_peak_MiB": 43.64257049560547,
+              "cpu_percent_one_core": 0.04592266323344609,
+              "package_idle_wakeups_per_second": 0.0,
+              "interrupt_wakeups_per_second": 1.7941483850259063
             },
             {
               "run": 3,
-              "last_MiB": 43.93939971923828,
-              "sampled_peak_MiB": 44.01752471923828,
-              "cpu_percent_one_core": 0.054417606619877656,
-              "package_idle_wakeups_per_second": 1.3385943064162285,
-              "interrupt_wakeups_per_second": 2.2309905106937142
+              "last_MiB": 44.064422607421875,
+              "sampled_peak_MiB": 44.064422607421875,
+              "cpu_percent_one_core": 0.034174490564256914,
+              "package_idle_wakeups_per_second": 0.8916546033221162,
+              "interrupt_wakeups_per_second": 0.8916546033221162
             }
           ],
-          "median_last_MiB": 43.26757049560547,
-          "maximum_sampled_peak_MiB": 53.31444549560547,
-          "median_cpu_percent_one_core": 0.054417606619877656,
-          "median_package_idle_wakeups_per_second": 0.8983450687201956,
-          "median_interrupt_wakeups_per_second": 1.7966901374403912
+          "median_last_MiB": 43.955047607421875,
+          "maximum_sampled_peak_MiB": 44.064422607421875,
+          "median_cpu_percent_one_core": 0.03451005855360271,
+          "median_package_idle_wakeups_per_second": 0.4456504736542723,
+          "median_interrupt_wakeups_per_second": 0.8916546033221162
         },
         "animation": {
           "runs": [
             {
               "run": 1,
-              "last_MiB": 14.329063415527344,
-              "sampled_peak_MiB": 16.469688415527344,
-              "cpu_percent_one_core": 1.1166657921930472,
-              "package_idle_wakeups_per_second": 0.8893070608405544,
-              "interrupt_wakeups_per_second": 11.11633826050693
+              "last_MiB": 15.141563415527344,
+              "sampled_peak_MiB": 17.454063415527344,
+              "cpu_percent_one_core": 1.1593789429808972,
+              "package_idle_wakeups_per_second": 3.5705757776763347,
+              "interrupt_wakeups_per_second": 10.711727333029005
             },
             {
               "run": 2,
-              "last_MiB": 14.657188415527344,
-              "sampled_peak_MiB": 16.829063415527344,
-              "cpu_percent_one_core": 1.356823555377239,
-              "package_idle_wakeups_per_second": 2.224656490795232,
-              "interrupt_wakeups_per_second": 13.792870242930437
+              "last_MiB": 14.969688415527344,
+              "sampled_peak_MiB": 16.797813415527344,
+              "cpu_percent_one_core": 1.3911775463082954,
+              "package_idle_wakeups_per_second": 4.888426117900284,
+              "interrupt_wakeups_per_second": 13.332071230637139
             },
             {
               "run": 3,
-              "last_MiB": 14.438438415527344,
-              "sampled_peak_MiB": 15.922836303710938,
-              "cpu_percent_one_core": 1.191453560605726,
-              "package_idle_wakeups_per_second": 2.2345969234050584,
-              "interrupt_wakeups_per_second": 10.72606523234428
+              "last_MiB": 15.125961303710938,
+              "sampled_peak_MiB": 16.563461303710938,
+              "cpu_percent_one_core": 1.3808771874659107,
+              "package_idle_wakeups_per_second": 4.929530126104455,
+              "interrupt_wakeups_per_second": 11.203477559328306
             }
           ],
-          "median_last_MiB": 14.438438415527344,
-          "maximum_sampled_peak_MiB": 16.829063415527344,
-          "median_cpu_percent_one_core": 1.191453560605726,
-          "median_package_idle_wakeups_per_second": 2.224656490795232,
-          "median_interrupt_wakeups_per_second": 11.11633826050693
+          "median_last_MiB": 15.125961303710938,
+          "maximum_sampled_peak_MiB": 17.454063415527344,
+          "median_cpu_percent_one_core": 1.3808771874659107,
+          "median_package_idle_wakeups_per_second": 4.888426117900284,
+          "median_interrupt_wakeups_per_second": 11.203477559328306
         },
         "telemetry": {
           "runs": [
             {
               "run": 1,
-              "last_MiB": 55.68937683105469,
-              "sampled_peak_MiB": 96.72064971923828,
-              "cpu_percent_one_core": 0.5215478712638427,
-              "package_idle_wakeups_per_second": 2.232884493806563,
-              "interrupt_wakeups_per_second": 5.358922785135752
+              "last_MiB": 56.189353942871094,
+              "sampled_peak_MiB": 93.7831039428711,
+              "cpu_percent_one_core": 0.5085514849657227,
+              "package_idle_wakeups_per_second": 0.8921597447501189,
+              "interrupt_wakeups_per_second": 4.460798723750595
             },
             {
               "run": 2,
-              "last_MiB": 54.78312683105469,
-              "sampled_peak_MiB": 93.70500183105469,
-              "cpu_percent_one_core": 0.3346366013262676,
-              "package_idle_wakeups_per_second": 0.4465591501068203,
-              "interrupt_wakeups_per_second": 3.5724732008545623
+              "last_MiB": 56.20500183105469,
+              "sampled_peak_MiB": 96.15812683105469,
+              "cpu_percent_one_core": 0.49992839829104113,
+              "package_idle_wakeups_per_second": 0.8916776603219314,
+              "interrupt_wakeups_per_second": 4.458388301609657
             },
             {
               "run": 3,
-              "last_MiB": 55.97064971923828,
-              "sampled_peak_MiB": 95.59562683105469,
-              "cpu_percent_one_core": 0.5288937773705515,
-              "package_idle_wakeups_per_second": 2.6816109867600426,
-              "interrupt_wakeups_per_second": 4.916286809060078
+              "last_MiB": 56.20500183105469,
+              "sampled_peak_MiB": 93.92375183105469,
+              "cpu_percent_one_core": 0.47636417765059674,
+              "package_idle_wakeups_per_second": 2.2250128828339717,
+              "interrupt_wakeups_per_second": 4.450025765667943
             }
           ],
-          "median_last_MiB": 55.68937683105469,
-          "maximum_sampled_peak_MiB": 96.72064971923828,
-          "median_cpu_percent_one_core": 0.5215478712638427,
-          "median_package_idle_wakeups_per_second": 2.232884493806563,
-          "median_interrupt_wakeups_per_second": 4.916286809060078
+          "median_last_MiB": 56.20500183105469,
+          "maximum_sampled_peak_MiB": 96.15812683105469,
+          "median_cpu_percent_one_core": 0.49992839829104113,
+          "median_package_idle_wakeups_per_second": 0.8921597447501189,
+          "median_interrupt_wakeups_per_second": 4.458388301609657
         },
         "telemetry_helper_exited": {
           "runs": [
             {
               "run": 1,
-              "last_MiB": 11.68841552734375,
-              "sampled_peak_MiB": 11.78216552734375,
-              "cpu_percent_one_core": 0.016858344481908975,
+              "last_MiB": 11.641517639160156,
+              "sampled_peak_MiB": 11.750892639160156,
+              "cpu_percent_one_core": 0.006623732666654626,
               "package_idle_wakeups_per_second": 0.0,
-              "interrupt_wakeups_per_second": 0.4472705982741241
+              "interrupt_wakeups_per_second": 0.44679478358547225
             },
             {
               "run": 2,
-              "last_MiB": 11.76654052734375,
-              "sampled_peak_MiB": 11.76654052734375,
-              "cpu_percent_one_core": 0.10166779043356822,
+              "last_MiB": 11.61029052734375,
+              "sampled_peak_MiB": 11.67279052734375,
+              "cpu_percent_one_core": 0.005276045251190705,
               "package_idle_wakeups_per_second": 0.0,
-              "interrupt_wakeups_per_second": 0.4453497910904812
+              "interrupt_wakeups_per_second": 0.4463357176494574
             },
             {
               "run": 3,
-              "last_MiB": 11.750892639160156,
-              "sampled_peak_MiB": 11.797767639160156,
-              "cpu_percent_one_core": 0.004236077697629959,
+              "last_MiB": 11.67279052734375,
+              "sampled_peak_MiB": 11.81341552734375,
+              "cpu_percent_one_core": 0.009239133104862587,
               "package_idle_wakeups_per_second": 0.0,
-              "interrupt_wakeups_per_second": 0.4455136772745874
+              "interrupt_wakeups_per_second": 0.4466046213830858
             }
           ],
-          "median_last_MiB": 11.750892639160156,
-          "maximum_sampled_peak_MiB": 11.797767639160156,
-          "median_cpu_percent_one_core": 0.016858344481908975,
+          "median_last_MiB": 11.641517639160156,
+          "maximum_sampled_peak_MiB": 11.81341552734375,
+          "median_cpu_percent_one_core": 0.006623732666654626,
           "median_package_idle_wakeups_per_second": 0.0,
-          "median_interrupt_wakeups_per_second": 0.4455136772745874
+          "median_interrupt_wakeups_per_second": 0.4466046213830858
         }
       }
     }
@@ -420,7 +429,7 @@
     "Short three-cold-start measurements, not a guarantee or statistically established speedup.",
     "Rates use the final12samples (~2.2s); startup/animation peaks are separate.",
     "Default General settings and POWER telemetry pages measured, not every editor/profile/rule workload.",
-    "Idle candidate run3 was16.67MiB; all three runs and sampled peaks are retained.",
+    "All three runs and sampled peaks are retained without removing outliers.",
     "CPU and wakeups are proxies, not direct Wh energy readings.",
     "Runtime tested on M5/macOS27.0.1. Both macOS13-target slices linked and signed; Intel/macOS13 execution not tested (Rosetta absent).",
     "Inherited native SwiftPM build-engine deprecation and host arm-only libswiftCompatibilityPacks.a x86_64 linker warning retained.",

@@ -52,7 +52,7 @@ Call the executable directly when forwarding an action to an already-running app
 | `scripts/` | Test, build, icon export and development-only profiling tools |
 | `.github/workflows/` | Universal CI builds and tagged releases |
 
-Profiles and rules store thresholds/reference maxima in base units. Editors convert to Wh, percent, GiB and MiB/s. New collectors share one bounded serial worker and the resident demand scheduler. UI helpers receive snapshots through a private pipe; they do not create collectors.
+Profiles and rules store thresholds/reference maxima in base units. Editors convert to Wh, percent, GiB and MiB/s. Titles/rule names allow up to 32 characters and 1,024 UTF-8 bytes; IDs allow 64 characters and 256 bytes, retaining whole graphemes. The private IPC payload budget is 128 KiB per newline-delimited frame, enforced at both send and receive boundaries. Oversized frames are drained before the next valid frame is read. New collectors share one bounded serial worker and the resident demand scheduler. UI helpers receive snapshots through a private pipe; they do not create collectors.
 
 Re-export the repository's vector icon source with `swift scripts/render-icons.swift`. Keep the menu icon contract separate from the app icon.
 

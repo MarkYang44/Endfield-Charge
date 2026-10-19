@@ -2,19 +2,20 @@
 
 ## Result / 结果
 
-Local validation completed for implementation `3f6408d`: **49 core tests in 6 suites, 17 native runtime groups**, universal packaging, bilingual exports, real network/storage samples and original-artwork regressions passed. Publication and downloaded-release checks will be recorded after delivery. Machine-readable evidence and all per-run aggregates are in [telemetry-plus-validation.json](telemetry-plus-validation.json).
+Local validation completed for implementation `a4451eb`: **54 core tests in 7 suites, 18 native runtime groups**, universal packaging, bilingual exports, real network/storage samples and original-artwork regressions passed. Publication and downloaded-release checks will be recorded after delivery. Machine-readable evidence and all per-run aggregates are in [telemetry-plus-validation.json](telemetry-plus-validation.json).
 
-本地验证已通过：49 项核心测试、17 组原生检查、双架构打包、中英文界面导出、真实网络／存储采样及原图案回归。公开发布与下载包检查在交付后补充，未执行的步骤不计为已通过。
+本地验证已通过：54 项核心测试、18 组原生检查、双架构打包、中英文界面导出、真实网络／存储采样及原图案回归。公开发布与下载包检查在交付后补充，未执行的步骤不计为已通过。
 
 ## Scope / 覆盖范围
 
 - Native 64-bit network counters: first/reset/missing samples, interface changes, observed-session totals and safe buffer parsing; storage capacity ordering and APFS Data semantics.
 - Old preferences, bounded profile/rule migration, practical units, strict thresholds, baseline/hold/cooldown/rearm and missing/disabled/wake invalidation.
+- Shared Unicode limits: names 32 characters / 1,024 UTF-8 bytes, IDs 64 characters / 256 bytes; whole graphemes retained. A 27,182-byte maximum-count family-emoji configuration now survives 8,192-byte real-Pipe fragments. The 131,072-byte per-frame budget is enforced at sender/receiver; oversized complete/fragmented frames drain and recover, exact-limit and coalesced frames deliver, and actual child close/reopen agrees with resident preferences.
 - One serial async worker with one inflight plus one coalesced request, main-thread responsiveness under a blocked read, generation rejection, module reset epochs and owner release.
 - Seven lazy settings pages, five telemetry pages, valid pending/marked IME commit, invalid draft preservation while the helper lives, untouched scalar precision, preview routing, restored presets and language switching.
 - Actual child-process IPC, final-write/close acknowledgment, highest-tab reopen, parent EOF exit, capped 300-point graphs, stopped header timers, bounded alert queue and power interruption.
 
-Commands: `bash scripts/test.sh`, `bash scripts/check-runtime.sh`, `bash scripts/build-app.sh --universal`. The native passing groups are retained in [runtime output](telemetry-plus-runtime-checks.txt). Core sources were unchanged after their 49-test pass; subsequent UI fixes received their native covering checks and a fresh universal build.
+Commands: `bash scripts/test.sh`, `bash scripts/check-runtime.sh`, `bash scripts/build-app.sh --universal`. The native passing groups are retained in [runtime output](telemetry-plus-runtime-checks.txt). The Unicode fix passed 54 core tests and 18 native groups. A subsequent test-only storage-fixture correction also passed all 54 core tests; production code remained unchanged from `c910180`. The fresh universal binary and its SHA256 are the same binary used for the candidate measurements.
 
 ## Visual and language checks / 图案与双语
 
@@ -35,31 +36,31 @@ Host: **MacBook Air M5 / Mac17,3, 16 GiB, macOS 27.0.1 (26A434)**. Three cold st
 
 | Scenario / 场景 | v1.0.2 MiB | v1.1.0 MiB | v1.1.0 sampled peak MiB |
 | --- | ---: | ---: | ---: |
-| Idle / 空闲 | 12.42 | 12.00 | 16.77 |
-| Settings / 设置 | 44.06 | 43.27 | 53.31 |
-| Battery animation end / 电量动画结束 | 15.42 | 14.44 | 16.83 |
-| Telemetry / 遥测 | 56.66 | 55.69 | 96.72 |
-| After UI helper exit / 界面进程退出后 | 12.20 | 11.75 | 11.80 |
+| Idle / 空闲 | 12.42 | 11.53 | 11.75 |
+| Settings / 设置 | 44.06 | 43.96 | 44.06 |
+| Battery animation end / 电量动画结束 | 15.42 | 15.13 | 17.45 |
+| Telemetry / 遥测 | 56.66 | 56.21 | 96.16 |
+| After UI helper exit / 界面进程退出后 | 12.20 | 11.64 | 11.81 |
 
-No sustained resident growth was observed in these scenarios. The candidate's third idle run was 16.67 MiB, unlike its other two runs; it is retained in the raw aggregates and peak, not silently excluded. Settings and telemetry defaults were measured; this is not a worst-case bound for every profile/rule/editor combination. System load, font caches, memory pressure and power mode are not controlled laboratory conditions; small differences are not proof of a performance gain.
+No sustained resident growth was observed in these scenarios. All candidate runs, including their peaks and variation, are retained; no outlier was excluded. Settings and telemetry defaults were measured; this is not a worst-case bound for every profile/rule/editor combination. System load, font caches, memory pressure and power mode are not controlled laboratory conditions; small differences are not proof of a performance gain.
 
-这些场景未观察到持续常驻增长，但短时峰值高于末值。新版第三次空闲读数为16.67MiB，已保留在逐轮数据和峰值中，没有删去异常值。这里测量的是默认设置页与电源遥测页，不代表所有配置的最坏情况，也不将小幅差异归因于优化效果。
+这些场景未观察到持续常驻增长，但短时峰值高于末值。所有逐轮数据和峰值均保留，没有删去异常值。这里测量的是默认设置页与电源遥测页，不代表所有配置的最坏情况，也不将小幅差异归因于优化效果。
 
 The following are baseline/candidate medians from same-PID deltas over the last 12 samples (~2.2 s). CPU 100% means one core; wakeup counters are kernel proxies. They are **not direct battery-energy measurements**. The animation interval can still include active animation.
 
 | Scenario / 场景 | CPU% old / new | Package idle wakes/s old / new | Interrupt wakes/s old / new |
 | --- | ---: | ---: | ---: |
-| Idle / 空闲 | 0.045 / 0.012 | 0.45 / 0.00 | 0.45 / 0.45 |
-| Settings / 设置 | 0.043 / 0.054 | 0.45 / 0.90 | 0.89 / 1.80 |
-| Battery animation end / 电量动画结束 | 1.016 / 1.191 | 7.55 / 2.22 | 10.27 / 11.12 |
-| Telemetry / 遥测 | 0.402 / 0.522 | 1.33 / 2.23 | 4.01 / 4.92 |
-| After UI helper exit / 界面进程退出后 | 0.007 / 0.017 | 0.00 / 0.00 | 0.45 / 0.45 |
+| Idle / 空闲 | 0.045 / 0.023 | 0.45 / 0.00 | 0.45 / 0.45 |
+| Settings / 设置 | 0.043 / 0.035 | 0.45 / 0.45 | 0.89 / 0.89 |
+| Battery animation end / 电量动画结束 | 1.016 / 1.381 | 7.55 / 4.89 | 10.27 / 11.20 |
+| Telemetry / 遥测 | 0.402 / 0.500 | 1.33 / 0.89 | 4.01 / 4.46 |
+| After UI helper exit / 界面进程退出后 | 0.007 / 0.007 | 0.00 / 0.00 | 0.45 / 0.45 |
 
 ## Local package / 本地安装包
 
 - Version 1.1.0/build 4; macOS 13 deployment; arm64+x86_64; en+zh-Hans bundle declarations.
-- Executable: **1,537,696 B**; ZIP: **930,203 B**; 10 real bundle files.
-- ZIP SHA256: `af6c09578510debd43a40d7f147993a861ae091bdd4110ca5ee7a93972af02f3`.
+- Executable: **1,539,184 B**; ZIP: **932,231 B**; 10 real bundle files.
+- ZIP SHA256: `f7ef6495275ee26c7eb87c370e45d716eaf03a11724eae85baff74446da3950d`.
 - Strict ad-hoc signature, executable permission, archive integrity/safe paths, all-file byte equality, privacy manifest and bundled licenses verified.
 - A real packaged-executable snapshot supplied all five modules; network rates were finite/nonnegative and `0≤available≤free≤total` held for storage. Personal readings are not published.
 

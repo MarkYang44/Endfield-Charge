@@ -83,7 +83,7 @@ The shared sampler runs every 2 seconds for visible telemetry/capsule demand and
 
 Readings and preferences stay on your Mac. There are no active network probes, automatic telemetry uploads or permanent telemetry histories. Preferences use the app's `com.markyang.endfieldcharge` UserDefaults domain. Accessibility and screen-recording permissions are not required.
 
-Settings and telemetry use on-demand UI processes that exit when their windows close. The resident retains the menu, shortcut and monitoring services. On the M5 validation host, three cold starts measured a median **12.00 MiB idle** and **55.69 MiB with the telemetry window** for the resident plus UI physical footprint; startup peaks were higher. Memory depends on the workload and macOS version; see [versioned performance records](docs/PERFORMANCE.md) and [v1.1.0 validation](docs/telemetry-plus-validation.md) for methods and measurements.
+Settings and telemetry use on-demand UI processes that exit when their windows close. The resident retains the menu, shortcut and monitoring services. On the M5 validation host, three cold starts measured a median **11.53 MiB idle** and **56.21 MiB with the telemetry window** for the resident plus UI physical footprint; startup peaks were higher. Memory depends on the workload and macOS version; see [versioned performance records](docs/PERFORMANCE.md) and [v1.1.0 validation](docs/telemetry-plus-validation.md) for methods and measurements.
 
 ## Development
 

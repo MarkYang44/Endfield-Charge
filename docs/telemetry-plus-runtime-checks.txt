@@ -1,6 +1,7 @@
 PASS: preference guard, peer updates and independent app/UI callbacks
 PASS: resident-only locking and release
 PASS: 200 ordered pipe messages, fragmented frame and flushed final write before EOF
+PASS: maximum Unicode pipe configuration, coalescing, exact wire boundary, oversized drain/recovery and outbound budget
 PASS: settings window release and preserved reopen state
 PASS: all seven lazy settings pages can open/close
 PASS: restore clears only built-in drafts, disabled ring availability, Chinese Swap and duplicate suffix
@@ -15,4 +16,4 @@ PASS: repeated animation lifecycle
 PASS: actual child process, preview, close acknowledgment, rapid reopen and tab/frame preservation
 PASS: telemetry delivery, preference direction, visibility, acknowledged close and rapid reopen
 PASS: telemetry child exits on parent EOF without fallback
-All 17 native runtime check groups passed
+All 18 native runtime check groups passed

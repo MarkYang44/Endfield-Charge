@@ -83,7 +83,7 @@ Endfield Charge 是一个原生菜单栏应用。插拔充电器时，屏幕顶�
 
 读数与偏好保留在本机，没有主动联网探测、自动遥测上传或长期遥测历史。偏好存储于 `com.markyang.endfieldcharge` 的 UserDefaults 域；不需要辅助功能或录屏权限。
 
-设置与遥测界面使用按需进程，关闭窗口后退出；常驻保留菜单、快捷键和监听服务。本次 M5 同机三轮冷启动测得常驻＋界面 physical footprint 末值中位数为：**空闲 12.00 MiB、遥测窗口打开 55.69 MiB**，启动峰值更高。实际内存取决于场景与 macOS 版本，测量方法及结果见 [分版本性能记录](docs/PERFORMANCE.md) 和 [v1.1.0 验证](docs/telemetry-plus-validation.md)。
+设置与遥测界面使用按需进程，关闭窗口后退出；常驻保留菜单、快捷键和监听服务。本次 M5 同机三轮冷启动测得常驻＋界面 physical footprint 末值中位数为：**空闲 11.53 MiB、遥测窗口打开 56.21 MiB**，启动峰值更高。实际内存取决于场景与 macOS 版本，测量方法及结果见 [分版本性能记录](docs/PERFORMANCE.md) 和 [v1.1.0 验证](docs/telemetry-plus-validation.md)。
 
 ## 开发
 
