@@ -24,10 +24,27 @@ final class ConfigurationBackupStore {
     }
 
     func load() throws -> Preferences {
-        // Check the on-disk size before reading. The second bound also handles an intervening change.
-        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        try ConfigurationTransactionRequest.validatedPreferences(ConfigurationFileIO.readBounded(fileURL))
+    }
+}
+
+/// Shared by native import and backup restore. Bounds allocation even if a file grows after stat.
+enum ConfigurationFileIO {
+    static func readBounded(_ url: URL) throws -> Data {
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
         guard let size = attributes[.size] as? NSNumber,
-              size.uint64Value <= UInt64(SettingsMessage.maximumPayloadBytes) else { throw ConfigurationShareError.fileTooLarge }
-        return try ConfigurationTransactionRequest.validatedPreferences(Data(contentsOf: fileURL))
+              size.uint64Value <= UInt64(SettingsMessage.maximumPayloadBytes) else {
+            throw ConfigurationShareError.fileTooLarge
+        }
+        let file = try FileHandle(forReadingFrom: url)
+        defer { try? file.close() }
+        var bytes = Data()
+        let limit = SettingsMessage.maximumPayloadBytes
+        while bytes.count <= limit {
+            guard let part = try file.read(upToCount: min(16_384, limit + 1 - bytes.count)), !part.isEmpty else { return bytes }
+            bytes.append(part)
+            if bytes.count > limit { throw ConfigurationShareError.fileTooLarge }
+        }
+        throw ConfigurationShareError.fileTooLarge
     }
 }
