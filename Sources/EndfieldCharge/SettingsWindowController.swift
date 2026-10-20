@@ -15,6 +15,10 @@ private final class SettingsBackground: NSView {
 final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSToolbarDelegate, NSTextFieldDelegate {
     let settings: AppSettings
     let onPreview: (Bool?) -> Void
+    var onConfigurationRequest: ((ConfigurationTransactionAction) throws -> Void)?
+    var sharingController: SettingsSharingController?
+    private(set) var configurationPending = false
+    private var closeAfterConfiguration = false
     var onCapsulePreview: ((String) -> Void)?
     private let onClose: (Int, NSRect) -> Void
     private let onScreenChange: (() -> Void)?
@@ -77,8 +81,44 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
 
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        if configurationPending { closeAfterConfiguration = true; return false }
+        return true
+    }
+
+    func setConfigurationPending(_ pending: Bool) {
+        guard configurationPending != pending else { return }
+        configurationPending = pending
+        tabs.isEnabled = !pending
+        if pending {
+            window?.makeFirstResponder(nil)
+            disableEditing()
+        } else {
+            draftText.removeAll()
+            buildPage()
+        }
+        sharingController?.setPending(pending)
+        if !pending && closeAfterConfiguration {
+            closeAfterConfiguration = false
+            window?.performClose(nil)
+        }
+    }
+
+    private func disableEditing() {
+        func disable(_ view: NSView) {
+            (view as? NSControl)?.isEnabled = false
+            view.subviews.forEach(disable)
+        }
+        if let content = window?.contentView { disable(content) }
+    }
+
+    func configurationCompleted(_ result: ConfigurationTransactionResult) {
+        sharingController?.completed(result)
+    }
+
     func windowWillClose(_ notification: Notification) {
         commitEditing()
+        sharingController?.close(); sharingController = nil
         settings.onUIChange = nil
         if let window { onClose(selectedTab, window.frame) }
     }
@@ -152,20 +192,23 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         place(hint, in: footer, x: 24, y: 17, width: 350, height: 18)
         button(t("预览本机电量", "Preview Battery"), in: footer, x: 461, y: 10, width: 135) { c, _ in c.commitEditing(); c.onPreview(nil) }
         refresh()
+        if configurationPending { disableEditing() }
     }
 
     private func refresh() {
+        if let sharingController { self.sharingController = sharingController.refreshed() }
         if renderedChinese != settings.chinese { rebuild(); return }
         for update in bindings { update(self) }
     }
 
     @objc private func selectTab(_ sender: NSSegmentedControl) {
+        guard !configurationPending else { return }
         commitEditing()
         selectedTab = sender.selectedSegment
         buildPage()
     }
 
-    @objc func controlChanged(_ sender: NSControl) { actions[ObjectIdentifier(sender)]?(self, sender) }
+    @objc func controlChanged(_ sender: NSControl) { guard !configurationPending else { return }; actions[ObjectIdentifier(sender)]?(self, sender) }
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [.flexibleSpace, Self.tabsID, .flexibleSpace]

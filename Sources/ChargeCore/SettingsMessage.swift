@@ -12,6 +12,7 @@ public struct SettingsMessage: Codable {
     public var command: Command
     public var preferences: Preferences?
     public var revision: Int?
+    public var baselineDigest: String?
     public var shortcutMessage: String?
     public var tab: Int?
     public var frame: String?
@@ -24,7 +25,8 @@ public struct SettingsMessage: Codable {
     public init(_ command: Command, preferences: Preferences? = nil, revision: Int? = nil,
                 shortcutMessage: String? = nil, tab: Int? = nil, frame: String? = nil, displayID: UInt32? = nil,
                 telemetry: TelemetrySnapshot? = nil, visible: Bool? = nil, profileID: String? = nil,
-                transactionRequest: ConfigurationTransactionRequest? = nil, transactionResult: ConfigurationTransactionResult? = nil) {
+                transactionRequest: ConfigurationTransactionRequest? = nil, transactionResult: ConfigurationTransactionResult? = nil, baselineDigest: String? = nil) {
+        self.baselineDigest = baselineDigest
         self.command = command; self.preferences = preferences; self.revision = revision
         self.shortcutMessage = shortcutMessage; self.tab = tab; self.frame = frame; self.displayID = displayID
         self.telemetry = telemetry

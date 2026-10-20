@@ -7,7 +7,8 @@ check_dir=$(mktemp -d "${TMPDIR:-/tmp}/endfield-runtime-checks.XXXXXX")
 trap 'rm -rf "$check_dir"' EXIT
 swiftc -I "$binary_dir/Modules" \
   Sources/EndfieldCharge/AppSettings.swift Sources/EndfieldCharge/HotKey.swift \
-  Sources/EndfieldCharge/SettingsChannel.swift Sources/EndfieldCharge/ResidentInstance.swift \
+  Sources/EndfieldCharge/ConfigurationBackupStore.swift Sources/EndfieldCharge/ConfigurationTransactionService.swift \
+  Sources/EndfieldCharge/SettingsSharing.swift Sources/EndfieldCharge/SettingsChannel.swift Sources/EndfieldCharge/ResidentInstance.swift \
   Sources/EndfieldCharge/SettingsProcessController.swift Sources/EndfieldCharge/SettingsApplicationDelegate.swift \
   Sources/EndfieldCharge/NetworkReader.swift Sources/EndfieldCharge/StorageReader.swift \
   Sources/EndfieldCharge/CapsulePresentation.swift Sources/EndfieldCharge/TelemetryReader.swift Sources/EndfieldCharge/TelemetryMonitor.swift \
@@ -16,6 +17,6 @@ swiftc -I "$binary_dir/Modules" \
   Sources/EndfieldCharge/HUDView.swift Sources/EndfieldCharge/HUDController.swift Sources/EndfieldCharge/CapsulePlaybackController.swift \
   Sources/EndfieldCharge/SettingsControls.swift Sources/EndfieldCharge/SettingsPages.swift \
   Sources/EndfieldCharge/SettingsCapsules.swift Sources/EndfieldCharge/SettingsRules.swift \
-  Sources/EndfieldCharge/SettingsWindowController.swift Tests/RuntimeChecks/PlaybackChecks.swift Tests/RuntimeChecks/main.swift \
+  Sources/EndfieldCharge/SettingsWindowController.swift Tests/RuntimeChecks/SharingChecks.swift Tests/RuntimeChecks/PlaybackChecks.swift Tests/RuntimeChecks/main.swift \
   "$binary_dir"/ChargeCore.build/*.o -o "$check_dir/check-runtime"
 "$check_dir/check-runtime"

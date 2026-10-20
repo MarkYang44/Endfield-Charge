@@ -11,7 +11,7 @@ extension SettingsWindowController {
     }
 
     func capsulesPage(_ container: NSView) {
-        let page = editorPage(in: container, height: 425)
+        let page = editorPage(in: container, height: 473)
         let profiles = settings.value.capsuleProfiles
         let id = profiles.first(where: { $0.id == settings.value.selectedCapsuleID })?.id ?? CapsuleProfile.batteryID
         guard let profile = profiles.first(where: { $0.id == id }) else { return }
@@ -107,5 +107,6 @@ extension SettingsWindowController {
         _ = caption(metricAvailability(unavailableMetric), in: page, y: 317)
         _ = caption(t("内置 ID 固定；恢复可找回原始电池样式。数值以本机读数为准。", "Built-in IDs stay stable. Restore recovers the original battery style. Values use local readings."), in: page, y: 355)
         editorValidation(in: page, y: 390)
+        button(t("分享与导入…", "Sharing & Import…"), in: page, y: 431, width: 240) { c, _ in c.showSharing() }
     }
 }

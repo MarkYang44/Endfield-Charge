@@ -46,6 +46,28 @@ if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry
         guard let window = app.windows.first(where: { $0.isVisible && (telemetryRole ? $0.contentView is TelemetryView : $0.toolbar != nil) }) else {
             fputs("FAIL: child settings window missing\n", stderr); exit(1)
         }
+        if !telemetryRole && ProcessInfo.processInfo.environment["ENDFIELD_RUNTIME_SHARING"] == "1" {
+            guard let controller = window.windowController as? SettingsWindowController else { exit(1) }
+            if tab == 0 {
+                var imported = Preferences()
+                imported.capsuleProfiles.append(.custom(title: "Actual pipe import"))
+                do { try controller.onConfigurationRequest?(.importShare(ConfigurationShare(preferences: imported), mode: .replace)) }
+                catch { fputs("FAIL: actual child import submit: \(error)\n", stderr); exit(1) }
+                guard controller.configurationPending else { fputs("FAIL: pending UI fence missing\n", stderr); exit(1) }
+                controller.selectedTab = 4
+                // PerformClose is the real user close path and must defer through the import ACK.
+                window.performClose(nil)
+                guard window.isVisible || (!controller.configurationPending && controller.settings.value.capsuleProfiles.contains(where: { $0.title == "Actual pipe import" })) else {
+                    fputs("FAIL: pending import closed before acknowledgment\n", stderr); exit(1)
+                }
+            } else {
+                guard controller.settings.value.capsuleProfiles.contains(where: { $0.title == "Actual pipe import" }) else {
+                    fputs("FAIL: rapid reopen lost imported configuration\n", stderr); exit(1)
+                }
+                window.performClose(nil)
+            }
+            return
+        }
         if telemetryRole {
             guard let view = window.contentView as? TelemetryView,
                   view.header.snapshot.percent == 68, view.header.preferences.scale == 0.75,
@@ -112,6 +134,8 @@ func awaitCondition(_ condition: () -> Bool, _ message: String) {
 func check(_ condition: @autoclosure () -> Bool, _ message: String) {
     guard condition() else { fputs("FAIL: \(message)\n", stderr); exit(1) }
 }
+try runSharingChecks()
+if ProcessInfo.processInfo.environment["ENDFIELD_SHARING_ONLY"] == "1" { exit(0) }
 var appChanges = 0, uiChanges = 0
 settings.onChange = { appChanges += 1 }
 settings.onUIChange = { uiChanges += 1 }
@@ -843,7 +867,8 @@ print("PASS: repeated animation lifecycle")
 let standardPreferences = UserDefaults.standard.data(forKey: "preferences")
 var fixture = maximumUnicodePreferences()
 fixture.scale = 0.85; fixture.duration = 3; fixture.showPercentage = false
-UserDefaults.standard.set(try JSONEncoder().encode(fixture), forKey: "preferences")
+settings.value = fixture
+UserDefaults.standard.set(try JSONEncoder().encode(Preferences()), forKey: "preferences")
 UserDefaults.standard.synchronize()
 var previews = 0
 var profilePreviews: [String] = []
@@ -930,4 +955,4 @@ UserDefaults.standard.set(standardPreferences, forKey: "preferences")
 print("PASS: actual child process, preview, close acknowledgment, rapid reopen and tab/frame preservation")
 print("PASS: telemetry delivery, preference direction, visibility, acknowledged close and rapid reopen")
 print("PASS: telemetry child exits on parent EOF without fallback")
-print("All 19 native runtime check groups passed")
+print("All 23 native runtime check groups passed")

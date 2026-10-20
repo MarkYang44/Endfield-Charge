@@ -14,7 +14,7 @@ final class SettingsProcessController {
     private let onScreen: (UInt32?) -> Void
     private var process: Process?
     private var channel: SettingsChannel?
-    private var revision = 0
+    private let transactions: ConfigurationTransactionService
     private var closing = false
     private var pendingReopen = false
     private var stopping = false
@@ -27,8 +27,10 @@ final class SettingsProcessController {
     var onVisibility: ((Bool) -> Void)?
     var onCapsulePreview: ((String) -> Void)?
 
-    init(settings: AppSettings, role: Role = .settings, onPreview: @escaping (Bool?) -> Void, onScreen: @escaping (UInt32?) -> Void) {
-        self.settings = settings; self.role = role; self.onPreview = onPreview; self.onScreen = onScreen
+    init(settings: AppSettings, role: Role = .settings, onPreview: @escaping (Bool?) -> Void, onScreen: @escaping (UInt32?) -> Void, backupStore: ConfigurationBackupStore = ConfigurationBackupStore()) {
+        self.settings = settings; self.role = role;
+        transactions = ConfigurationTransactionService(settings: settings, backupStore: backupStore)
+        self.onPreview = onPreview; self.onScreen = onScreen
     }
 
     func open() {
@@ -50,7 +52,6 @@ final class SettingsProcessController {
         do {
             try child.run()
             process = child
-            revision = 0
             pipeEnded = false
             processExited = false
             channel = SettingsChannel(input: fromChild.fileHandleForReading, output: toChild.fileHandleForWriting)
@@ -71,9 +72,9 @@ final class SettingsProcessController {
     private func receive(_ message: SettingsMessage) {
         if let display = message.displayID { onScreen(display) }
         switch message.command {
-        case .ready, .changed:
-            if role == .settings { apply(message) }
-            sendState()
+        case .ready, .changed, .configurationRequest:
+            if role == .settings, let response = transactions.receive(message) { channel?.send(response) }
+            else { sendState() }
         case .preview: onPreview(nil)
         case .previewCapsule:
             if let id = message.profileID, settings.value.capsuleProfiles.contains(where: { $0.id == id }) {
@@ -86,7 +87,7 @@ final class SettingsProcessController {
             if role == .telemetry, !closing, let visible = message.visible { setVisibility(visible) }
         case .closed:
             closing = true
-            if role == .settings { apply(message) }
+            if role == .settings, let response = transactions.receive(message) { channel?.send(response) }
             if let selected = message.tab, (0..<role.tabCount).contains(selected) { tab = selected }
             if let saved = message.frame, validFrame(saved) { frame = saved }
             onScreen(nil)
@@ -96,12 +97,6 @@ final class SettingsProcessController {
         }
     }
 
-    private func apply(_ message: SettingsMessage) {
-        guard let incoming = message.revision, incoming >= revision, let value = message.preferences else { return }
-        revision = incoming
-        settings.applyFromPeer(value)
-    }
-
     private func sendState(_ command: SettingsMessage.Command = .state) {
         if role == .telemetry {
             channel?.send(SettingsMessage(command == .state ? .telemetry : command,
@@ -109,7 +104,7 @@ final class SettingsProcessController {
             return
         }
         // Feedback never overwrites the UI's newer preference model.
-        channel?.send(SettingsMessage(command, revision: revision, shortcutMessage: settings.shortcutMessage))
+        channel?.send(SettingsMessage(command, revision: transactions.revision, shortcutMessage: settings.shortcutMessage))
     }
 
     func sendTelemetry(_ snapshot: TelemetrySnapshot) {

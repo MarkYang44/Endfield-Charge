@@ -6,7 +6,7 @@ final class AppSettings {
     var value: Preferences {
         didSet {
             guard value != oldValue else { return }
-            if !readingPeer { save() }; onChange?(); onUIChange?()
+            if !readingPeer && persistsChanges { save() }; onChange?(); onUIChange?()
         }
     }
     private(set) var loginEnabled = false
@@ -17,8 +17,10 @@ final class AppSettings {
     var onUIChange: (() -> Void)?
     private var readingPeer = false
     private let defaults: UserDefaults
+    private let persistsChanges: Bool
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, persistsChanges: Bool = true) {
+        self.persistsChanges = persistsChanges
         self.defaults = defaults
         if let data = defaults.data(forKey: "preferences"),
            let decoded = try? JSONDecoder().decode(Preferences.self, from: data) {
