@@ -37,15 +37,24 @@ public struct CapsuleProfile: Codable, Equatable, Identifiable {
     public var secondaryMetric: TelemetryMetric?
     public var ringMetric: TelemetryMetric?
     public var referenceMaximum: Double
+    public var colorConditions: [CapsuleColorCondition]
     /// Preserve the original battery renderer only for the unchanged built-in configuration.
     public var isDefaultBattery: Bool { self == Self.defaults[0] }
+    /// Palette changes retain the original battery geometry and animation.
+    public var isBatteryLayout: Bool {
+        var uncolored = self; uncolored.colorConditions = []
+        return uncolored.isDefaultBattery
+    }
+    public func resolvedAccent(in snapshot: TelemetrySnapshot) -> CapsuleAccent {
+        colorConditions.prefix(4).first { $0.matches(in: snapshot) }?.accent ?? .theme
+    }
 
     public init(id: String, title: String, primaryMetric: TelemetryMetric,
                 secondaryMetric: TelemetryMetric? = nil, ringMetric: TelemetryMetric? = nil,
-                referenceMaximum: Double = 100) {
+                referenceMaximum: Double = 100, colorConditions: [CapsuleColorCondition] = []) {
         self.id = id; self.title = title; self.primaryMetric = primaryMetric
         self.secondaryMetric = secondaryMetric; self.ringMetric = ringMetric
-        self.referenceMaximum = referenceMaximum
+        self.referenceMaximum = referenceMaximum; self.colorConditions = colorConditions
         normalize()
     }
     /// UUIDs are generated only in response to explicit creation, never during migration/defaults.
@@ -56,6 +65,7 @@ public struct CapsuleProfile: Codable, Equatable, Identifiable {
         id = ConfigurationTextLimit.identifier.bounded(id)
         title = ConfigurationTextLimit.name.bounded(title)
         if title.isEmpty { title = "CUSTOM" }
+        colorConditions = Array(colorConditions.prefix(4).filter { $0.threshold.isFinite })
         if !referenceMaximum.isFinite || referenceMaximum <= 0 { referenceMaximum = 100 }
     }
     public static var defaults: [Self] {
@@ -65,13 +75,25 @@ public struct CapsuleProfile: Codable, Equatable, Identifiable {
          Self(id: networkID, title: "NETWORK", primaryMetric: .networkDownloadBytesPerSecond, secondaryMetric: .networkUploadBytesPerSecond),
          Self(id: storageID, title: "STORAGE", primaryMetric: .storageAvailableBytes, secondaryMetric: .storageUsedPercent, ringMetric: .storageUsedPercent)]
     }
-    private enum CodingKeys: String, CodingKey { case id, title, primaryMetric, secondaryMetric, ringMetric, referenceMaximum }
+    private enum CodingKeys: String, CodingKey { case id, title, primaryMetric, secondaryMetric, ringMetric, referenceMaximum, colorConditions }
     public init(from decoder: Decoder) throws {
         let v = try decoder.container(keyedBy: CodingKeys.self)
         self.init(id: try v.decodeIfPresent(String.self, forKey: .id) ?? "", title: try v.decodeIfPresent(String.self, forKey: .title) ?? "CUSTOM",
             primaryMetric: try v.decode(TelemetryMetric.self, forKey: .primaryMetric),
             secondaryMetric: try v.decodeIfPresent(TelemetryMetric.self, forKey: .secondaryMetric),
             ringMetric: try v.decodeIfPresent(TelemetryMetric.self, forKey: .ringMetric),
-            referenceMaximum: try v.decodeIfPresent(Double.self, forKey: .referenceMaximum) ?? 100)
+            referenceMaximum: try v.decodeIfPresent(Double.self, forKey: .referenceMaximum) ?? 100,
+            colorConditions: (try? v.decodeIfPresent(BoundedColorConditions.self, forKey: .colorConditions))?.items ?? [])
+    }
+}
+
+private struct BoundedColorConditions: Decodable {
+    var items: [CapsuleColorCondition] = []
+    init(from decoder: Decoder) throws {
+        var values = try decoder.unkeyedContainer()
+        for _ in 0..<4 where !values.isAtEnd {
+            let entry = try values.superDecoder()
+            if let value = try? CapsuleColorCondition(from: entry) { items.append(value) }
+        }
     }
 }

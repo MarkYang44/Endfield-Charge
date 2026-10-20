@@ -37,6 +37,7 @@ public struct Preferences: Codable, Equatable {
     public var capsuleProfiles = CapsuleProfile.defaults
     public var selectedCapsuleID = CapsuleProfile.batteryID
     public var telemetryAlertRules: [TelemetryAlertRule] = []
+    public var playback = CapsulePlayback()
 
     public init() {}
 
@@ -51,6 +52,7 @@ public struct Preferences: Codable, Equatable {
             capsuleProfiles.insert(CapsuleProfile.defaults[0], at: 0)
         }
         if !capsuleProfiles.contains(where: { $0.id == selectedCapsuleID }) { selectedCapsuleID = CapsuleProfile.batteryID }
+        playback.normalize(profiles: capsuleProfiles)
         seen.removeAll(keepingCapacity: true)
         telemetryAlertRules = telemetryAlertRules.prefix(16).compactMap { source in
             var rule = source; rule.normalize()
@@ -63,7 +65,7 @@ public struct Preferences: Codable, Equatable {
         case shortcutKey, shortcutModifiers, lowBatteryAlert, fullBatteryAlert, lowPowerAlert
         case lowThreshold, ripplesEnabled
         case powerTelemetryEnabled, computeTelemetryEnabled, thermalTelemetryEnabled, thermalAlert
-        case networkTelemetryEnabled, storageTelemetryEnabled, capsuleProfiles, selectedCapsuleID, telemetryAlertRules
+        case networkTelemetryEnabled, storageTelemetryEnabled, capsuleProfiles, selectedCapsuleID, telemetryAlertRules, playback
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -93,6 +95,7 @@ public struct Preferences: Codable, Equatable {
         try values.encode(value.capsuleProfiles, forKey: .capsuleProfiles)
         try values.encode(value.selectedCapsuleID, forKey: .selectedCapsuleID)
         try values.encode(value.telemetryAlertRules, forKey: .telemetryAlertRules)
+        try values.encode(value.playback, forKey: .playback)
     }
 
     public init(from decoder: Decoder) throws {
@@ -121,6 +124,7 @@ public struct Preferences: Codable, Equatable {
         capsuleProfiles = (try? values.decodeIfPresent(BoundedProfiles.self, forKey: .capsuleProfiles))?.items ?? capsuleProfiles
         selectedCapsuleID = (try? values.decodeIfPresent(String.self, forKey: .selectedCapsuleID)) ?? selectedCapsuleID
         telemetryAlertRules = (try? values.decodeIfPresent(BoundedRules.self, forKey: .telemetryAlertRules))?.items ?? telemetryAlertRules
+        playback = (try? values.decodeIfPresent(CapsulePlayback.self, forKey: .playback)) ?? playback
         normalizeTelemetryConfiguration()
     }
 }
