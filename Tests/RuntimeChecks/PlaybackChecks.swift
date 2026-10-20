@@ -173,5 +173,135 @@ func runPlaybackChecks() {
     monitor.resetAfterWake()
     check(builtin == [.serious] && rules.count == 3, "Wake resets both builtin and custom baseline without stale alerts")
     monitor.stop()
+    runPlaybackReviewChecks()
     print("PASS: playback coordinator, static hold, priority, live battery/palette, reduced motion, sleep and typed state alerts")
+}
+
+func runPlaybackReviewChecks() {
+    var failures: [String] = []
+    func check(_ condition: @autoclosure () -> Bool, _ message: String) {
+        if !condition() { failures.append(message); print("FAIL: \(message)") }
+    }
+    func spin(_ seconds: Double) { RunLoop.main.run(until: Date().addingTimeInterval(seconds)) }
+    func visibleView() -> HUDView? { NSApplication.shared.windows.first { $0.isVisible && $0.contentView is HUDView }?.contentView as? HUDView }
+    func png(_ view: HUDView) -> Data {
+        let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds)!
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        return bitmap.representation(using: .png, properties: [:])!
+    }
+    let domain = "endfield-playback-review.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: domain)!
+    defer { defaults.removePersistentDomain(forName: domain) }
+    let settings = AppSettings(defaults: defaults)
+    let battery = BatterySnapshot(percent: 67)
+    var sample = TelemetrySnapshot(sampledAt: 1, battery: battery, power: nil,
+        compute: ComputeTelemetry(cpuFraction: 0.8, memoryUsedBytes: 1, memoryTotalBytes: 2,
+            compressedBytes: nil, swapUsedBytes: nil, pressure: .warning), thermal: .serious,
+        network: NetworkTelemetry(downloadBytesPerSecond: 100, uploadBytesPerSecond: 0,
+            receivedBytes: 0, sentBytes: 0, interfaces: ["en0"]))
+    let network = TelemetryAlertRule(id: "network-disabled", enabled: true, metric: .networkDownloadBytesPerSecond)
+    let cpu = TelemetryAlertRule(id: "cpu-independent", enabled: true)
+    let batteryRule = TelemetryAlertRule(id: "battery-independent", enabled: true, metric: .batteryPercent)
+    let thermal = TelemetryAlertRule(id: "thermal-disabled", enabled: true, condition: .stateChange, source: .thermal)
+    func reset() {
+        settings.value = Preferences(); settings.value.duration = 3
+        settings.value.telemetryAlertRules = [network, cpu, batteryRule, thermal]
+    }
+    reset()
+    let hud = HUDController(settings: settings, reduceMotion: { true })
+    let playback = CapsulePlaybackController(settings: settings, hud: hud)
+    playback.preferencesChanged(); playback.updateTelemetry(sample)
+    playback.showPower(battery); playback.showRule(network, snapshot: sample); playback.showRule(cpu, snapshot: sample)
+    settings.value.networkTelemetryEnabled = false; playback.preferencesChanged()
+    check(visibleView()?.kind == .power && visibleView()?.capsule == nil, "Disabling queued source preserves real power")
+    spin(3.15)
+    check(visibleView()?.capsule?.profile.id == "rule.cpu-independent", "Disabled queued network rule is removed while unrelated CPU alert survives")
+    playback.stop()
+
+    reset()
+    let activeHUD = HUDController(settings: settings, reduceMotion: { true })
+    let active = CapsulePlaybackController(settings: settings, hud: activeHUD)
+    active.preferencesChanged(); active.updateTelemetry(sample); active.showRule(network, snapshot: sample)
+    settings.value.networkTelemetryEnabled = false; active.preferencesChanged()
+    check(visibleView() == nil, "Active rule is canceled when its source module is disabled")
+    settings.value.thermalTelemetryEnabled = true; active.preferencesChanged(); active.showRule(thermal, snapshot: sample)
+    settings.value.thermalTelemetryEnabled = false; active.preferencesChanged()
+    check(visibleView() == nil, "Active typed thermal state rule is canceled with thermal module")
+    active.stop()
+
+    reset()
+    let atomicHUD = HUDController(settings: settings, reduceMotion: { true })
+    let atomic = CapsulePlaybackController(settings: settings, hud: atomicHUD)
+    atomic.preferencesChanged(); atomic.updateTelemetry(sample)
+    atomic.showRule(cpu, snapshot: sample); atomic.showRule(network, snapshot: sample); atomic.showRule(batteryRule, snapshot: sample)
+    var changedDemands: [Set<TelemetryMetric>] = []
+    atomic.onCapsuleDemand = { changedDemands.append($0) }
+    settings.value.telemetryAlertRules.removeAll { $0.id == cpu.id }; settings.value.networkTelemetryEnabled = false
+    atomic.preferencesChanged()
+    check(visibleView()?.capsule?.profile.id == "rule.battery-independent", "Combined rule deletion and module disable keeps unrelated queued alert")
+    check(!changedDemands.contains { $0.contains(.networkDownloadBytesPerSecond) }, "Configuration invalidation never transiently presents stale-source queue entries")
+    atomic.stop()
+
+    let cases: [(HUDKind, (inout Preferences) -> Void)] = [
+        (.lowBattery, { $0.lowBatteryAlert = false }), (.fullyCharged, { $0.fullBatteryAlert = false }),
+        (.lowPowerEnabled, { $0.lowPowerAlert = false }), (.lowPowerDisabled, { $0.lowPowerAlert = false }),
+        (.thermalWarning, { $0.thermalAlert = false }), (.thermalCritical, { $0.thermalTelemetryEnabled = false })
+    ]
+    for (kind, disable) in cases {
+        reset()
+        let caseHUD = HUDController(settings: settings, reduceMotion: { true })
+        let controller = CapsulePlaybackController(settings: settings, hud: caseHUD)
+        controller.preferencesChanged(); controller.showPower(battery); controller.showAlert(battery, kind: kind)
+        controller.previewBattery(BatterySnapshot(percent: 31)); disable(&settings.value); controller.preferencesChanged()
+        check(visibleView()?.kind == .power && visibleView()?.snapshot.percent == 67, "Alert disable preserves actual power for \(kind)")
+        spin(3.15)
+        check(visibleView()?.kind == .power && visibleView()?.snapshot.percent == 31, "Disabled builtin \(kind) is discarded and manual demo survives")
+        controller.stop()
+    }
+    reset()
+    let currentHUD = HUDController(settings: settings, reduceMotion: { true })
+    let current = CapsulePlaybackController(settings: settings, hud: currentHUD)
+    current.preferencesChanged(); current.showAlert(battery, kind: .lowPowerEnabled)
+    settings.value.lowPowerAlert = false; current.preferencesChanged()
+    check(visibleView() == nil, "Already active builtin alert cancels with its switch")
+    current.stop()
+
+    // Compare the ACTUAL controller-produced output against the original reduced-motion alert path.
+    reset()
+    let renderHUD = HUDController(settings: settings, reduceMotion: { true })
+    var completions = 0
+    for kind in [HUDKind.thermalCritical, .lowPowerEnabled] {
+        renderHUD.render(battery: battery, kind: kind) { completions += 1 }
+        let actual = visibleView()!
+        check(actual.frameOverride?.titleOpacity == 1 && actual.frameOverride?.numbersOpacity == 0,
+            "Reduced-motion \(kind) frame retains identifying title and omits ordinary battery numbers")
+        let actualPNG = png(actual)
+        let savedFrame = actual.frameOverride, savedElapsed = actual.elapsed
+        // Use the same attached view/backing color space for the pre-override reduced-motion reference.
+        actual.frameOverride = nil; actual.elapsed = 0.15
+        let referencePNG = png(actual)
+        actual.frameOverride = savedFrame; actual.elapsed = savedElapsed
+        check(actualPNG == referencePNG, "Native reduced-motion \(kind) pixels match identifying-title reference")
+        if kind == .lowPowerEnabled {
+            spin(0.2)
+            check(visibleView() != nil && completions == 0, "Reduced-motion builtin keeps full configured dwell")
+            spin(3.0)
+            check(visibleView() == nil && completions == 1, "Reduced-motion builtin completes at full dwell")
+        } else { renderHUD.dismiss() }
+    }
+    renderHUD.dismiss()
+
+    let severityCases: [(ThermalLevel, CapsuleAccent)] = [(.nominal, .theme), (.fair, .amber), (.serious, .red), (.critical, .red)]
+    for (level, accent) in severityCases {
+        sample.thermal = level
+        check(CapsulePresentation(rule: thermal, snapshot: sample, chinese: false).accent == accent,
+            "Typed thermal \(level) uses severity \(accent)")
+    }
+    let memory = TelemetryAlertRule(id: "memory-severity", enabled: true, condition: .stateChange, source: .memoryPressure)
+    for (pressure, accent) in [(MemoryPressureLevel.normal, CapsuleAccent.theme), (.warning, .amber), (.critical, .red)] {
+        sample.compute?.pressure = pressure
+        check(CapsulePresentation(rule: memory, snapshot: sample, chinese: false).accent == accent,
+            "Typed memory \(pressure) retains severity \(accent)")
+    }
+    if !failures.isEmpty { fatalError("Playback review regressions failed: \(failures.count)\n" + failures.joined(separator: "\n")) }
 }

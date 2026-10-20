@@ -43,13 +43,13 @@ public struct CapsulePlaybackScheduler {
     }
     public init(clock: @escaping () -> Double) { self.clock = clock }
 
-    public mutating func configure(_ value: Preferences) -> [Action] {
+    public mutating func configure(_ value: Preferences, canceling requestIDs: Set<String> = []) -> [Action] {
         let old = preferences
         preferences = value
         preferences.playback.normalize(profiles: preferences.capsuleProfiles)
         let changed = old.playback != preferences.playback || old.selectedCapsuleID != value.selectedCapsuleID
             || old.capsuleProfiles != value.capsuleProfiles || old.duration != value.duration
-        var actions: [Action] = []
+        var actions = removeRequests(requestIDs)
         if changed {
             cycleProfileIDs = preferences.playback.effectiveProfileIDs(selectedID: preferences.selectedCapsuleID,
                 profiles: preferences.capsuleProfiles)
@@ -135,11 +135,14 @@ public struct CapsulePlaybackScheduler {
         return restore(at: now)
     }
     public mutating func cancel(requestIDs: Set<String>) -> [Action] {
+        let actions = removeRequests(requestIDs)
+        return actions + restore(at: clock())
+    }
+    private mutating func removeRequests(_ requestIDs: Set<String>) -> [Action] {
         pendingAlerts.removeAll { requestIDs.contains($0.request.id) }
         if let p = pendingPreview, requestIDs.contains(p.request.id) { pendingPreview = nil }
-        var actions: [Action] = []
-        if let current, requestIDs.contains(current.request.id) { actions += clearCurrent() }
-        return actions + restore(at: clock())
+        if let current, requestIDs.contains(current.request.id) { return clearCurrent() }
+        return []
     }
     public mutating func setHidden(_ hidden: Bool) -> [Action] {
         guard isHidden != hidden else { return [] }

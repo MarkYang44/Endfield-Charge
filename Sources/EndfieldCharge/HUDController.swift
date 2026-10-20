@@ -225,7 +225,12 @@ final class HUDController {
         }
         // Reduced motion switches directly to compact content and keeps the complete configured dwell.
         if view.reduceMotion {
-            view.frameOverride = HUDFrame.at(seconds: 2.52, duration: 10)
+            var frame = HUDFrame.at(seconds: 2.52, duration: 10)
+            if view.kind != .power && view.capsule == nil {
+                frame = HUDFrame.at(seconds: 0.15, duration: 10, reduceMotion: true)
+                frame.numbersOpacity = 0
+            }
+            view.frameOverride = frame
             view.compactHold = true
         }
         view.needsDisplay = true

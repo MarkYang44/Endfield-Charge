@@ -91,6 +91,22 @@ struct CapsulePlaybackTests {
         #expect(s.retainedRequestIDs.count == 6)
         _ = finish(&s); #expect(s.current?.request.id == "a1")
     }
+    @Test func configurationCancellationRemovesInvalidRequestsBeforeRestoringQueue() {
+        var s = CapsulePlaybackScheduler(clock: { 0 })
+        var p = preferences()
+        _ = s.configure(p)
+        _ = s.submit(.init(id: "active-invalid", priority: .alert))
+        _ = s.submit(.init(id: "queued-invalid", priority: .alert))
+        _ = s.submit(.init(id: "queued-valid", priority: .alert))
+        p.duration = 7
+        let actions = s.configure(p, canceling: ["active-invalid", "queued-invalid"])
+        let shown = actions.compactMap { action -> String? in
+            if case .show(let presentation) = action { return presentation.request.id }
+            return nil
+        }
+        #expect(shown == ["queued-valid"])
+        #expect(s.current?.request.id == "queued-valid" && s.pendingAlertCount == 0)
+    }
     @Test func oldAlertsAndWaitingPreviewExpire() {
         let clock = Clock(); var s = CapsulePlaybackScheduler(clock: { clock.now })
         _ = s.submit(.init(id: "power", priority: .power))

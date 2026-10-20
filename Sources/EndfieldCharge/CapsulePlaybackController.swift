@@ -32,15 +32,9 @@ final class CapsulePlaybackController {
     }
     func preferencesChanged() {
         enqueue { [self] in
-            let invalid = Set(payloads.compactMap { id, content -> String? in
-                switch content {
-                case .profile(let profile): return settings.value.capsuleProfiles.contains(profile) ? nil : id
-                case .rule(let rule, _): return rule.enabled && settings.value.telemetryAlertRules.contains(rule) ? nil : id
-                case .battery: return nil
-                }
-            })
-            apply(scheduler.configure(settings.value))
-            apply(scheduler.cancel(requestIDs: invalid))
+            let invalid = Set(payloads.compactMap { valid($0.value) ? nil : $0.key })
+            // Invalidate payloads in the same transition as configuration, before any queued show action.
+            apply(scheduler.configure(settings.value, canceling: invalid))
             hud.refreshPresentation()
         }
     }
@@ -86,9 +80,39 @@ final class CapsulePlaybackController {
         _ = scheduler.suspend(); payloads.removeAll(); latestSnapshot = nil
         hud.dismiss()
     }
+    private func valid(_ content: Content) -> Bool {
+        let preferences = settings.value
+        switch content {
+        case .profile(let profile): return preferences.capsuleProfiles.contains(profile)
+        case .rule(let rule, _):
+            guard rule.enabled, preferences.telemetryAlertRules.contains(rule) else { return false }
+            if rule.condition == .stateChange {
+                switch rule.source {
+                case .thermal: return preferences.thermalTelemetryEnabled
+                case .memoryPressure: return preferences.computeTelemetryEnabled
+                case nil: return false
+                }
+            }
+            switch rule.metric {
+            case .batteryEnergyWh, .batteryPercent: return true
+            case .cpuPercent, .memoryUsedBytes, .memoryPercent: return preferences.computeTelemetryEnabled
+            case .networkDownloadBytesPerSecond, .networkUploadBytesPerSecond: return preferences.networkTelemetryEnabled
+            case .storageAvailableBytes, .storageUsedPercent: return preferences.storageTelemetryEnabled
+            }
+        case .battery(_, let kind):
+            switch kind {
+            case .power: return true // Real power and explicit demos are independent of optional alert switches.
+            case .lowBattery: return preferences.lowBatteryAlert
+            case .fullyCharged: return preferences.fullBatteryAlert
+            case .lowPowerEnabled, .lowPowerDisabled: return preferences.lowPowerAlert
+            case .thermalWarning, .thermalCritical: return preferences.thermalAlert && preferences.thermalTelemetryEnabled
+            }
+        }
+    }
     private func submit(_ content: Content, priority: CapsulePlaybackScheduler.Priority,
                         profileID: String? = nil, ruleID: String? = nil) {
         enqueue { [self] in
+            guard valid(content) else { return }
             let id = UUID().uuidString
             payloads[id] = content
             apply(scheduler.submit(.init(id: id, priority: priority, profileID: profileID, ruleID: ruleID)))

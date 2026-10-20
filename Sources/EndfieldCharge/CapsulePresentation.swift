@@ -88,8 +88,8 @@ struct CapsulePresentation: Equatable {
         stateSourceLabel = rule.source == .thermal ? (chinese ? "系统热状态" : "Thermal state")
             : (chinese ? "内存压力" : "Memory pressure")
         switch state {
-        case .thermal(.critical), .memoryPressure(.critical): accent = .red
-        case .thermal(.fair), .thermal(.serious), .memoryPressure(.warning): accent = .amber
+        case .thermal(.serious), .thermal(.critical), .memoryPressure(.critical): accent = .red
+        case .thermal(.fair), .memoryPressure(.warning): accent = .amber
         default: accent = .theme
         }
     }
