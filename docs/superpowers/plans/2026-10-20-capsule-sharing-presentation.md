@@ -51,19 +51,29 @@
 - [ ] Persisted battery compact hold updates from actual new BatterySnapshot; palette calculation adds dependencies and disabled modules remain unavailable. Status rule alert text/severity and thermal built-in dedup wired to same delivery queue.
 - [ ] Static hold has no 60Hz timer. Reduce Motion immediately switches compact states but keeps dwell. Wake waits fresh snapshot before restoring. Run full core/build and focused native tests after adding compiled sources to check-runtime list; commit.
 
-## Task 4: Native sharing, condition/state editors and playback controls
+## Task 4: Native sharing UI and authoritative import transactions
 
-**Files:** create `SettingsSharing.swift`, `SettingsAppearance.swift`, `SettingsPlayback.swift` in Sources/EndfieldCharge; modify `SettingsCapsules.swift`, `SettingsRules.swift`, `SettingsPages.swift`, `SettingsControls.swift`, `SettingsWindowController.swift`, `SettingsApplicationDelegate.swift`, `SettingsProcessController.swift`, `AppSettings.swift`; modify runtime-check source list.
+**Files:** create `Sources/EndfieldCharge/SettingsSharing.swift` and `ConfigurationTransactionService.swift`; modify `SettingsCapsules.swift` (sharing entry only), `SettingsWindowController.swift`, `SettingsApplicationDelegate.swift`, `SettingsProcessController.swift`, `AppSettings.swift`, `scripts/check-runtime.sh`, `Tests/RuntimeChecks/main.swift`.
 
 **Interfaces:** reuse task1/2 models; native NSOpenPanel/NSSavePanel, dedicated import preview with merge/replace and clear localized warning/confirmation. Helper sends validated correlated import/restore with current revision; resident revalidates, writes backup, persists once, acknowledges authoritative preferences/revision. Reject stale requests, disable controls while pending; newer edits cannot be overwritten by late result. Normal helper writes must respect resident revision transaction. Close/import/reopen cannot replay stale helper preferences.
 
-- [ ] Runtime checks first for settings editor callbacks, status rule target/hold/cooldown, playback queue order/delete/interval normalization; use injected backup directory and private pipe requests for import/restore/cancel/failure/stale/close races.
-- [ ] Add palette condition editor maximum4, numeric localized units, explicit add/remove/move and current match preview; invalid text kept as drafts as existing editors do, not silently clamped by UI.
-- [ ] Add playback queue editor and off-by-default persistent toggle; ephemeral menu hide/resume independent from saved mode; keep seven tabs readable via scrolling/subwindows, no hidden retained view trees.
+- [ ] Runtime checks first for sharing callbacks and actual resident transaction handling; use injected backup directory and private pipe requests for import/restore/cancel/failure/stale/close races.
 - [ ] Add native sharing UI with import summaries, failure messages and restore confirmation; file read prechecks128KiB and keeps all mutations in resident. All labels/errors in English/Chinese.
 - [ ] Run core + runtime checks, export every affected settings page in en/zh and inspect screenshot for overflow, commit.
 
-## Task 5: Full review, regression, measurements and delivery
+## Task 5: Native appearance/state/playback editors
+
+**Files:** create `Sources/EndfieldCharge/SettingsAppearance.swift` and `SettingsPlayback.swift`; modify `SettingsCapsules.swift`, `SettingsRules.swift`, `SettingsPages.swift`, `SettingsControls.swift`, `SettingsWindowController.swift`, `scripts/check-runtime.sh`, `Tests/RuntimeChecks/main.swift`.
+
+**Interfaces:** consume task1 typed palette/state/playback models and task3 native presentation. Preserve Task4 sharing entry/callbacks and pending-transaction edit fence. Add scrollable controls within existing seven tabs, no permanent hidden views or extra UI processes.
+
+- [ ] Add native failing checks for actual bound controls: add/remove/order maximum4 color conditions, threshold human units/invalid and marked IME drafts; state source/target switching/hold/cooldown; playback ordered unique queue/add/remove/move/interval and persistent toggle.
+- [ ] Build single-condition editor with selector/order controls, metric/strict comparison/threshold/theme palette, localized match explanation and actual preview. Invalid drafts remain attached to logical condition through reorder, or prevent reorder until corrected with explicit message.
+- [ ] Build state-change rule controls alongside preserved numeric rule editor; only thermal/memoryPressure known targets plus AnyChange, clear incompatible target on source switch, explain baseline/cooldown/background30s.
+- [ ] Build playback queue editor and interval10–600, rotation defaultoff. Add persistent defaultoff to Display page; preserve menu hide/resume and actual finite selected-first shortcut semantics. Keep controls readable, not clipped, via scrolling.
+- [ ] Core+runtime checks, actual en/zh settings exports visual QA (including scrolled sections), diff-check then commit. Keep artifacts/report in task5 paths.
+
+## Task 6: Full review, regression, measurements and delivery
 
 **Files:** `Tests/RuntimeChecks/main.swift`, `scripts/check-runtime.sh`, `scripts/build-app.sh`, `README.md`, `README.zh-CN.md`, `docs/DEVELOPMENT*.md`, `docs/PERFORMANCE.md`, `THIRD_PARTY_NOTICES.md`, new versioned validation docs.
 
@@ -77,4 +87,4 @@
 ## Progress
 
 - Baseline/spec: approved. Worktree created at c35777f; baseline test in progress.
-- Tasks 1–5: pending. Detailed per-task reports and reviews live in `/private/tmp/endfield-capsule-sharing/`.
+- Tasks 1–6: see durable ledger. Detailed per-task reports and reviews live in `/private/tmp/endfield-capsule-sharing/`.
