@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let monitor = PowerMonitor()
     private let hotkey = HotKey()
     private var hud: HUDController!
+    private var playback: CapsulePlaybackController!
     private var menu: StatusMenuController!
     private var settingsProcess: SettingsProcessController!
     private var telemetryProcess: SettingsProcessController!
@@ -30,8 +31,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSApplication.shared.setActivationPolicy(.accessory)
         hud = HUDController(settings: settings)
+        playback = CapsulePlaybackController(settings: settings, hud: hud)
         settingsProcess = SettingsProcessController(settings: settings, onPreview: { [weak self] charging in
-            if let charging { self?.hud.show(demoSnapshot(charging: charging)) }
+            if let charging { self?.playback.previewBattery(demoSnapshot(charging: charging)) }
             else { self?.preview() }
         }, onScreen: { [weak self] display in
             self?.hud.contextDisplayID = display
@@ -48,16 +50,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         })
         telemetryMonitor.onSnapshot = { [weak self] snapshot in
             self?.telemetryProcess.sendTelemetry(snapshot)
-            self?.hud.updateTelemetry(snapshot)
+            self?.playback.updateTelemetry(snapshot)
         }
-        telemetryMonitor.onRuleAlert = { [weak self] rule, snapshot in self?.hud.showRule(rule, snapshot: snapshot) }
-        telemetryMonitor.onWake = { [weak self] in self?.hud.dismiss() }
-        hud.onCapsuleDemand = { [weak self] in self?.telemetryMonitor.setCapsuleMetrics($0) }
+        telemetryMonitor.onRuleAlert = { [weak self] rule, snapshot in self?.playback.showRule(rule, snapshot: snapshot) }
+        telemetryMonitor.onSleep = { [weak self] in
+            self?.reducer = PowerEventReducer()
+            self?.playback.suspend()
+        }
+        telemetryMonitor.onWake = { [weak self] in
+            guard let self else { return }
+            self.playback.wake()
+            self.reducer = PowerEventReducer()
+            // Refresh the battery before the shared sampler captures its first wake request.
+            self.receive(BatteryReader.read())
+        }
+        playback.onCapsuleDemand = { [weak self] in self?.telemetryMonitor.setCapsuleMetrics($0) }
         settingsProcess.onCapsulePreview = { [weak self] in self?.previewCapsule(id: $0) }
         telemetryProcess.onCapsulePreview = { [weak self] in self?.previewCapsule(id: $0) }
         telemetryMonitor.onThermalAlert = { [weak self] level in
             guard let self else { return }
-            self.hud.show(self.snapshot, kind: level == .critical ? .thermalCritical : .thermalWarning, queued: true)
+            self.playback.showAlert(self.snapshot, kind: level == .critical ? .thermalCritical : .thermalWarning)
         }
         telemetryProcess.onVisibility = { [weak self] in self?.telemetryMonitor.setPanelVisible($0) }
         menu = StatusMenuController(settings: settings, target: self, entries: [
@@ -73,6 +85,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ("", "", nil, ""),
             ("退出 Endfield Charge", "Quit Endfield Charge", #selector(quit), "q")
         ])
+        menu.onPlaybackVisibility = { [weak self] in
+            guard let self else { return }
+            self.playback.setHidden(!self.playback.isHidden)
+        }
+        playback.onHiddenChanged = { [weak self] in self?.menu.setPlaybackHidden($0) }
         menu.onRefresh = { [weak self] in self?.monitor.scheduleRefresh() }
         menu.onProfileSelected = { [weak self] in self?.previewCapsule(id: $0) }
         hotkey.onPress = { [weak self] in self?.previewSelectedCapsule() }
@@ -105,15 +122,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func receive(_ value: BatterySnapshot) {
         snapshot = value
+        playback.updateBattery(value)
         menu.update(snapshot)
         telemetryProcess.updateBattery(value)
         for event in reducer.consume(value, lowThreshold: settings.value.lowThreshold) {
             switch event {
-            case .connected, .disconnected: hud.show(value)
-            case .lowBattery where settings.value.lowBatteryAlert: hud.show(value, kind: .lowBattery, queued: true)
-            case .fullyCharged where settings.value.fullBatteryAlert: hud.show(value, kind: .fullyCharged, queued: true)
-            case .lowPowerEnabled where settings.value.lowPowerAlert: hud.show(value, kind: .lowPowerEnabled, queued: true)
-            case .lowPowerDisabled where settings.value.lowPowerAlert: hud.show(value, kind: .lowPowerDisabled, queued: true)
+            case .connected, .disconnected: playback.showPower(value)
+            case .lowBattery where settings.value.lowBatteryAlert: playback.showAlert(value, kind: .lowBattery)
+            case .fullyCharged where settings.value.fullBatteryAlert: playback.showAlert(value, kind: .fullyCharged)
+            case .lowPowerEnabled where settings.value.lowPowerAlert: playback.showAlert(value, kind: .lowPowerEnabled)
+            case .lowPowerDisabled where settings.value.lowPowerAlert: playback.showAlert(value, kind: .lowPowerDisabled)
             default: break
             }
         }
@@ -134,23 +152,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menu.update(snapshot)
         hud.position()
-        hud.preferencesChanged()
         telemetryMonitor.preferencesChanged()
+        playback.preferencesChanged()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         preview(); return false
     }
 
-    @objc private func previewSelectedCapsule() { previewCapsule(id: settings.value.selectedCapsuleID) }
-    private func previewCapsule(id: String) {
-        guard let profile = settings.value.capsuleProfiles.first(where: { $0.id == id }) else { return }
-        if profile.isDefaultBattery { preview(); return }
-        hud.showProfile(profile, snapshot: telemetryMonitor.latestSnapshot)
-    }
-    @objc private func preview() { hud.show(BatteryReader.read()) }
-    @objc private func chargingDemo() { hud.show(demoSnapshot(charging: true)) }
-    @objc private func batteryDemo() { hud.show(demoSnapshot(charging: false)) }
+    @objc private func previewSelectedCapsule() { playback.previewSelected() }
+    private func previewCapsule(id: String) { playback.previewProfile(id: id) }
+    @objc private func preview() { playback.previewBattery(BatteryReader.read()) }
+    @objc private func chargingDemo() { playback.previewBattery(demoSnapshot(charging: true)) }
+    @objc private func batteryDemo() { playback.previewBattery(demoSnapshot(charging: false)) }
     @objc private func openRepository() {
         NSWorkspace.shared.open(URL(string: "https://github.com/MarkYang44/Endfield-Charge")!)
     }
@@ -159,7 +173,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func openSettings() { settingsProcess.open() }
     @objc private func openTelemetry() { telemetryProcess.open() }
     func applicationWillTerminate(_ notification: Notification) {
-        hud?.dismiss(); telemetryMonitor?.stop(); settingsProcess?.stop(); telemetryProcess?.stop()
+        playback?.stop(); telemetryMonitor?.stop(); settingsProcess?.stop(); telemetryProcess?.stop()
         if let requestObserver { DistributedNotificationCenter.default().removeObserver(requestObserver) }
     }
 }

@@ -180,7 +180,8 @@ if let index = arguments.firstIndex(of: "--render") {
         }
         if !profile.isDefaultBattery {
             let snapshot = exportSnapshot(preferences: renderPreferences, demo: arguments.contains("--demo"))
-            view.capsule = CapsulePresentation(profile: profile, snapshot: snapshot)
+            if profile.isBatteryLayout { view.accentOverride = profile.resolvedAccent(in: snapshot) }
+            else { view.capsule = CapsulePresentation(profile: profile, snapshot: snapshot) }
         }
     }
     do { try view.writePNG(to: URL(fileURLWithPath: arguments[index + 1])) }

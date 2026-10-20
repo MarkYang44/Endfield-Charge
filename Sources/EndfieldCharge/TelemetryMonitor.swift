@@ -56,6 +56,10 @@ final class TelemetryMonitor {
     private var rules = TelemetryRuleEvaluator()
     private var timer: Timer?
     private var wakeObserver: NSObjectProtocol?
+    private var sleepObserver: NSObjectProtocol?
+    private var sleeping = false
+    private var observedThermal: ThermalLevel?
+    private var builtinPresentedForTransition = false
     private var running = false
     private var panelVisible = false
     private var capsuleMetrics: Set<TelemetryMetric> = []
@@ -66,6 +70,7 @@ final class TelemetryMonitor {
     var onThermalAlert: ((ThermalLevel) -> Void)?
     var onRuleAlert: ((TelemetryAlertRule, TelemetrySnapshot) -> Void)?
     var onWake: (() -> Void)?
+    var onSleep: (() -> Void)?
     var demand: TelemetryDemand {
         TelemetryDemand(preferences: settings.value, panelVisible: panelVisible, capsuleMetrics: capsuleMetrics)
     }
@@ -84,17 +89,33 @@ final class TelemetryMonitor {
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in self?.resetAfterWake() }
+        sleepObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification, object: nil, queue: .main
+        ) { [weak self] _ in self?.suspendForSleep() }
         refresh(); scheduleTimer()
+    }
+    func suspendForSleep() {
+        guard running else { return }
+        sleeping = true
+        invalidate(resetReader: true); rules.reset(); alerts.reset()
+        observedThermal = nil; builtinPresentedForTransition = false
+        capsuleMetrics = []; latestSnapshot = nil
+        timer?.invalidate(); timer = nil; samplingInterval = nil
+        onSleep?()
     }
     func resetAfterWake() {
         guard running else { return }
-        invalidate(resetReader: true); rules.reset(); capsuleMetrics = []
+        sleeping = false
+        invalidate(resetReader: true); rules.reset(); alerts.reset(); capsuleMetrics = []
+        observedThermal = nil; builtinPresentedForTransition = false; latestSnapshot = nil
         onWake?()
         refresh(); scheduleTimer()
     }
     func preferencesChanged() {
         guard running else { return }
-        if previousPreferences?.thermalTelemetryEnabled != settings.value.thermalTelemetryEnabled { alerts.reset() }
+        if previousPreferences?.thermalTelemetryEnabled != settings.value.thermalTelemetryEnabled {
+            alerts.reset(); observedThermal = nil; builtinPresentedForTransition = false
+        }
         previousPreferences = settings.value
         invalidate()
         capsuleMetrics = []
@@ -119,18 +140,20 @@ final class TelemetryMonitor {
     }
     func stop() {
         guard running else { return }
-        running = false
+        running = false; sleeping = false
         invalidate(resetReader: true)
         timer?.invalidate(); timer = nil; samplingInterval = nil
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
         wakeObserver = nil
+        if let sleepObserver { NSWorkspace.shared.notificationCenter.removeObserver(sleepObserver) }
+        sleepObserver = nil
         if !inFlight { resetCollectorWhenIdle() }
         alerts.reset(); rules.reset(); previousPreferences = nil; previousDemand = nil
         capsuleMetrics = []; latestSnapshot = nil
     }
     private func scheduleTimer() {
         timer?.invalidate(); timer = nil; samplingInterval = nil
-        guard running, demand.hasWork else { return }
+        guard running, !sleeping, demand.hasWork else { return }
         let interval = demand.highFrequency ? 2.0 : 30.0
         samplingInterval = interval
         let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in self?.refresh() }
@@ -148,7 +171,7 @@ final class TelemetryMonitor {
         collector.queue.async { collector.reset() }
     }
     func refresh() {
-        guard running else { return }
+        guard running, !sleeping else { return }
         let preferences = settings.value, demand = demand
         if let previousDemand {
             // A disabled request may be coalesced away: retain each module's reset independently.
@@ -176,7 +199,7 @@ final class TelemetryMonitor {
     }
     private func complete(_ snapshot: TelemetrySnapshot, request: Request) {
         inFlight = false
-        if running, generation == request.generation,
+        if running, !sleeping, generation == request.generation,
            settings.value == request.preferences, demand == request.demand {
             publish(snapshot, request: request)
         }
@@ -197,17 +220,24 @@ final class TelemetryMonitor {
         latestSnapshot = snapshot
         onSnapshot?(snapshot)
         guard running, generation == request.generation else { return }
-        if let thermal = snapshot.thermal, alerts.shouldAlert(thermal, enabled: preferences.thermalAlert) { onThermalAlert?(thermal) }
-        var values: [TelemetryMetric: Double] = [:]
-        for metric in TelemetryMetric.allCases {
-            if let value = metric.value(in: snapshot) { values[metric] = value }
+        let thermal = snapshot.thermal == .unknown ? nil : snapshot.thermal
+        if thermal != observedThermal {
+            observedThermal = thermal; builtinPresentedForTransition = false
         }
-        let fired = rules.evaluate(rules: preferences.telemetryAlertRules, values: values, at: clock())
-        // All simultaneous IDs have been consumed by the evaluator; present one bounded event.
-        if let id = fired.first, let rule = preferences.telemetryAlertRules.first(where: { $0.id == id }) { onRuleAlert?(rule, snapshot) }
+        if let thermal, alerts.shouldAlert(thermal, enabled: preferences.thermalAlert) {
+            builtinPresentedForTransition = true
+            onThermalAlert?(thermal)
+        }
+        let fired = rules.evaluate(rules: preferences.telemetryAlertRules, snapshot: snapshot, at: clock())
+        for id in fired {
+            guard let rule = preferences.telemetryAlertRules.first(where: { $0.id == id }) else { continue }
+            if rule.condition == .stateChange, rule.source == .thermal, builtinPresentedForTransition { continue }
+            onRuleAlert?(rule, snapshot)
+        }
     }
     deinit {
         timer?.invalidate()
+        if let sleepObserver { NSWorkspace.shared.notificationCenter.removeObserver(sleepObserver) }
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
     }
 }

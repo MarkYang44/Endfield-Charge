@@ -737,6 +737,8 @@ resetMonitor.stop()
 print("PASS: blocked asynchronous collector responsiveness, bounded coalescing, stale generations and owner release")
 
 settings.value.duration = 4
+runPlaybackChecks()
+
 let hud = HUDController(settings: settings)
 let initial = BatterySnapshot(hasBattery: true, percent: 76, externalPower: true, isCharging: true)
 let alert = BatterySnapshot(hasBattery: true, percent: 19)
@@ -928,4 +930,4 @@ UserDefaults.standard.set(standardPreferences, forKey: "preferences")
 print("PASS: actual child process, preview, close acknowledgment, rapid reopen and tab/frame preservation")
 print("PASS: telemetry delivery, preference direction, visibility, acknowledged close and rapid reopen")
 print("PASS: telemetry child exits on parent EOF without fallback")
-print("All 18 native runtime check groups passed")
+print("All 19 native runtime check groups passed")

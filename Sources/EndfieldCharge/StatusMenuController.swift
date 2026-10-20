@@ -10,6 +10,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private let timeItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private var labels: [(NSMenuItem, String, String)] = []
     var onRefresh: (() -> Void)?
+    var onPlaybackVisibility: (() -> Void)?
+    private var playbackHidden = false
+    private let playbackItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     var onProfileSelected: ((String) -> Void)?
     private let profilesItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let profilesMenu = NSMenu()
@@ -37,6 +40,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         }
         profilesItem.submenu = profilesMenu
         menu.insertItem(profilesItem, at: 3)
+        playbackItem.target = self
+        playbackItem.action = #selector(togglePlaybackVisibility)
+        menu.insertItem(playbackItem, at: 4)
         status.menu = menu
     }
 
@@ -57,6 +63,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             timeItem.title = "\(minutes / 60)h \(minutes % 60)m \(suffix)"
         }
         for (item, zh, en) in labels { item.title = settings.text(zh, en) }
+        playbackItem.title = playbackHidden ? settings.text("恢复常驻与轮播", "Resume Persistent HUD / Carousel")
+            : settings.text("临时隐藏常驻与轮播", "Hide Persistent HUD / Carousel")
+        playbackItem.isEnabled = settings.value.playback.persistent || settings.value.playback.rotationEnabled || playbackHidden
         profilesItem.title = settings.text("选择胶囊", "Select Capsule")
         let profiles = settings.value.capsuleProfiles
         if profileOrder != profiles.map(\.id) {
@@ -79,6 +88,13 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         settings.value.selectedCapsuleID = id
         onProfileSelected?(id)
     }
+
+    func setPlaybackHidden(_ hidden: Bool) {
+        playbackHidden = hidden
+        playbackItem.title = hidden ? settings.text("恢复常驻与轮播", "Resume Persistent HUD / Carousel")
+            : settings.text("临时隐藏常驻与轮播", "Hide Persistent HUD / Carousel")
+    }
+    @objc private func togglePlaybackVisibility() { onPlaybackVisibility?() }
 
     func menuWillOpen(_ menu: NSMenu) { onRefresh?() }
 

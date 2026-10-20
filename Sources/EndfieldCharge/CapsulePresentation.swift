@@ -52,6 +52,9 @@ struct CapsulePresentation: Equatable {
     let secondaryUnit: String
     let ringFraction: Double?
     let alert: Bool
+    let accent: CapsuleAccent
+    let stateLabel: String?
+    let stateSourceLabel: String?
 
     init(profile: CapsuleProfile, snapshot: TelemetrySnapshot?, alert: Bool = false) {
         self.profile = profile
@@ -66,6 +69,44 @@ struct CapsulePresentation: Equatable {
             snapshot.flatMap { metric.value(in: $0) }.map { min(1, max(0, $0 / profile.referenceMaximum)) }
         }
         self.alert = alert
+        accent = alert ? .red : snapshot.map { profile.resolvedAccent(in: $0) } ?? .theme
+        stateLabel = nil; stateSourceLabel = nil
+    }
+
+    init(rule: TelemetryAlertRule, snapshot: TelemetrySnapshot, chinese: Bool) {
+        guard rule.condition == .stateChange else {
+            self = CapsulePresentation(profile: CapsuleProfile(id: "rule.\(rule.id)", title: rule.name, primaryMetric: rule.metric),
+                snapshot: snapshot, alert: true)
+            return
+        }
+        profile = CapsuleProfile(id: "rule.\(rule.id)", title: rule.name, primaryMetric: .batteryPercent)
+        title = rule.name; alert = true; ringFraction = nil
+        primaryUnit = ""; secondary = ""; secondaryUnit = ""
+        let state = rule.source?.value(in: snapshot)
+        primary = TelemetryFormatting.state(state, chinese: chinese)
+        stateLabel = primary
+        stateSourceLabel = rule.source == .thermal ? (chinese ? "系统热状态" : "Thermal state")
+            : (chinese ? "内存压力" : "Memory pressure")
+        switch state {
+        case .thermal(.critical), .memoryPressure(.critical): accent = .red
+        case .thermal(.fair), .thermal(.serious), .memoryPressure(.warning): accent = .amber
+        default: accent = .theme
+        }
+    }
+}
+
+extension TelemetryFormatting {
+    static func state(_ state: TelemetryState?, chinese: Bool) -> String {
+        let labels: (String, String)
+        switch state {
+        case .thermal(.nominal), .memoryPressure(.normal): labels = ("正常", "Normal")
+        case .thermal(.fair): labels = ("轻度压力", "Elevated")
+        case .thermal(.serious): labels = ("严重压力", "Serious")
+        case .thermal(.critical), .memoryPressure(.critical): labels = ("临界", "Critical")
+        case .memoryPressure(.warning): labels = ("警告", "Warning")
+        default: labels = ("未知", "Unknown")
+        }
+        return chinese ? labels.0 : labels.1
     }
 }
 
@@ -80,7 +121,7 @@ struct TelemetryDemand: Equatable {
     var hasWork: Bool { power || compute || thermal || network || storage || batterySnapshot }
 
     init(preferences: Preferences, panelVisible: Bool, capsuleMetrics: Set<TelemetryMetric>) {
-        let rules = preferences.telemetryAlertRules.prefix(16).filter(\.enabled).map(\.metric)
+        let rules = preferences.telemetryAlertRules.prefix(16).filter { $0.enabled && $0.condition == .threshold }.map(\.metric)
         let metrics = capsuleMetrics.union(rules)
         batterySnapshot = metrics.contains(.batteryEnergyWh) || metrics.contains(.batteryPercent)
         power = preferences.powerTelemetryEnabled

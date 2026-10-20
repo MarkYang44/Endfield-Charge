@@ -16,12 +16,30 @@ final class HUDView: NSView {
     var kind = HUDKind.power
     var elapsed = 0.0
     var reduceMotion = false
+    var compactHold = false
+    var frameOverride: HUDFrame?
+    var accentOverride: CapsuleAccent?
+    var resolvedAccent: CapsuleAccent {
+        if kind == .lowBattery || kind == .thermalWarning || kind == .thermalCritical { return .red }
+        if let capsule { return capsule.accent }
+        if (snapshot.percent ?? 100) < 20 { return .red }
+        return accentOverride ?? .theme
+    }
+    private func accentColor(alpha: Double) -> NSColor {
+        let rgb: UInt32
+        switch resolvedAccent {
+        case .theme, .lime: rgb = 0xC6CA4C
+        case .amber: rgb = 0xFFBC54
+        case .red: rgb = 0xFF4D4F
+        }
+        return NSColor(rgb: rgb, alpha: alpha)
+    }
     private let center = NSPoint(x: 310, y: 72)
     private let white = NSColor.white
     private let plate = NSColor(rgb: 0xE9E7E4)
 
     override func draw(_ dirtyRect: NSRect) {
-        let f = HUDFrame.at(seconds: elapsed, duration: preferences.duration, reduceMotion: reduceMotion)
+        let f = frameOverride ?? HUDFrame.at(seconds: elapsed, duration: preferences.duration, reduceMotion: reduceMotion)
         guard f.overallScale > 0.001 else { return }
         NSGraphicsContext.saveGraphicsState()
         let transform = NSAffineTransform()
@@ -32,7 +50,7 @@ final class HUDView: NSView {
         transform.concat()
         drawPill(f)
         drawBolt(f)
-        if reduceMotion {
+        if reduceMotion && frameOverride == nil {
             if kind == .power { drawNumbers(f) }
             else { drawTitle(f) }
         } else {
@@ -139,17 +157,18 @@ final class HUDView: NSView {
         let alpha = f.numbersOpacity
         let current = snapshot.energyWh.map { String(format: "≈%.1f", $0) } ?? "—"
         let full = snapshot.fullEnergyWh.map { String(format: "/%.1f", $0) } ?? "/—"
-        let currentWidth = drawText(current, at: NSPoint(x: 94, y: 56), size: 26, alpha: alpha)
+        let currentWidth = drawText(current, at: NSPoint(x: 94, y: 56), size: 26, alpha: alpha,
+            color: accentOverride == nil || resolvedAccent == .theme ? nil : accentColor(alpha: 1))
         let fullWidth = drawText(full, at: NSPoint(x: 98 + currentWidth, y: 64), size: 14, alpha: alpha * 0.55)
         drawText("Wh", at: NSPoint(x: 103 + currentWidth + fullWidth, y: 67), size: 10, alpha: alpha * 0.4)
         let percentage = snapshot.percent.map(String.init) ?? "—"
         let numberWidth = textWidth(percentage, size: 22)
-        drawText(percentage, at: NSPoint(x: 491 - numberWidth, y: 59), size: 22, alpha: alpha)
+        drawText(percentage, at: NSPoint(x: 491 - numberWidth, y: 59), size: 22, alpha: alpha, color: accentOverride == nil || resolvedAccent == .theme ? nil : accentColor(alpha: 1))
         drawText("%", at: NSPoint(x: 493, y: 65), size: 13, alpha: alpha * 0.55)
         let badgeCenter = NSPoint(x: 562, y: 72)
         NSColor(rgb: 0x262425, alpha: alpha).setFill()
         NSBezierPath(ovalIn: NSRect(x: 539, y: 49, width: 46, height: 46)).fill()
-        let accent = NSColor(rgb: (snapshot.percent ?? 100) < 20 || kind == .thermalWarning || kind == .thermalCritical ? 0xFF4D4F : 0xC6CA4C, alpha: alpha)
+        let accent = accentColor(alpha: alpha)
         if let percent = snapshot.percent, percent > 0 {
             let arc = NSBezierPath()
             arc.appendArc(withCenter: badgeCenter, radius: 20.75, startAngle: -90,
@@ -171,10 +190,11 @@ final class HUDView: NSView {
     private func drawCapsule(_ capsule: CapsulePresentation, _ f: HUDFrame) {
         guard f.numbersOpacity > 0 else { return }
         let alpha = f.numbersOpacity
-        drawFitted(TelemetryFormatting.name(capsule.profile.primaryMetric, chinese: chinese),
+        drawFitted(capsule.stateLabel == nil ? TelemetryFormatting.name(capsule.profile.primaryMetric, chinese: chinese) : capsule.title,
             rect: NSRect(x: 94, y: 44, width: 238, height: 12), size: 8, alpha: alpha * 0.4)
         drawFitted(capsule.primary + " " + capsule.primaryUnit,
-            rect: NSRect(x: 94, y: 56, width: 238, height: 35), size: 26, alpha: alpha)
+            rect: NSRect(x: 94, y: 56, width: 238, height: 35), size: 26, alpha: alpha,
+            color: resolvedAccent != .theme && (capsule.alert || !capsule.profile.colorConditions.isEmpty) ? accentColor(alpha: 1) : nil)
         if let metric = capsule.profile.secondaryMetric {
             drawFitted(TelemetryFormatting.name(metric, chinese: chinese),
                 rect: NSRect(x: 344, y: 47, width: 165, height: 12), size: 8, alpha: alpha * 0.4)
@@ -184,7 +204,7 @@ final class HUDView: NSView {
         let badgeCenter = NSPoint(x: 562, y: 72)
         NSColor(rgb: 0x262425, alpha: alpha).setFill()
         NSBezierPath(ovalIn: NSRect(x: 539, y: 49, width: 46, height: 46)).fill()
-        let accent = NSColor(rgb: capsule.alert ? 0xFF4D4F : 0xC6CA4C, alpha: alpha)
+        let accent = accentColor(alpha: alpha)
         if let fraction = capsule.ringFraction, fraction > 0 {
             let arc = NSBezierPath()
             arc.appendArc(withCenter: badgeCenter, radius: 20.75, startAngle: -90,
@@ -197,7 +217,7 @@ final class HUDView: NSView {
         NSBezierPath(roundedRect: NSRect(x: 557.5, y: 63.5, width: 9, height: 3), xRadius: 1, yRadius: 1).fill()
     }
 
-    private func drawFitted(_ text: String, rect: NSRect, size: CGFloat, alpha: Double, centered: Bool = false) {
+    private func drawFitted(_ text: String, rect: NSRect, size: CGFloat, alpha: Double, centered: Bool = false, color: NSColor? = nil) {
         NSGraphicsContext.saveGraphicsState()
         NSBezierPath(rect: rect).addClip()
         // CJK fallback advances can change after font-size rounding. Measure with the
@@ -211,7 +231,7 @@ final class HUDView: NSView {
         var fitted = max(8, min(size, size * available / max(1, width(at: size))))
         while fitted > 8 && width(at: fitted) > available { fitted = max(8, fitted - 0.25) }
         drawText(text, at: NSPoint(x: centered ? rect.midX : rect.minX + 2, y: rect.minY), size: fitted,
-            alpha: alpha, centered: centered)
+            alpha: alpha, centered: centered, color: color)
         NSGraphicsContext.restoreGraphicsState()
     }
 
@@ -220,10 +240,10 @@ final class HUDView: NSView {
     }
 
     @discardableResult private func drawText(_ text: String, at point: NSPoint, size: CGFloat,
-        alpha: Double, weight: NSFont.Weight = .medium, centered: Bool = false, spacing: CGFloat = 0) -> CGFloat {
+        alpha: Double, weight: NSFont.Weight = .medium, centered: Bool = false, spacing: CGFloat = 0, color: NSColor? = nil) -> CGFloat {
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedDigitSystemFont(ofSize: size, weight: weight),
-            .foregroundColor: white.withAlphaComponent(alpha), .kern: spacing
+            .foregroundColor: (color ?? white).withAlphaComponent(alpha), .kern: spacing
         ]
         let width = (text as NSString).size(withAttributes: attributes).width
         (text as NSString).draw(at: NSPoint(x: centered ? point.x - width / 2 : point.x, y: point.y), withAttributes: attributes)
