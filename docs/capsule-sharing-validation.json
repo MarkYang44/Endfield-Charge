@@ -2,7 +2,7 @@
   "version": "1.2.0",
   "build": 5,
   "date": "2026-10-21",
-  "status": "Local candidate verified; whole-branch review 0 Critical/0 Important and Minor bilingual caption corrected; final focused resolution and public delivery handled separately",
+  "status": "Verified local candidate, final review resolved, public v1.2.0 independently downloaded and local candidate installed with live preferences preserved",
   "host": {
     "cpu": "Apple M5",
     "memory_GiB": 16,
@@ -343,5 +343,46 @@
       "measurements_rerun": false,
       "limitation": "Measurements precede both notice and caption polish. The historical TEXT equality proof applies only from measured executable to intermediate notice-only reseal, not this final copy-only rebuild."
     }
+  },
+  "delivery": {
+    "date": "2026-10-21",
+    "source_commit": "78295abba72cbd4820a338c6e3d032a37ab6f34e",
+    "review_outstanding": {
+      "critical": 0,
+      "important": 0,
+      "minor": 0
+    },
+    "release_url": "https://github.com/MarkYang44/Endfield-Charge/releases/tag/v1.2.0",
+    "public_stable_non_draft": true,
+    "workflow_runs": {
+      "main": 39633130661,
+      "tag": 39633130467
+    },
+    "download": {
+      "archive_bytes": 1279992,
+      "archive_sha256": "29130710a3ad7db7ada8b64ec23f16a12fdf2c214e6f42a5be462d23379259ee",
+      "github_digest_matches": true,
+      "binary_bytes": 2373744,
+      "binary_sha256": "f346f83e8d94c85c936810cda7a00c447ff3000d8db25bd15716166a1a55c244",
+      "universal_minimum_macos": "13.0",
+      "signature": "strict ad-hoc verified",
+      "original_battery_pngs_match": true,
+      "exact_license_notice_privacy_match": true,
+      "demo_exports_passed": 6
+    },
+    "installation": {
+      "version": "1.2.0",
+      "build": "5",
+      "uses_tested_local_candidate": true,
+      "binary_sha256": "e5712d50681a3fb9739fe3e849856236e186fb7b3620e9da241f1f0c474c1edc",
+      "live_legacy_fields_preserved": 14,
+      "existing_shortcut_preserved": true,
+      "settings_and_telemetry_helpers_launched": true,
+      "test_helpers_closed": true,
+      "resident_count": 1,
+      "rollback_retained_privately": true
+    },
+    "limits": "Native suite verifies actual controls/close ACK; installed entrypoint probes verify owned helper launch. Intel/macOS 13 physical runtime untested. Downloaded CI and installed local binary hashes intentionally differ.",
+    "managed_worktree_archived": true
   }
 }

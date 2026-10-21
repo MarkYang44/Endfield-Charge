@@ -61,3 +61,15 @@ Old preferences and shortcut migrate without enabling colors, persistent display
 ## 中文摘要
 
 本记录验证本地 1.2.0/build 5 候选包：108 项核心测试、24 组原生检查、双架构 macOS 13 声明与严格签名通过。5 个图案与 3 张原电池阶段 PNG 哈希未变；新增中英文真实界面使用合成演示数据。上表为常驻＋直接界面子进程 physical footprint 的三轮末值中位数，不是 RSS 或通用内存保证。系统活动与缓存未受控，峰值仅为采样观测；新轮播／常驻场景不能与旧默认空闲直接等同。测量后先展开上游声明路径并重新签名，中间阶段的两架构 __TEXT／代码段完全不变；随后仅修正中英文“减少动态效果”说明并重新构建。测量未为声明／文案改动重跑，中间阶段的字节相等证据不适用于最终重建包。公开文件只含汇总与方法，无真实偏好或原始遥测。整分支审查无关键／重要问题，唯一轻微文案问题已修正；后续完成聚焦复核、公开下载核验与安装。
+
+
+## Public delivery / 公开交付
+
+Verified on 2026-10-21:
+
+- Final review resolved all findings (0 Critical / 0 Important / 0 Minor). The reviewed source `78295abba72cbd4820a338c6e3d032a37ab6f34e` was fast-forwarded to main and tagged **[v1.2.0](https://github.com/MarkYang44/Endfield-Charge/releases/tag/v1.2.0)**. The merged core suite passed 108 tests again. Both [main build](https://github.com/MarkYang44/Endfield-Charge/actions/runs/39633130661) and [tag build/release](https://github.com/MarkYang44/Endfield-Charge/actions/runs/39633130467) succeeded.
+- The release is public, stable and non-draft; its bilingual notes match the committed release file. An independently downloaded ZIP is **1,279,992 bytes**, SHA-256 `29130710a3ad7db7ada8b64ec23f16a12fdf2c214e6f42a5be462d23379259ee`, matching GitHub's asset digest. The CI executable is 2,373,744 bytes, SHA-256 `f346f83e8d94c85c936810cda7a00c447ff3000d8db25bd15716166a1a55c244`; it differs from the locally built candidate and was checked separately.
+- Downloaded artifact checks passed: safe/integral ZIP, 1.2.0/build 5, both architectures/minimum macOS 13, strict ad-hoc signature, exact bundled license/notice/privacy text, original menu/wordmark resources, three actual settings/telemetry demo exports and all three original battery PNG hashes. Intel/macOS 13 physical runtime remains untested.
+- The tested local candidate was installed at `/Applications/Endfield Charge.app`; its binary matches the final local hash above. All **14 live legacy preference fields**, including the existing shortcut, remain unchanged after launch and installed settings/telemetry entrypoint checks. Those probes launched owned helper processes; actual control/close-ACK behavior is covered separately by the native suite. Test helpers were closed and one resident remains. LaunchServices/Spotlight registration was refreshed. A rollback bundle and fresh preference snapshots are retained privately.
+
+公开发布、独立下载与本机升级均已完成。下载包摘要与 GitHub 一致，双架构、签名、随包声明和三张原电池渲染通过核验；本机安装的是已测本地构建，两者哈希分别记录。14 个原有实时偏好字段及快捷键保留，检查后恢复单一常驻实例。原生控件／关闭确认与安装入口探测采用不同验证方式，不把进程启动等同于人工点击；旧应用及偏好回滚备份留在本机，不公开原始数据。
