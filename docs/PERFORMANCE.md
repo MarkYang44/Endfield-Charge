@@ -1,8 +1,23 @@
 # Performance records / 性能记录
 
-These are versioned measurements, not universal memory guarantees. New results are recorded in [v1.1.0 validation](telemetry-plus-validation.md). The historical Chinese records below remain unchanged in meaning.
+These are versioned measurements, not universal memory guarantees. Current candidate results are recorded in [v1.2.0 validation](capsule-sharing-validation.md); [v1.1.0 validation](telemetry-plus-validation.md) remains historical. The historical Chinese records below remain unchanged in meaning.
 
-以下为历史版本测量，不能当作当前版本或所有系统的占用保证。v1.1.0 的同机对照见 [验证记录](telemetry-plus-validation.md)。
+以下为历史版本测量，不能当作当前版本或所有系统的占用保证。v1.2.0 候选版本的同机对照和新增场景见 [验证记录](capsule-sharing-validation.md)，v1.1.0 记录保留为历史证据。
+
+## v1.2.0 candidate / 候选版本
+
+| Scenario | v1.1.0 final median MiB | Candidate final median MiB | Candidate sampled peak MiB | Whole-run CPU % of one core |
+| --- | ---: | ---: | ---: | ---: |
+| Default idle | 11.470 | 11.735 | 11.860 | 0.0145 |
+| Settings open | 42.533 | 48.314 | 82.752 | 0.3695 |
+| After settings helper exits | — | 11.642 | 11.766 | 0.0042 |
+| Transient carousel | — | 16.220 | 19.767 | 2.7229 |
+| Persistent single | — | 14.407 | 16.032 | 1.0284 |
+| Persistent carousel | — | 17.532 | 18.001 | 1.6734 |
+
+Methods, caveats, signature-only reseal evidence and aggregates: [validation](capsule-sharing-validation.md), [JSON](capsule-sharing-validation.json). Default scenarios use matching five-second methods; new display modes have separate observation windows. Peaks are sampled, table CPU averages the observed run after launch settling, and system activity is uncontrolled. Phase-sensitive final ~2.2-second CPU values are retained separately in JSON.
+
+测量方法、限制及仅资源重新签名证据见上述验证记录。默认场景使用匹配的五秒方法，新增播放场景窗口不同；峰值为采样值，表内 CPU 为启动稳定后观测窗口均值；另存的末尾约 2.2 秒 CPU 对切换阶段敏感，系统活动未受控。
 
 ## 内存与体积
 

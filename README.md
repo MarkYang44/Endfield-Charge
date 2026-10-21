@@ -36,12 +36,18 @@ Actual AppKit exports using **demo data**, not measurements of your Mac. Setting
   </tr>
 </table>
 
+![Native color editor, synthetic demo configuration](docs/images/sharing-colors-en.png)
+
+[More actual sharing, state and playback examples](docs/configuration-sharing.md).
+
 ## Core features
 
 - **Power HUD:** original three-stage geometry and ripple directions, estimated Wh, battery percentage, charging state, multi-display placement and Reduce Motion support. The overlay does not take focus or intercept clicks.
 - **Five telemetry modules:** battery-side power and adapter rating; CPU and estimated memory; system thermal state; enabled `en*` interface traffic; APFS Data volume capacity. Missing readings remain unknown.
 - **Capsule profiles:** battery, CPU, memory, network and storage presets; up to 12 profiles with an editable title, primary/secondary metrics and an optional ring. Select a profile from the menu or preview it with your shortcut.
-- **Alert rules:** up to 16 optional rules with a strict threshold, hold time, cooldown and recovery before rearming. New rules are disabled. Power events retain priority over generic alerts.
+- **Sharing and colors:** local `.endfield.json` export/import with merge/replace preview and one backup for undo; up to four ordered Theme/Lime/Amber/Red conditions per capsule. [Configuration guide](docs/configuration-sharing.md).
+- **Playback:** unique queue, 10–600-second interval, one transient round or optional persistent compact display. Rotation and persistent display default off.
+- **Alert rules:** up to 16 optional numeric threshold or typed thermal/memory-pressure transition rules, with hold and cooldown. New rules are disabled. Power events retain priority over generic alerts.
 - **Native controls:** English / 简体中文 / system language, configurable global shortcut, optional login launch and menu bar percentage. Login launch is off by default.
 
 ## Installation
@@ -60,11 +66,12 @@ Builds use an ad-hoc signature and are **not Apple-notarized**. If macOS blocks 
 2. Use **Preview Battery** or connect/disconnect your charger to see the original HUD.
 3. Open **Telemetry Terminal** for the five telemetry pages. Individual modules can be disabled in **Settings → Telemetry**.
 4. Open **Settings → Capsules**, select or edit a profile, then use **Preview Active Capsule**.
-5. Open **Settings → Rules** to create an alert. Choose its metric and units, then explicitly enable it.
+5. Scroll down in **Capsules** to edit **Conditional colors**, the **Playback queue**, or open **Sharing & Import…**. Enable persistent display separately in **Display**.
+6. Open **Settings → Rules** to create a threshold or state-change alert, then explicitly enable it.
 
-The fresh-install shortcut is **Control + Option + H**. You can choose **Command + Shift + E** or another supported combination. Existing shortcuts are preserved. The shortcut previews the selected capsule; explicit battery preview and charger events continue to use the battery HUD.
+The fresh-install shortcut is **Control + Option + H**. You can choose **Command + Shift + E** or another supported combination. Existing shortcuts are preserved. The shortcut starts with the selected capsule and, when rotation is enabled, plays one queue round; explicit battery preview and charger events continue to use the battery HUD.
 
-A newly enabled rule first establishes a baseline. A condition already true at startup does not trigger an alert; it must recover and cross the threshold again. Background evaluation is every 30 seconds, so brief changes may be missed.
+A newly enabled rule first establishes a quiet baseline. Numeric rules must recover and cross the threshold again if already true at startup; state rules wait for the next known transition. Background evaluation is every 30 seconds, so brief changes may be missed.
 
 ## Data sources and limits
 
@@ -83,7 +90,7 @@ The shared sampler runs every 2 seconds for visible telemetry/capsule demand and
 
 Readings and preferences stay on your Mac. There are no active network probes, automatic telemetry uploads or permanent telemetry histories. Preferences use the app's `com.markyang.endfieldcharge` UserDefaults domain. Accessibility and screen-recording permissions are not required.
 
-Settings and telemetry use on-demand UI processes that exit when their windows close. The resident retains the menu, shortcut and monitoring services. On the M5 validation host, three cold starts measured a median **11.53 MiB idle** and **56.21 MiB with the telemetry window** for the resident plus UI physical footprint; startup peaks were higher. Memory depends on the workload and macOS version; see [versioned performance records](docs/PERFORMANCE.md) and [v1.1.0 validation](docs/telemetry-plus-validation.md) for methods and measurements.
+Settings and telemetry use on-demand UI processes that exit when their windows close. The resident retains the menu, shortcut and monitoring services. Measured costs for the packaged v1.2.0 candidate, including persistent and carousel modes, are recorded with methods and limits in [v1.2.0 validation](docs/capsule-sharing-validation.md) and [performance records](docs/PERFORMANCE.md).
 
 ## Development
 
@@ -104,6 +111,8 @@ On a Mac with a graphical session, also run `bash scripts/check-runtime.sh` for 
 | --- | --- |
 | [Developer guide](docs/DEVELOPMENT.md) · [中文](docs/DEVELOPMENT.zh-CN.md) | Build, CLI exports, project structure and release workflow |
 | [Performance records](docs/PERFORMANCE.md) | Versioned measurements and their limits |
+| [Sharing and playback guide](docs/configuration-sharing.md) · [中文](docs/configuration-sharing.zh-CN.md) | Import/undo, colors, typed state alerts and playback defaults/limits |
+| [v1.2.0 validation](docs/capsule-sharing-validation.md) | Current candidate tests, artwork regression, package and performance |
 | [v1.1.0 validation](docs/telemetry-plus-validation.md) | Feature, lifecycle, package and release verification |
 | [Release notes](https://github.com/MarkYang44/Endfield-Charge/releases) | Packaged versions and changes |
 | [Third-party notices](THIRD_PARTY_NOTICES.md) | Upstream code, design and artwork attribution |

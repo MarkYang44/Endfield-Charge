@@ -1,0 +1,339 @@
+{
+  "version": "1.2.0",
+  "build": 5,
+  "date": "2026-10-21",
+  "status": "local candidate verified; final whole-branch review and public delivery handled separately",
+  "host": {
+    "cpu": "Apple M5",
+    "memory_GiB": 16,
+    "architecture": "arm64",
+    "macOS": "27.0.1 (26A434)"
+  },
+  "tests": {
+    "core_tests": 108,
+    "core_suites": 10,
+    "native_groups": 24
+  },
+  "package": {
+    "minimum_os": "13.0",
+    "slices": [
+      "x86_64",
+      "arm64"
+    ],
+    "binary_bytes": 2282544,
+    "binary_sha256": "1a91cedaea8b800a9a7e956964727bc31f3de23b0c5a96d2dea9fb72ff54d12f",
+    "archive_bytes": 1240558,
+    "archive_sha256": "256212cde2c4fd4a861896675d0a941039b0698787f8507549ed1b0449f65861",
+    "artwork": {
+      "Resources/MenuBarIcon.png": {
+        "sha256": "d5be9d72656c7e7b733c3cb67a1e7caa90892f0fc72d790ba7ed02a14cedcacf",
+        "unchanged": true
+      },
+      "Resources/ChargeIcon.svg": {
+        "sha256": "0868bb1acf6df2c8248e370e76536366185baf63466611540b002204f9bf2139",
+        "unchanged": true
+      },
+      "Resources/endfield-industries.svg": {
+        "sha256": "3e2af120ec6c86d2132448e7fbd4264b50e7258276c1beabb2bf3fa666200025",
+        "unchanged": true
+      },
+      "Resources/AppIcon.png": {
+        "sha256": "c7643d8bd0b4ccfcfe9e0edd1c7bc74230891648cdf99f7cec8587397f99d77e",
+        "unchanged": true
+      },
+      "Resources/ChargeMenuIcon.svg": {
+        "sha256": "b0c3efa6bb7957c82785d62b099fa84b4bf9bd9192704983d4eefe1dd69bc7d1",
+        "unchanged": true
+      }
+    },
+    "battery_exports": {
+      "title": {
+        "sha256": "86250dc770e1b1a14751bd40e1f9ea59eda1db82f4e05950e0f0f42aab4d55ab",
+        "unchanged": true
+      },
+      "numbers": {
+        "sha256": "206f83823493a18d9793e505b781b3a748695fd0480b25e8d713815459443696",
+        "unchanged": true
+      },
+      "reduced": {
+        "sha256": "206f83823493a18d9793e505b781b3a748695fd0480b25e8d713815459443696",
+        "unchanged": true
+      }
+    }
+  },
+  "measurement": {
+    "metric": "sum resident and direct UI-child ri_phys_footprint",
+    "runs_per_scenario": 3,
+    "interval_seconds": 0.2,
+    "launch_settle_seconds": 0.3,
+    "nominal_observation_seconds": {
+      "idle": 5,
+      "settings": 5,
+      "settings_helper_exited": 5,
+      "transient_carousel": 45,
+      "persistent_single": 35,
+      "persistent_carousel": 45
+    },
+    "aggregate": {
+      "idle": {
+        "median_last_MiB": 11.735,
+        "maximum_sampled_peak_MiB": 11.86,
+        "median_tail_cpu_percent_one_core": 0.022,
+        "median_whole_run_cpu_percent_one_core": 0.0145
+      },
+      "settings": {
+        "median_last_MiB": 48.314,
+        "maximum_sampled_peak_MiB": 82.752,
+        "median_tail_cpu_percent_one_core": 0.05,
+        "median_whole_run_cpu_percent_one_core": 0.3695
+      },
+      "settings_helper_exited": {
+        "median_last_MiB": 11.642,
+        "maximum_sampled_peak_MiB": 11.766,
+        "median_tail_cpu_percent_one_core": 0.0091,
+        "median_whole_run_cpu_percent_one_core": 0.0042
+      },
+      "transient_carousel": {
+        "median_last_MiB": 16.22,
+        "maximum_sampled_peak_MiB": 19.767,
+        "median_tail_cpu_percent_one_core": 0.0233,
+        "median_whole_run_cpu_percent_one_core": 2.7229
+      },
+      "persistent_single": {
+        "median_last_MiB": 14.407,
+        "maximum_sampled_peak_MiB": 16.032,
+        "median_tail_cpu_percent_one_core": 0.2163,
+        "median_whole_run_cpu_percent_one_core": 1.0284
+      },
+      "persistent_carousel": {
+        "median_last_MiB": 17.532,
+        "maximum_sampled_peak_MiB": 18.001,
+        "median_tail_cpu_percent_one_core": 3.8511,
+        "median_whole_run_cpu_percent_one_core": 1.6734
+      }
+    },
+    "fresh_v1_1_0_baseline_same_host": {
+      "idle": {
+        "median_last_MiB": 11.47,
+        "peak_MiB": 11.579,
+        "median_tail_cpu_percent_one_core": 0.0138
+      },
+      "settings": {
+        "median_last_MiB": 42.533,
+        "peak_MiB": 43.705,
+        "median_tail_cpu_percent_one_core": 0.0269
+      }
+    },
+    "profiled_executable_sha256": "d4bd0eb26e1668c556de03b58c81b589171835297192b681c4c15fe20d2b1166",
+    "resource_only_reseal": {
+      "change": "Only the bundled THIRD_PARTY_NOTICES.md expanded upstream file paths; app ad-hoc seal/ZIP regenerated",
+      "profiled_sha256": "d4bd0eb26e1668c556de03b58c81b589171835297192b681c4c15fe20d2b1166",
+      "final_sha256": "1a91cedaea8b800a9a7e956964727bc31f3de23b0c5a96d2dea9fb72ff54d12f",
+      "executable_bytes_unchanged": 2282544,
+      "architectures_and_TEXT_segments_and_all_TEXT_sections_unchanged": true,
+      "minimum_os_unchanged": "13.0 both architectures",
+      "architectures": {
+        "x86_64": {
+          "slice_bytes": 1172960,
+          "text_sections": {
+            "__text": {
+              "bytes": 773984,
+              "sha256": "d74597131ca9bcd8c609d112203bd41662220dc087b45b2e74fddcc44ab91708"
+            },
+            "__stubs": {
+              "bytes": 2070,
+              "sha256": "8b29b52046734a5ab6e22c131fc5882a8f7d1af2b999ad4c0facda0270231876"
+            },
+            "__const": {
+              "bytes": 26986,
+              "sha256": "f139b8e7d07c6fc3a6296f869e861b8414326958eb8e1fc179e5a687255acd58"
+            },
+            "__cstring": {
+              "bytes": 21331,
+              "sha256": "ebfe29fc07f8cffd09b2ed09c1763da7126b17793ab36bb2ed34ce9c756d3285"
+            },
+            "__swift5_typeref": {
+              "bytes": 6036,
+              "sha256": "5ecdcfde807888a8fec9ddea287af9aaafe9ae4abf86b8d8d5943086f0446fbb"
+            },
+            "__constg_swiftt": {
+              "bytes": 5076,
+              "sha256": "f4ceeea9cc4c9d4efa7c2bc5d17478e9c965b4fe1775566f0c65da87ea404383"
+            },
+            "__swift5_reflstr": {
+              "bytes": 7398,
+              "sha256": "367d918526e4c39f95017919bf203a214d7baeedf9db96154cec827aeaa734b7"
+            },
+            "__swift5_fieldmd": {
+              "bytes": 11404,
+              "sha256": "f0e8bd9c94811b1f184dfdf4c353596534d0e2b39d99bcb985bd545d5f62c2a1"
+            },
+            "__objc_methname": {
+              "bytes": 15741,
+              "sha256": "3090e960a3b596d745ba12ed1ef537241e863c10011b6bea48fd0a87d814870d"
+            },
+            "__swift5_proto": {
+              "bytes": 1264,
+              "sha256": "cb5abb084e1d568f32bdafa07215e82a57992c25b365877ec4d583baf4d9099d"
+            },
+            "__swift5_types": {
+              "bytes": 536,
+              "sha256": "36013c37feee0f817627d969605727efdbb246b644ac5dc0449fe8a27fee2295"
+            },
+            "__swift5_assocty": {
+              "bytes": 1032,
+              "sha256": "300deff86d533a78b9184705e4c0bad7c99cd0e6ee07210c70bf735f8586c25f"
+            },
+            "__swift5_builtin": {
+              "bytes": 240,
+              "sha256": "afa98edee0b263cacde2eed62db229b14b1e4944d0195c9986eeb9afa3f3c6bc"
+            },
+            "__swift5_mpenum": {
+              "bytes": 308,
+              "sha256": "3c80477a13cef4db6d68d880f85735d3213b26b700615d399a003cd6881299c0"
+            },
+            "__swift5_entry": {
+              "bytes": 8,
+              "sha256": "63ee3acc58c11d20dfc8a47e82e479aac2fbab624f5c6e5e70ee8734705db466"
+            },
+            "__objc_methtype": {
+              "bytes": 4488,
+              "sha256": "bcc1fe1f9c3b51a44865b8eb2fc3a8bf19717b31d02f57b12b97694dc2bbf169"
+            },
+            "__objc_classname": {
+              "bytes": 1936,
+              "sha256": "bce518996c13a7ddb292ba3210b6a82ce02d60a2faddc5fcc2a5af9167a62258"
+            },
+            "__swift5_capture": {
+              "bytes": 4712,
+              "sha256": "09a67f8605b664fc6cb726d9ba80e33716489c2f96bd77c53de705d10020961b"
+            },
+            "__oslogstring": {
+              "bytes": 60,
+              "sha256": "f995a703fbb47932d4aca050417b52494c82bcda1597be3abc74f152c93c37de"
+            },
+            "__unwind_info": {
+              "bytes": 7288,
+              "sha256": "c3fc577e079b72675b2083f1910bf4da5ab73c4191c1fc2810eb62624edc5006"
+            },
+            "__eh_frame": {
+              "bytes": 3984,
+              "sha256": "13065498079ac1161fea15a979d6ab3861e531c2b08699f62270cdfef27535cf"
+            }
+          },
+          "TEXT_segment_bytes": 905216,
+          "TEXT_segment_sha256": "cb754faaa4e1921e0ef00f84e8f1615daefa5adedee3109d0c86934cbcd0ce8a"
+        },
+        "arm64": {
+          "slice_bytes": 1086512,
+          "text_sections": {
+            "__text": {
+              "bytes": 671148,
+              "sha256": "301419b0d1c6e3d614803353d737c5f2e368074f5cf00694abe6e71fc48fcaf4"
+            },
+            "__stubs": {
+              "bytes": 4140,
+              "sha256": "d2eea234047915e9de22149935b26aa0ebba8a5e4e3b9408de4ffb1f96f953f7"
+            },
+            "__objc_stubs": {
+              "bytes": 8864,
+              "sha256": "4d504c37bb7dda5a905078d5e3f550255f434368ac09f26713bca3b0f824d002"
+            },
+            "__objc_methlist": {
+              "bytes": 3564,
+              "sha256": "2a93949333df0499e5818d97ae3d3bd82734e7ef15520008555c490393cde503"
+            },
+            "__const": {
+              "bytes": 23322,
+              "sha256": "5ea422fa73ce760decc9d080922fd68996d4614eb3c5e354a081ea96bf7a88a2"
+            },
+            "__cstring": {
+              "bytes": 21331,
+              "sha256": "ebfe29fc07f8cffd09b2ed09c1763da7126b17793ab36bb2ed34ce9c756d3285"
+            },
+            "__swift5_typeref": {
+              "bytes": 6036,
+              "sha256": "1a6ebd957f674d7fadbdc2575ac7ae374f45145df43380fc79cbc8c3dd3e6839"
+            },
+            "__constg_swiftt": {
+              "bytes": 5076,
+              "sha256": "28946441c76da066200ac048ced4d3d44b64ef0e82bf8a00792162b1573baa98"
+            },
+            "__swift5_reflstr": {
+              "bytes": 7398,
+              "sha256": "367d918526e4c39f95017919bf203a214d7baeedf9db96154cec827aeaa734b7"
+            },
+            "__swift5_fieldmd": {
+              "bytes": 11404,
+              "sha256": "f0e8bd9c94811b1f184dfdf4c353596534d0e2b39d99bcb985bd545d5f62c2a1"
+            },
+            "__swift5_proto": {
+              "bytes": 1264,
+              "sha256": "a50b56edcde1315f6bc1c4da48424d062c54b42ece420830e2ed40166f32d9db"
+            },
+            "__swift5_types": {
+              "bytes": 536,
+              "sha256": "a4b461278ada7ad1bfd9635fc124186910d625001ee89d094f9e6955ba3f1344"
+            },
+            "__swift5_assocty": {
+              "bytes": 1032,
+              "sha256": "415a618c4d9c01f5928861e2be98cb856f5512aabd6cfd874a3106722c2adf81"
+            },
+            "__swift5_builtin": {
+              "bytes": 240,
+              "sha256": "e2337c73658926dd4d7f03481f1bbb29df4b78f6874d72d82869adb90df1d0fe"
+            },
+            "__swift5_mpenum": {
+              "bytes": 308,
+              "sha256": "60c11fa4380f873b5992af971b140f37481ffc31758729d418b250fedcc1a54e"
+            },
+            "__swift5_entry": {
+              "bytes": 8,
+              "sha256": "bb0762f7d739ae5ab7e69e9c4f5031f169829aac80666fa4ec77709cf70baa40"
+            },
+            "__objc_methname": {
+              "bytes": 14437,
+              "sha256": "5f7e14c00e7378fe1d6bf191666962e44fdbba0f2700faac78ac368494fcebb1"
+            },
+            "__objc_methtype": {
+              "bytes": 4488,
+              "sha256": "b41909265950c510ff87003870fa75750e82c8fea88b3f40ddfaafb204b21680"
+            },
+            "__objc_classname": {
+              "bytes": 1936,
+              "sha256": "bce518996c13a7ddb292ba3210b6a82ce02d60a2faddc5fcc2a5af9167a62258"
+            },
+            "__swift5_capture": {
+              "bytes": 4712,
+              "sha256": "1bf747ab45f73bf1ff4f262540fff428e48058ce3afaeaee4251d626a109b8af"
+            },
+            "__oslogstring": {
+              "bytes": 60,
+              "sha256": "f995a703fbb47932d4aca050417b52494c82bcda1597be3abc74f152c93c37de"
+            },
+            "__unwind_info": {
+              "bytes": 8744,
+              "sha256": "87943a8f2ea08a447c78ea4f1e85459ab0487d82a3c6b4bf19b6e0586825bee0"
+            },
+            "__eh_frame": {
+              "bytes": 8216,
+              "sha256": "4e7471d4839830546b5514493725a1bce00a90e473cae61dff1541c2c007516d"
+            }
+          },
+          "TEXT_segment_bytes": 819200,
+          "TEXT_segment_sha256": "6069f0e76ee96b417a7c26b82977e9a20d8e380b27031c91af7786f2e5bad6e3"
+        }
+      }
+    },
+    "cpu_method": "median of per-run CPU deltas first to last sample, matching PIDs; 0.3-second launch settle excluded. Tail final-12-sample values retained separately. 100 percent is one core",
+    "limits": [
+      "not RSS; sampled peaks can miss shorter events",
+      "macOS and concurrent system activity uncontrolled",
+      "five-second default scenarios include startup/cache settling",
+      "new playback modes are separate workloads, not zero-cost claims",
+      "owned settings helper terminated with SIGTERM for the post-close footprint; actual UI-close lifecycle is independently asserted by native suite",
+      "profiled package subsequently resealed only to expand attribution paths; TEXT segments/code sections unchanged",
+      "arm64 execution only; Intel/macOS 13 checked structurally, not on physical hardware"
+    ]
+  }
+}

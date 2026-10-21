@@ -27,6 +27,12 @@ func runEditorChecks() throws {
         c.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: f))
     }
     let id = CapsuleProfile.batteryID
+    enter("profile.\(id).title", "Available title")
+    check(control("playback.available", NSPopUpButton.self).itemTitles.contains("Available title"), "Available caption refreshes on committed profile title")
+    click("playback.add")
+    enter("profile.\(id).title", "Queued title")
+    check(control("playback.queue", NSPopUpButton.self).itemTitles == ["1. Queued title"], "Queue caption refreshes on committed profile title")
+    click("playback.delete")
     click("appearance.add")
     check(settings.value.capsuleProfiles[0].colorConditions.count == 1, "Add writes actual condition")
     let scroll = views(c.window!.contentView!).compactMap { $0 as? NSScrollView }.first!
@@ -139,6 +145,31 @@ func runEditorChecks() throws {
                 }
             }
         }
-        print("PASS: isolated English/Chinese actual settings screenshot exports")
+        // Production HUDView + CapsulePresentation, isolated synthetic readings; no real preferences.
+        let snapshot = TelemetrySnapshot(sampledAt: 100,
+            battery: BatterySnapshot(hasBattery: true, percent: 64), power: nil,
+            compute: ComputeTelemetry(cpuFraction: 0.37, memoryUsedBytes: 11 * 1_073_741_824,
+                memoryTotalBytes: 24 * 1_073_741_824, compressedBytes: nil, swapUsedBytes: nil, pressure: .warning), thermal: .serious)
+        let profile = CapsuleProfile(id: "demo.palette", title: "PALETTE · DEMO", primaryMetric: .cpuPercent,
+            ringMetric: .cpuPercent, referenceMaximum: 100,
+            colorConditions: [CapsuleColorCondition(metric: .cpuPercent, comparison: .above, threshold: 30, accent: .amber),
+                CapsuleColorCondition(metric: .cpuPercent, comparison: .above, threshold: 10, accent: .red)])
+        check(CapsulePresentation(profile: profile, snapshot: snapshot).accent == .amber, "Demo uses first matching color")
+        for language in ["en", "zh"] {
+            let chinese = language == "zh"
+            let thermal = TelemetryAlertRule(id: "demo.thermal", name: chinese ? "热状态 · 演示" : "THERMAL · DEMO",
+                condition: .stateChange, source: .thermal, targetState: .thermal(.serious))
+            let memory = TelemetryAlertRule(id: "demo.memory", name: chinese ? "内存压力 · 演示" : "MEMORY · DEMO",
+                condition: .stateChange, source: .memoryPressure, targetState: .memoryPressure(.warning))
+            for (name, presentation) in [("palette", CapsulePresentation(profile: profile, snapshot: snapshot)),
+                ("thermal-state", CapsulePresentation(rule: thermal, snapshot: snapshot, chinese: chinese)),
+                ("memory-state", CapsulePresentation(rule: memory, snapshot: snapshot, chinese: chinese))] {
+                let hud = HUDView(frame: NSRect(x: 0, y: 0, width: 620, height: 144))
+                hud.snapshot = snapshot.battery; hud.preferences = Preferences(); hud.chinese = chinese
+                hud.capsule = presentation; hud.elapsed = 3
+                try hud.writePNG(to: URL(fileURLWithPath: path).appendingPathComponent("\(name)-\(language).png"))
+            }
+        }
+        print("PASS: isolated English/Chinese actual settings and production palette/state HUD exports")
     }
 }

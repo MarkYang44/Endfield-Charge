@@ -50,3 +50,17 @@ LICENSES/zmd-charge-plus-MIT.txt and packaged as zmd-charge-plus-MIT.txt.
 This native Swift adaptation does not bundle that project's Avalonia/.NET
 runtime, LibreHardwareMonitor, fonts, or additional game assets. Existing
 upstream and brand-art notices above remain applicable.
+
+
+## Windows Endfield Charge Plus concepts
+
+Local configuration sharing, bounded color/state rules and carousel concepts
+also reference [GlacierGlimmer/zmd-charge-plus](https://github.com/GlacierGlimmer/zmd-charge-plus)
+at commit `dd17813e682215f3b91d17b40963c34cb8c64a95`, including
+Settings/SettingsManager.cs, Customization/HudColorRuleParser.cs,
+Customization/HudTriggerRule.cs and its
+carousel behavior. This is a bounded native Swift reimplementation, not JSON
+compatibility with arbitrary upstream files. Its MIT notice is the same
+Copyright (c) 2026 GlacierGlimmer_冰川雪貓 retained in
+LICENSES/zmd-charge-plus-MIT.txt and the packaged notice. No Windows/.NET
+runtime, fonts or additional artwork are distributed.

@@ -6,11 +6,24 @@ let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 // The same executable hosts the real child role, allowing an actual pipe/exit/reopen regression.
 let unicodeName = String(repeating: "👨‍👩‍👧‍👦", count: 32)
+let byteMaximumName = String(repeating: "e\u{301}", count: 31) + "e" + String(repeating: "\u{301}", count: 465)
 func maximumUnicodePreferences() -> Preferences {
     var value = Preferences()
-    for index in value.capsuleProfiles.indices { value.capsuleProfiles[index].title = unicodeName }
     for _ in 0..<7 { value.capsuleProfiles.append(.custom(title: unicodeName)) }
-    value.telemetryAlertRules = (0..<16).map { _ in .custom(name: unicodeName) }
+    for index in value.capsuleProfiles.indices {
+        if index >= 5 { value.capsuleProfiles[index].id = String(format: "%02d", index) + String(repeating: "i", count: 61) + "e" + String(repeating: "\u{301}", count: 96) }
+        value.capsuleProfiles[index].title = byteMaximumName
+        value.capsuleProfiles[index].colorConditions = CapsuleAccent.allCases.map {
+            CapsuleColorCondition(metric: .networkDownloadBytesPerSecond, comparison: .above, threshold: 1, accent: $0)
+        }
+    }
+    value.telemetryAlertRules = (0..<16).map { index in
+        TelemetryAlertRule(id: String(format: "%02d", index) + String(repeating: "r", count: 61) + "e" + String(repeating: "\u{301}", count: 96), name: byteMaximumName, condition: index.isMultiple(of: 2) ? .threshold : .stateChange,
+            source: index.isMultiple(of: 2) ? nil : .memoryPressure,
+            targetState: index.isMultiple(of: 2) ? nil : .memoryPressure(.critical))
+    }
+    value.playback = CapsulePlayback(persistent: true, rotationEnabled: true,
+        profileIDs: value.capsuleProfiles.map(\.id), intervalSeconds: 600)
     return value
 }
 let telemetryRole = CommandLine.arguments.contains("--telemetry-ui")
@@ -83,9 +96,9 @@ if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry
         } else if tab == 0 {
             guard let controller = window.windowController as? SettingsWindowController,
                   controller.settings.value.capsuleProfiles.count == 12,
-                  controller.settings.value.capsuleProfiles.allSatisfy({ $0.title == unicodeName }),
+                  controller.settings.value.capsuleProfiles.allSatisfy({ $0.title == byteMaximumName }),
                   controller.settings.value.telemetryAlertRules.count == 16,
-                  controller.settings.value.telemetryAlertRules.allSatisfy({ $0.name == unicodeName }) else {
+                  controller.settings.value.telemetryAlertRules.allSatisfy({ $0.name == byteMaximumName }) else {
                 fputs("FAIL: child lost maximum Unicode configuration\n", stderr); exit(1)
             }
             guard let tabs = window.toolbar?.items.compactMap({ $0.view as? NSSegmentedControl }).first else {
@@ -106,9 +119,9 @@ if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry
         } else {
             guard let controller = window.windowController as? SettingsWindowController,
                   controller.settings.value.capsuleProfiles.count == 12,
-                  controller.settings.value.capsuleProfiles.allSatisfy({ $0.title == unicodeName }),
+                  controller.settings.value.capsuleProfiles.allSatisfy({ $0.title == byteMaximumName }),
                   controller.settings.value.telemetryAlertRules.count == 16,
-                  controller.settings.value.telemetryAlertRules.allSatisfy({ $0.name == unicodeName }) else {
+                  controller.settings.value.telemetryAlertRules.allSatisfy({ $0.name == byteMaximumName }) else {
                 fputs("FAIL: reopened child lost maximum Unicode configuration\n", stderr); exit(1)
             }
             (window.windowController as? SettingsWindowController)?.onCapsulePreview?(CapsuleProfile.cpuID)
@@ -215,7 +228,7 @@ do {
     check(unicodeFrame.count > 16_384, "Unicode regression exercises the former incomplete-frame cap")
     try write(unicodeFrame)
     check(messages.count == 1 && messages[0].preferences == maximum,
-        "Maximum 12-profile/16-rule Unicode configuration survives actual 8192-byte pipe fragments")
+        "Maximum Unicode 12-profile/four-color/mixed-16-rule/12-queue configuration survives actual 8192-byte pipe fragments")
     // Each frame is valid even when their combined write is larger than one frame's budget.
     let coalesced = try (2...7).reduce(into: Data()) { $0.append(try line(SettingsMessage(.changed, preferences: maximum, revision: $1))) }
     try write(coalesced, fragmentSize: coalesced.count)

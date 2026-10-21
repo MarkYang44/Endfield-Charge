@@ -61,3 +61,18 @@ swift scripts/render-icons.swift
 ## 配置与通信边界
 
 标题／规则名称最多 32 个字符且不超过 1,024 个 UTF-8 字节；ID 最多 64 个字符且不超过 256 字节，规范化保留完整字素。私有通信每帧负载上限为 128 KiB（不含换行），发送与接收采用同一限制；超大帧会丢弃至换行，随后恢复接收正常帧。正常中文及 32 个家庭 Emoji 名称均受支持。
+
+
+## v1.2.0 配置验证
+
+[配置指南](configuration-sharing.zh-CN.md)（[English](configuration-sharing.md)）说明分享范围、安全默认值和播放行为。分享校验严格且带版本；旧 Preferences 迁移保持宽容。常驻端 ConfigurationTransactionService 负责校验、原子备份及一次提交，辅助进程只发送请求并接收权威版本。撤销恢复一份完整快照，不修改 SMAppService 注册。CapsulePlaybackScheduler 使用确定性状态机；单个原生协调器管理 HUD 与截止计时，静态紧凑保持停止动画计时器。
+
+先用 `bash scripts/test.sh` 构建 ChargeCore，再运行 `bash scripts/check-runtime.sh` 检查真实控件、管道及子进程，包括扩展 UTF-8 极值配置。隔离导出演示界面：
+
+```bash
+ENDFIELD_EDITORS_ONLY=1 ENDFIELD_EDITOR_SCREENSHOTS=/tmp/endfield-demo bash scripts/check-runtime.sh
+```
+
+此命令使用临时偏好导出真实中英文设置及生产配色／散热／内存压力 HUD，不使用用户读数。`ENDFIELD_SHARING_ONLY=1` 可仅运行分享检查，其截图 fixture 见 Tests/RuntimeChecks/SharingChecks.swift。`--render-settings --scroll-bottom` 导出可滚动页底部。原电池回归使用 `--render /tmp/battery.png --demo --stage 1.55`、阶段 3，以及阶段 0.15 加 `--reduce-motion`；不要通过修改图案更新基准。
+
+[分版本验证](capsule-sharing-validation.md)记录命令、物理占用汇总、安装包哈希与限制。真实偏好备份和原始遥测样本保留在仓库之外。性能脚本只用于开发，应用不打包 Python、.NET、字体或其他运行时。

@@ -17,11 +17,20 @@ extension SettingsWindowController {
         let queue = playback.profileIDs
         selectedPlaybackIndex = min(max(0, selectedPlaybackIndex), max(0, queue.count - 1))
         let index = selectedPlaybackIndex
-        choice(t("顺序", "Order"), id: "playback.queue", choices: queue.isEmpty ? [t("空队列：使用当前胶囊", "Empty: use active capsule")] : queue.enumerated().map { i, id in
+        let queueChoice = choice(t("顺序", "Order"), id: "playback.queue", choices: queue.isEmpty ? [t("空队列：使用当前胶囊", "Empty: use active capsule")] : queue.enumerated().map { i, id in
             "\(i + 1). " + (profiles.first { $0.id == id }?.title ?? id)
-        }, selected: index, in: page, y: y + 48) { c, item in c.selectedPlaybackIndex = item; c.buildPage() }.isEnabled = !queue.isEmpty
+        }, selected: index, in: page, y: y + 48) { c, item in c.selectedPlaybackIndex = item; c.buildPage() }
+        queueChoice.isEnabled = !queue.isEmpty
         let available = profiles.filter { !queue.contains($0.id) }
         let addChoice = choice(t("可添加胶囊", "Available capsule"), id: "playback.available", choices: available.isEmpty ? [t("已全部添加", "All added")] : available.map(\.title), selected: 0, in: page, y: y + 86) { _,_ in }
+        bindings.append { c in
+            for (i, id) in queue.enumerated() where i < queueChoice.numberOfItems {
+                queueChoice.item(at: i)?.title = "\(i + 1). " + (c.settings.value.capsuleProfiles.first { $0.id == id }?.title ?? id)
+            }
+            for (i, profile) in available.enumerated() where i < addChoice.numberOfItems {
+                addChoice.item(at: i)?.title = c.settings.value.capsuleProfiles.first { $0.id == profile.id }?.title ?? profile.title
+            }
+        }
         addChoice.isEnabled = !available.isEmpty
         let add = button(t("添加", "Add"), in: page, y: y + 124, width: 125) { c,_ in
             let i = addChoice.indexOfSelectedItem

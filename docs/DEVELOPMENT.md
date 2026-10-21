@@ -61,3 +61,18 @@ Re-export the repository's vector icon source with `swift scripts/render-icons.s
 See [performance records](PERFORMANCE.md) for profiling commands, metrics and historical results. Python 3 and Command Line Tools are needed only for those developer measurements, not the installed app.
 
 Pushing `main` runs core tests and creates a universal archive. Pushing a `v*` tag publishes the archive using `docs/releases/<tag>.md` when present. Builds currently use ad-hoc signing, without Developer ID notarization. Preserve bundled licenses, third-party notices and privacy metadata when distributing.
+
+
+## v1.2.0 configuration verification / 配置验证
+
+The [configuration guide](configuration-sharing.md) ([中文](configuration-sharing.zh-CN.md)) defines sharing scope, safety defaults and playback behavior. Share validation is strict and versioned; legacy Preferences migration stays tolerant. Resident-side ConfigurationTransactionService owns validation, atomic backup and one commit; helpers only request and receive authoritative revisions. Undo restores one full snapshot without changing SMAppService registration. CapsulePlaybackScheduler is deterministic; one native coordinator owns the HUD/deadline, while static compact holds stop the animation timer.
+
+`bash scripts/test.sh` builds ChargeCore first; `bash scripts/check-runtime.sh` then exercises actual controls, pipes and child processes, including expanded UTF-8 configurations. For isolated synthetic exports:
+
+```bash
+ENDFIELD_EDITORS_ONLY=1 ENDFIELD_EDITOR_SCREENSHOTS=/tmp/endfield-demo bash scripts/check-runtime.sh
+```
+
+This exports actual English/Chinese settings content and production palette/thermal/memory HUDs from temporary preferences, not user readings. `ENDFIELD_SHARING_ONLY=1` isolates sharing checks; see Tests/RuntimeChecks/SharingChecks.swift for its screenshot fixture. `--render-settings --scroll-bottom` exports the bottom of a scrollable page. The original battery regression uses `--render /tmp/battery.png --demo --stage 1.55`, stage 3, and stage 0.15 with `--reduce-motion`; do not change artwork to update these expectations.
+
+[Versioned validation](capsule-sharing-validation.md) records commands, physical-footprint aggregates, package hashes and limitations. Raw live preference backups and telemetry samples belong outside the repository. The profiling tools are development-only; no Python, .NET, font or other runtime is bundled.
