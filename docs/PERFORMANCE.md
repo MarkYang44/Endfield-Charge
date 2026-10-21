@@ -15,9 +15,9 @@ These are versioned measurements, not universal memory guarantees. Current candi
 | Persistent single | — | 14.407 | 16.032 | 1.0284 |
 | Persistent carousel | — | 17.532 | 18.001 | 1.6734 |
 
-Methods, caveats, signature-only reseal evidence and aggregates: [validation](capsule-sharing-validation.md), [JSON](capsule-sharing-validation.json). Default scenarios use matching five-second methods; new display modes have separate observation windows. Peaks are sampled, table CPU averages the observed run after launch settling, and system activity is uncontrolled. Phase-sensitive final ~2.2-second CPU values are retained separately in JSON.
+Methods, caveats, historical intermediate reseal evidence, final copy-only rebuild limits and aggregates: [validation](capsule-sharing-validation.md), [JSON](capsule-sharing-validation.json). Default scenarios use matching five-second methods; new display modes have separate observation windows. Peaks are sampled, table CPU averages the observed run after launch settling, and system activity is uncontrolled. Phase-sensitive final ~2.2-second CPU values are retained separately in JSON.
 
-测量方法、限制及仅资源重新签名证据见上述验证记录。默认场景使用匹配的五秒方法，新增播放场景窗口不同；峰值为采样值，表内 CPU 为启动稳定后观测窗口均值；另存的末尾约 2.2 秒 CPU 对切换阶段敏感，系统活动未受控。
+测量方法、文案重建限制及历史中间阶段仅资源重新签名证据见上述验证记录。默认场景使用匹配的五秒方法，新增播放场景窗口不同；峰值为采样值，表内 CPU 为启动稳定后观测窗口均值；另存的末尾约 2.2 秒 CPU 对切换阶段敏感，系统活动未受控。
 
 ## 内存与体积
 

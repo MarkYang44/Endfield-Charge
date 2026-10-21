@@ -78,7 +78,7 @@
 **Files:** `Tests/RuntimeChecks/main.swift`, `scripts/check-runtime.sh`, `scripts/build-app.sh`, `README.md`, `README.zh-CN.md`, `docs/DEVELOPMENT*.md`, `docs/PERFORMANCE.md`, `THIRD_PARTY_NOTICES.md`, new versioned validation docs.
 
 - [x] Add native lifecycle/max UTF8 frame tests covering expanded config, fragmented/coalesced pipe, authoritative import revision, backup failure, hold exit, fresh wake, rule invalidation and collector demand. Run `bash scripts/test.sh`, `bash scripts/check-runtime.sh`, universal build.
-- [ ] Run task-scoped reviews then final whole-branch review from merge-base to final head; fix important/critical findings and rerun covering tests, keep minor findings visible in ledger.
+- [x] Run task-scoped reviews then final whole-branch review from merge-base to final head; fix important/critical findings and rerun covering tests, keep minor findings visible in ledger.
 - [x] Verify unchanged original artwork SHA and battery stage exports against v1.1.0. Render actual demo exports of new en/zh editors and playback/alert examples, visually inspect.
 - [x] Measure cold baseline and new idle/UI/transient-carousel/persistent-single/persistent-carousel resident+UI physical footprint/CPU using existing profiling tools, bounded runs; record environment and limitations. Validate no static animation timer and UI-helper close exit independently.
 - [x] Bump next appropriate release to1.2.0/build5 after passing checks; document defaults, scope, migration, limits and recovery in both READMEs. Package license notices and no new runtime deps.
@@ -87,5 +87,5 @@
 ## Progress
 
 - Baseline/spec approved 2026-10-20; Tasks 1–5 implemented and reviewed.
-- Task 6 implementation, regression, measurements, docs and local package complete: [versioned validation](../../capsule-sharing-validation.md). Task-scoped review Minor caption refresh fixed with actual-control RED/GREEN. Final whole-branch review and integration/publication/download/install remain with the controller.
+- Task 6 implementation, regression, measurements, docs and local package complete: [versioned validation](../../capsule-sharing-validation.md). Task-scoped review Minor caption refresh fixed with actual-control RED/GREEN. Whole-branch review found 0 Critical/0 Important and one Minor Reduce Motion caption, corrected in both languages with actual exports and a covering rebuild/package check. Controller resolution review and integration/publication/download/install remain pending.
 - Detailed private task reports/reviews and raw measurement evidence remain in `/private/tmp/endfield-capsule-sharing/`; no raw preferences/telemetry are published.

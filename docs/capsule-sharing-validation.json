@@ -2,7 +2,7 @@
   "version": "1.2.0",
   "build": 5,
   "date": "2026-10-21",
-  "status": "local candidate verified; final whole-branch review and public delivery handled separately",
+  "status": "Local candidate verified; whole-branch review 0 Critical/0 Important and Minor bilingual caption corrected; final focused resolution and public delivery handled separately",
   "host": {
     "cpu": "Apple M5",
     "memory_GiB": 16,
@@ -21,9 +21,9 @@
       "arm64"
     ],
     "binary_bytes": 2282544,
-    "binary_sha256": "1a91cedaea8b800a9a7e956964727bc31f3de23b0c5a96d2dea9fb72ff54d12f",
-    "archive_bytes": 1240558,
-    "archive_sha256": "256212cde2c4fd4a861896675d0a941039b0698787f8507549ed1b0449f65861",
+    "binary_sha256": "e5712d50681a3fb9739fe3e849856236e186fb7b3620e9da241f1f0c474c1edc",
+    "archive_bytes": 1240621,
+    "archive_sha256": "f0807c41a3126863465de4864cbdf8ffc08be901948b0e22b6c7f588ef409dfd",
     "artwork": {
       "Resources/MenuBarIcon.png": {
         "sha256": "d5be9d72656c7e7b733c3cb67a1e7caa90892f0fc72d790ba7ed02a14cedcacf",
@@ -125,10 +125,19 @@
       }
     },
     "profiled_executable_sha256": "d4bd0eb26e1668c556de03b58c81b589171835297192b681c4c15fe20d2b1166",
-    "resource_only_reseal": {
+    "cpu_method": "median of per-run CPU deltas first to last sample, matching PIDs; 0.3-second launch settle excluded. Tail final-12-sample values retained separately. 100 percent is one core",
+    "limits": [
+      "not RSS; sampled peaks can miss shorter events",
+      "macOS and concurrent system activity uncontrolled",
+      "five-second default scenarios include startup/cache settling",
+      "new playback modes are separate workloads, not zero-cost claims",
+      "owned settings helper terminated with SIGTERM for the post-close footprint; actual UI-close lifecycle is independently asserted by native suite",
+      "Measurements precede notice and caption polish; historical TEXT equality is only for the intermediate notice-only reseal, not the final copy-only rebuild",
+      "arm64 execution only; Intel/macOS 13 checked structurally, not on physical hardware"
+    ],
+    "intermediate_notice_only_reseal": {
       "change": "Only the bundled THIRD_PARTY_NOTICES.md expanded upstream file paths; app ad-hoc seal/ZIP regenerated",
       "profiled_sha256": "d4bd0eb26e1668c556de03b58c81b589171835297192b681c4c15fe20d2b1166",
-      "final_sha256": "1a91cedaea8b800a9a7e956964727bc31f3de23b0c5a96d2dea9fb72ff54d12f",
       "executable_bytes_unchanged": 2282544,
       "architectures_and_TEXT_segments_and_all_TEXT_sections_unchanged": true,
       "minimum_os_unchanged": "13.0 both architectures",
@@ -323,17 +332,16 @@
           "TEXT_segment_bytes": 819200,
           "TEXT_segment_sha256": "6069f0e76ee96b417a7c26b82977e9a20d8e380b27031c91af7786f2e5bad6e3"
         }
-      }
+      },
+      "stage": "Historical intermediate notice-only reseal, before the final Reduce Motion caption polish",
+      "intermediate_sha256": "1a91cedaea8b800a9a7e956964727bc31f3de23b0c5a96d2dea9fb72ff54d12f"
     },
-    "cpu_method": "median of per-run CPU deltas first to last sample, matching PIDs; 0.3-second launch settle excluded. Tail final-12-sample values retained separately. 100 percent is one core",
-    "limits": [
-      "not RSS; sampled peaks can miss shorter events",
-      "macOS and concurrent system activity uncontrolled",
-      "five-second default scenarios include startup/cache settling",
-      "new playback modes are separate workloads, not zero-cost claims",
-      "owned settings helper terminated with SIGTERM for the post-close footprint; actual UI-close lifecycle is independently asserted by native suite",
-      "profiled package subsequently resealed only to expand attribution paths; TEXT segments/code sections unchanged",
-      "arm64 execution only; Intel/macOS 13 checked structurally, not on physical hardware"
-    ]
+    "copy_only_final_rebuild": {
+      "change": "Only the English/Chinese Reduce Motion help caption changed in SettingsPages.swift; universal app rebuilt",
+      "intermediate_executable_sha256": "1a91cedaea8b800a9a7e956964727bc31f3de23b0c5a96d2dea9fb72ff54d12f",
+      "final_executable_sha256": "e5712d50681a3fb9739fe3e849856236e186fb7b3620e9da241f1f0c474c1edc",
+      "measurements_rerun": false,
+      "limitation": "Measurements precede both notice and caption polish. The historical TEXT equality proof applies only from measured executable to intermediate notice-only reseal, not this final copy-only rebuild."
+    }
   }
 }

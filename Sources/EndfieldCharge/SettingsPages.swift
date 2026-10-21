@@ -75,7 +75,7 @@ extension SettingsWindowController {
         slider(t("总显示时长", "Total duration"), in: page, y: 120, range: 3...10, step: 0.5,
                value: { $0.duration }, set: { $0.duration = $1 }, format: { String(format: "%.1fs", $0) })
         toggle(t("启用能量波纹", "Energy ripples"), \.ripplesEnabled, in: page, y: 164)
-        _ = caption(t("系统开启“减少动态效果”时，自动使用简化淡入淡出。", "Uses a gentle fade when Reduce Motion is enabled in macOS."), in: page, y: 201)
+        _ = caption(t("系统开启“减少动态效果”时，直接显示紧凑胶囊，并保留完整显示时长。", "Reduce Motion shows compact content immediately and keeps the full configured duration."), in: page, y: 201)
         button(t("模拟插电", "Charging Demo"), in: page, y: 249) { c, _ in c.onPreview(true) }
         button(t("模拟拔电", "Battery Demo"), in: page, x: 150, y: 249) { c, _ in c.onPreview(false) }
         let persistent = NSButton(checkboxWithTitle: t("常驻显示胶囊（默认关闭）", "Keep capsule visible (off by default)"), target: nil, action: nil)
