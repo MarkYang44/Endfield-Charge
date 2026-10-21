@@ -42,7 +42,8 @@ extension SettingsWindowController {
         bindings.append { c in loginMessage.stringValue = c.settings.loginMessage }
     }
 
-    func animationPage(_ page: NSView) {
+    func animationPage(_ container: NSView) {
+        let page = editorPage(in: container, height: 440)
         place(label(t("显示器", "Display")), in: page, y: 4, width: 200)
         let display = NSPopUpButton(frame: .zero, pullsDown: false)
         display.addItem(withTitle: t("当前主显示器", "Current main display"))
@@ -77,6 +78,12 @@ extension SettingsWindowController {
         _ = caption(t("系统开启“减少动态效果”时，自动使用简化淡入淡出。", "Uses a gentle fade when Reduce Motion is enabled in macOS."), in: page, y: 201)
         button(t("模拟插电", "Charging Demo"), in: page, y: 249) { c, _ in c.onPreview(true) }
         button(t("模拟拔电", "Battery Demo"), in: page, x: 150, y: 249) { c, _ in c.onPreview(false) }
+        let persistent = NSButton(checkboxWithTitle: t("常驻显示胶囊（默认关闭）", "Keep capsule visible (off by default)"), target: nil, action: nil)
+        persistent.identifier = NSUserInterfaceItemIdentifier("playback.persistent")
+        place(persistent, in: page, y: 300, width: 545)
+        bind(persistent) { c,sender in c.editPlayback { $0.persistent = (sender as! NSButton).state == .on } }
+        bindings.append { c in persistent.state = c.settings.value.playback.persistent ? .on : .off }
+        _ = caption(t("保持紧凑胶囊；可在菜单栏隐藏/恢复。队列和间隔在“胶囊”页配置。", "Holds the compact capsule; hide/resume from the menu bar. Configure queue and interval in Capsules."), in: page, y: 340)
     }
 
     func alertsPage(_ page: NSView) {

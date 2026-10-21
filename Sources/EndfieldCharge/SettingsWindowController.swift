@@ -29,9 +29,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
     private let tabs = NSSegmentedControl()
     private let content = SettingsBackground(frame: NSRect(x: 0, y: 0, width: 620, height: 480))
     private var page: NSView?
+    private var renderedTab: Int?
     var draftText: [String: String] = [:]
     var textEdits: [ObjectIdentifier: (key: String, field: NSTextField, save: (SettingsWindowController, String) -> Bool)] = [:]
     var selectedRuleID: String?
+    var selectedColorIndex = 0
+    var selectedPlaybackIndex = 0
     var validationMessage: NSTextField?
 
     private var renderedChinese: Bool
@@ -162,6 +165,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
     }
 
     func buildPage() {
+        let scrollOffset = renderedTab == selectedTab ? (page?.subviews.first { $0 is NSScrollView } as? NSScrollView)?.contentView.bounds.origin : nil
         commitEditing()
         textEdits.removeAll()
         validationMessage = nil
@@ -171,6 +175,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         bindings.removeAll(keepingCapacity: true)
         let page = SettingsBackground(frame: NSRect(x: 24, y: 104, width: 572, height: 310))
         self.page = page
+        renderedTab = selectedTab
         content.addSubview(page)
         switch selectedTab {
         case 1: animationPage(page)
@@ -180,6 +185,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         case 5: rulesPage(page)
         case 6: aboutPage(page)
         default: generalPage(page)
+        }
+        if let scrollOffset, let scroll = page.subviews.first(where: { $0 is NSScrollView }) as? NSScrollView {
+            let maximumY = max(0, (scroll.documentView?.bounds.height ?? 0) - scroll.contentView.bounds.height)
+            scroll.contentView.scroll(to: NSPoint(x: scrollOffset.x, y: min(maximumY, scrollOffset.y)))
+            scroll.reflectScrolledClipView(scroll.contentView)
         }
         // Footer controls are recreated with the page, so their action entries stay valid.
         content.subviews.filter { $0.identifier?.rawValue == "footer" }.forEach { $0.removeFromSuperview() }

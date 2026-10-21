@@ -134,6 +134,8 @@ func awaitCondition(_ condition: () -> Bool, _ message: String) {
 func check(_ condition: @autoclosure () -> Bool, _ message: String) {
     guard condition() else { fputs("FAIL: \(message)\n", stderr); exit(1) }
 }
+try runEditorChecks()
+if ProcessInfo.processInfo.environment["ENDFIELD_EDITORS_ONLY"] == "1" { exit(0) }
 try runSharingChecks()
 if ProcessInfo.processInfo.environment["ENDFIELD_SHARING_ONLY"] == "1" { exit(0) }
 var appChanges = 0, uiChanges = 0
@@ -955,4 +957,4 @@ UserDefaults.standard.set(standardPreferences, forKey: "preferences")
 print("PASS: actual child process, preview, close acknowledgment, rapid reopen and tab/frame preservation")
 print("PASS: telemetry delivery, preference direction, visibility, acknowledged close and rapid reopen")
 print("PASS: telemetry child exits on parent EOF without fallback")
-print("All 23 native runtime check groups passed")
+print("All 24 native runtime check groups passed")

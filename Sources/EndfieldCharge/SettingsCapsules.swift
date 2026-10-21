@@ -11,7 +11,7 @@ extension SettingsWindowController {
     }
 
     func capsulesPage(_ container: NSView) {
-        let page = editorPage(in: container, height: 473)
+        let page = editorPage(in: container, height: 1220)
         let profiles = settings.value.capsuleProfiles
         let id = profiles.first(where: { $0.id == settings.value.selectedCapsuleID })?.id ?? CapsuleProfile.batteryID
         guard let profile = profiles.first(where: { $0.id == id }) else { return }
@@ -29,14 +29,17 @@ extension SettingsWindowController {
         selector.setAccessibilityLabel(t("当前胶囊", "Active capsule"))
         place(selector, in: page, y: 0, width: 545, height: 28)
         bind(selector) { c, sender in
-            c.commitEditing()
+            guard c.appearanceMutationAllowed() else {
+                selector.selectItem(at: profiles.firstIndex(where: { $0.id == id }) ?? 0)
+                return
+            }
             if let id = (sender as! NSPopUpButton).selectedItem?.representedObject as? String {
                 c.settings.value.selectedCapsuleID = id
             }
             c.buildPage()
         }
         let add = button(t("新建", "Add"), in: page, y: 38, width: 88) { c, _ in
-            c.commitEditing()
+            guard c.appearanceMutationAllowed() else { return }
             guard c.settings.value.capsuleProfiles.count < 12 else { return }
             let profile = CapsuleProfile.custom()
             c.settings.value.capsuleProfiles.append(profile)
@@ -44,7 +47,7 @@ extension SettingsWindowController {
             c.buildPage()
         }
         let duplicate = button(t("复制", "Duplicate"), in: page, x: 96, y: 38, width: 100) { c, _ in
-            c.commitEditing()
+            guard c.appearanceMutationAllowed() else { return }
             guard c.settings.value.capsuleProfiles.count < 12,
                   var copy = c.settings.value.capsuleProfiles.first(where: { $0.id == id }) else { return }
             copy.id = UUID().uuidString
@@ -55,15 +58,18 @@ extension SettingsWindowController {
         }
         add.isEnabled = profiles.count < 12; duplicate.isEnabled = profiles.count < 12
         let delete = button(t("删除", "Delete"), in: page, x: 204, y: 38, width: 88) { c, _ in
-            c.commitEditing()
-            c.settings.value.capsuleProfiles.removeAll { $0.id == id && !$0.id.hasPrefix("builtin.") }
-            c.settings.value.selectedCapsuleID = CapsuleProfile.batteryID
+            guard c.appearanceMutationAllowed() else { return }
+            var value = c.settings.value
+            value.capsuleProfiles.removeAll { $0.id == id && !$0.id.hasPrefix("builtin.") }
+            value.selectedCapsuleID = CapsuleProfile.batteryID
+            value.normalizeTelemetryConfiguration()
+            c.settings.value = value
             c.draftText = c.draftText.filter { !$0.key.hasPrefix("profile.\(id).") }
             c.buildPage()
         }
         delete.isEnabled = !id.hasPrefix("builtin.")
         button(t("恢复内置", "Restore Built-ins"), in: page, x: 303, y: 38, width: 242) { c, _ in
-            c.commitEditing()
+            guard c.appearanceMutationAllowed() else { return }
             let custom = c.settings.value.capsuleProfiles.filter { !$0.id.hasPrefix("builtin.") }
             let restoredPrefixes = CapsuleProfile.defaults.map { "profile.\($0.id)." }
             c.draftText = c.draftText.filter { key, _ in !restoredPrefixes.contains { key.hasPrefix($0) } }
@@ -107,6 +113,8 @@ extension SettingsWindowController {
         _ = caption(metricAvailability(unavailableMetric), in: page, y: 317)
         _ = caption(t("内置 ID 固定；恢复可找回原始电池样式。数值以本机读数为准。", "Built-in IDs stay stable. Restore recovers the original battery style. Values use local readings."), in: page, y: 355)
         editorValidation(in: page, y: 390)
-        button(t("分享与导入…", "Sharing & Import…"), in: page, y: 431, width: 240) { c, _ in c.showSharing() }
+        appearanceEditor(id, profile: profile, in: page, y: 430)
+        playbackEditor(in: page, y: 800)
+        button(t("分享与导入…", "Sharing & Import…"), in: page, y: 1155, width: 240) { c, _ in c.showSharing() }
     }
 }

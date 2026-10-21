@@ -170,6 +170,17 @@ extension SettingsWindowController {
         for edit in Array(textEdits.values) { validate(edit.field) }
     }
 
+    @discardableResult func choice(_ title: String, id: String, choices: [String], selected: Int,
+        in page: NSView, y: CGFloat, change: @escaping (SettingsWindowController, Int) -> Void) -> NSPopUpButton {
+        place(label(title), in: page, y: y + 4, width: 260)
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+        popup.addItems(withTitles: choices); popup.selectItem(at: selected)
+        popup.identifier = NSUserInterfaceItemIdentifier(id); popup.setAccessibilityLabel(title)
+        place(popup, in: page, x: 270, y: y, width: 275, height: 28)
+        bind(popup) { c, sender in change(c, (sender as! NSPopUpButton).indexOfSelectedItem) }
+        return popup
+    }
+
     func metricPopup(_ title: String, metric: TelemetryMetric?, optional: Bool, in page: NSView,
                      y: CGFloat, set: @escaping (SettingsWindowController, TelemetryMetric?) -> Void) {
         place(label(title), in: page, y: y + 4, width: 260)
