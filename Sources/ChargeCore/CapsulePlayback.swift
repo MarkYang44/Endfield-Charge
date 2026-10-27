@@ -18,7 +18,7 @@ public struct CapsulePlayback: Codable, Equatable {
         var normalized: [String] = []
         for id in profileIDs where valid.contains(id) && seen.insert(id).inserted {
             normalized.append(id)
-            if normalized.count == 12 { break }
+            if normalized.count == ConfigurationLimits.maximumProfiles { break }
         }
         profileIDs = normalized
         if profileIDs.isEmpty { rotationEnabled = false }
@@ -42,7 +42,7 @@ public struct CapsulePlayback: Codable, Equatable {
             intervalSeconds: try values.decodeIfPresent(Double.self, forKey: .intervalSeconds) ?? 15)
         if values.contains(.profileIDs) {
             var ids = try values.nestedUnkeyedContainer(forKey: .profileIDs)
-            for _ in 0..<12 where !ids.isAtEnd {
+            for _ in 0..<ConfigurationLimits.maximumProfiles where !ids.isAtEnd {
                 let entry = try ids.superDecoder()
                 if let id = try? String(from: entry) { profileIDs.append(id) }
             }

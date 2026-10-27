@@ -46,7 +46,7 @@ public struct CapsuleProfile: Codable, Equatable, Identifiable {
         return uncolored.isDefaultBattery
     }
     public func resolvedAccent(in snapshot: TelemetrySnapshot) -> CapsuleAccent {
-        colorConditions.prefix(4).first { $0.matches(in: snapshot) }?.accent ?? .theme
+        colorConditions.prefix(ConfigurationLimits.maximumColorConditions).first { $0.matches(in: snapshot) }?.accent ?? .theme
     }
 
     public init(id: String, title: String, primaryMetric: TelemetryMetric,
@@ -65,7 +65,7 @@ public struct CapsuleProfile: Codable, Equatable, Identifiable {
         id = ConfigurationTextLimit.identifier.bounded(id)
         title = ConfigurationTextLimit.name.bounded(title)
         if title.isEmpty { title = "CUSTOM" }
-        colorConditions = Array(colorConditions.prefix(4).filter { $0.threshold.isFinite })
+        colorConditions = Array(colorConditions.prefix(ConfigurationLimits.maximumColorConditions).filter { $0.threshold.isFinite })
         if !referenceMaximum.isFinite || referenceMaximum <= 0 { referenceMaximum = 100 }
     }
     public static var defaults: [Self] {
@@ -91,7 +91,7 @@ private struct BoundedColorConditions: Decodable {
     var items: [CapsuleColorCondition] = []
     init(from decoder: Decoder) throws {
         var values = try decoder.unkeyedContainer()
-        for _ in 0..<4 where !values.isAtEnd {
+        for _ in 0..<ConfigurationLimits.maximumColorConditions where !values.isAtEnd {
             let entry = try values.superDecoder()
             if let value = try? CapsuleColorCondition(from: entry) { items.append(value) }
         }

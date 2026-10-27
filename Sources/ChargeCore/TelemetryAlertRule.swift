@@ -70,7 +70,7 @@ public struct TelemetryRuleEvaluator {
     public mutating func evaluate(rules: [TelemetryAlertRule], snapshot: TelemetrySnapshot, at time: Double) -> [String] {
         var values: [TelemetryMetric: Double] = [:]
         var knownStates: [TelemetryStateSource: TelemetryState] = [:]
-        for rule in rules.prefix(16) where rule.enabled {
+        for rule in rules.prefix(ConfigurationLimits.maximumRules) where rule.enabled {
             switch rule.condition {
             case .threshold: values[rule.metric] = rule.metric.value(in: snapshot)
             case .stateChange:
@@ -98,7 +98,7 @@ public struct TelemetryRuleEvaluator {
             }
         }
         previousTime = time
-        let active = rules.prefix(16).map { source -> TelemetryAlertRule in
+        let active = rules.prefix(ConfigurationLimits.maximumRules).map { source -> TelemetryAlertRule in
             var rule = source; rule.normalize(); return rule
         }
         let ids = Set(active.filter(\.enabled).map(\.id))

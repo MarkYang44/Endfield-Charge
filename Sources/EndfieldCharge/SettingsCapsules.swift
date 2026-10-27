@@ -40,7 +40,7 @@ extension SettingsWindowController {
         }
         let add = button(t("新建", "Add"), in: page, y: 38, width: 88) { c, _ in
             guard c.appearanceMutationAllowed() else { return }
-            guard c.settings.value.capsuleProfiles.count < 12 else { return }
+            guard c.settings.value.capsuleProfiles.count < ConfigurationLimits.maximumProfiles else { return }
             let profile = CapsuleProfile.custom()
             c.settings.value.capsuleProfiles.append(profile)
             c.settings.value.selectedCapsuleID = profile.id
@@ -48,7 +48,7 @@ extension SettingsWindowController {
         }
         let duplicate = button(t("复制", "Duplicate"), in: page, x: 96, y: 38, width: 100) { c, _ in
             guard c.appearanceMutationAllowed() else { return }
-            guard c.settings.value.capsuleProfiles.count < 12,
+            guard c.settings.value.capsuleProfiles.count < ConfigurationLimits.maximumProfiles,
                   var copy = c.settings.value.capsuleProfiles.first(where: { $0.id == id }) else { return }
             copy.id = UUID().uuidString
             copy.title = ConfigurationTextLimit.name.bounded(copy.title + c.t(" 副本", " COPY"))
@@ -56,7 +56,7 @@ extension SettingsWindowController {
             c.settings.value.selectedCapsuleID = copy.id
             c.buildPage()
         }
-        add.isEnabled = profiles.count < 12; duplicate.isEnabled = profiles.count < 12
+        add.isEnabled = profiles.count < ConfigurationLimits.maximumProfiles; duplicate.isEnabled = profiles.count < ConfigurationLimits.maximumProfiles
         let delete = button(t("删除", "Delete"), in: page, x: 204, y: 38, width: 88) { c, _ in
             guard c.appearanceMutationAllowed() else { return }
             var value = c.settings.value

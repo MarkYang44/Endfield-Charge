@@ -78,7 +78,7 @@ public struct CapsulePlaybackScheduler {
                 cycleProfileIDs = Array(cycleProfileIDs[index...]) + Array(cycleProfileIDs[..<index])
             } else { cycleProfileIDs.insert(selected, at: 0) }
         }
-        cycleProfileIDs = Array(cycleProfileIDs.prefix(12))
+        cycleProfileIDs = Array(cycleProfileIDs.prefix(ConfigurationLimits.maximumProfiles))
         ambientIndex = 0; cycleActive = false; ambientIntroduced = false; nextDeadline = nil
         guard let first = cycleProfileIDs.first else { return [] }
         var request = Request(id: "cycle.start", priority: .preview, profileID: first)

@@ -43,18 +43,18 @@ public struct Preferences: Codable, Equatable {
 
     public mutating func normalizeTelemetryConfiguration() {
         var seen = Set<String>()
-        capsuleProfiles = capsuleProfiles.prefix(12).compactMap { source in
+        capsuleProfiles = capsuleProfiles.prefix(ConfigurationLimits.maximumProfiles).compactMap { source in
             var profile = source; profile.normalize()
             return !profile.id.isEmpty && seen.insert(profile.id).inserted ? profile : nil
         }
         if !capsuleProfiles.contains(where: { $0.id == CapsuleProfile.batteryID }) {
-            if capsuleProfiles.count == 12 { capsuleProfiles.removeLast() }
+            if capsuleProfiles.count == ConfigurationLimits.maximumProfiles { capsuleProfiles.removeLast() }
             capsuleProfiles.insert(CapsuleProfile.defaults[0], at: 0)
         }
         if !capsuleProfiles.contains(where: { $0.id == selectedCapsuleID }) { selectedCapsuleID = CapsuleProfile.batteryID }
         playback.normalize(profiles: capsuleProfiles)
         seen.removeAll(keepingCapacity: true)
-        telemetryAlertRules = telemetryAlertRules.prefix(16).compactMap { source in
+        telemetryAlertRules = telemetryAlertRules.prefix(ConfigurationLimits.maximumRules).compactMap { source in
             var rule = source; rule.normalize()
             return !rule.id.isEmpty && seen.insert(rule.id).inserted ? rule : nil
         }
@@ -134,7 +134,7 @@ private struct BoundedProfiles: Decodable {
     var items: [CapsuleProfile] = []
     init(from decoder: Decoder) throws {
         var values = try decoder.unkeyedContainer()
-        for _ in 0..<12 where !values.isAtEnd {
+        for _ in 0..<ConfigurationLimits.maximumProfiles where !values.isAtEnd {
             let entry = try values.superDecoder()
             if let value = try? CapsuleProfile(from: entry) { items.append(value) }
         }
@@ -144,7 +144,7 @@ private struct BoundedRules: Decodable {
     var items: [TelemetryAlertRule] = []
     init(from decoder: Decoder) throws {
         var values = try decoder.unkeyedContainer()
-        for _ in 0..<16 where !values.isAtEnd {
+        for _ in 0..<ConfigurationLimits.maximumRules where !values.isAtEnd {
             let entry = try values.superDecoder()
             if let value = try? TelemetryAlertRule(from: entry) { items.append(value) }
         }

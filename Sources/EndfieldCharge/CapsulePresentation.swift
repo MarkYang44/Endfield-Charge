@@ -121,7 +121,7 @@ struct TelemetryDemand: Equatable {
     var hasWork: Bool { power || compute || thermal || network || storage || batterySnapshot }
 
     init(preferences: Preferences, panelVisible: Bool, capsuleMetrics: Set<TelemetryMetric>) {
-        let rules = preferences.telemetryAlertRules.prefix(16).filter { $0.enabled && $0.condition == .threshold }.map(\.metric)
+        let rules = preferences.telemetryAlertRules.prefix(ConfigurationLimits.maximumRules).filter { $0.enabled && $0.condition == .threshold }.map(\.metric)
         let metrics = capsuleMetrics.union(rules)
         batterySnapshot = metrics.contains(.batteryEnergyWh) || metrics.contains(.batteryPercent)
         power = preferences.powerTelemetryEnabled

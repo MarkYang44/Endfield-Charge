@@ -7,8 +7,8 @@ public enum ConfigurationShareError: Error, Equatable, LocalizedError {
         case .fileTooLarge: return "Configuration exceeds 128 KiB."
         case .unsupportedFormat: return "Unrecognized configuration format."
         case .unsupportedVersion: return "Unsupported configuration schema version."
-        case .profileLimit: return "Configuration exceeds 12 capsules."
-        case .ruleLimit: return "Configuration exceeds 16 alert rules."
+        case .profileLimit: return "Configuration exceeds \(ConfigurationLimits.maximumProfiles) capsules."
+        case .ruleLimit: return "Configuration exceeds \(ConfigurationLimits.maximumRules) alert rules."
         case .invalidField(let field): return "Invalid configuration field: \(field)."
         }
     }
@@ -69,8 +69,8 @@ public struct ConfigurationShare: Codable, Equatable {
     public func validate() throws {
         guard format == Self.formatIdentifier else { throw ConfigurationShareError.unsupportedFormat }
         guard schemaVersion == Self.currentSchemaVersion else { throw ConfigurationShareError.unsupportedVersion }
-        guard profiles.count <= 12 else { throw ConfigurationShareError.profileLimit }
-        guard rules.count <= 16 else { throw ConfigurationShareError.ruleLimit }
+        guard profiles.count <= ConfigurationLimits.maximumProfiles else { throw ConfigurationShareError.profileLimit }
+        guard rules.count <= ConfigurationLimits.maximumRules else { throw ConfigurationShareError.ruleLimit }
         var ids = Set<String>()
         for (i, profile) in profiles.enumerated() {
             let path = "profiles[\(i)]"
@@ -78,7 +78,7 @@ public struct ConfigurationShare: Codable, Equatable {
             try Self.text(profile.title, limit: .name, path: path + ".title")
             guard ids.insert(profile.id).inserted else { throw ConfigurationShareError.invalidField(path + ".id.duplicate") }
             guard profile.referenceMaximum.isFinite && profile.referenceMaximum > 0 else { throw ConfigurationShareError.invalidField(path + ".referenceMaximum") }
-            guard profile.colorConditions.count <= 4 else { throw ConfigurationShareError.invalidField(path + ".colorConditions.count") }
+            guard profile.colorConditions.count <= ConfigurationLimits.maximumColorConditions else { throw ConfigurationShareError.invalidField(path + ".colorConditions.count") }
             for condition in profile.colorConditions where !condition.threshold.isFinite {
                 throw ConfigurationShareError.invalidField(path + ".colorConditions.threshold")
             }
@@ -96,7 +96,7 @@ public struct ConfigurationShare: Codable, Equatable {
             if let target = rule.targetState, rule.source?.accepts(target) != true { throw ConfigurationShareError.invalidField(path + ".targetState") }
         }
         try Self.text(selectedProfileID, limit: .identifier, path: "selectedProfileID")
-        guard playback.profileIDs.count <= 12 else { throw ConfigurationShareError.invalidField("playback.profileIDs.count") }
+        guard playback.profileIDs.count <= ConfigurationLimits.maximumProfiles else { throw ConfigurationShareError.invalidField("playback.profileIDs.count") }
         ids.removeAll()
         for id in playback.profileIDs {
             try Self.text(id, limit: .identifier, path: "playback.profileIDs")
@@ -138,7 +138,7 @@ public struct ConfigurationShare: Codable, Equatable {
         if !mergedProfiles.contains(where: { $0.id == CapsuleProfile.batteryID }) {
             mergedProfiles.insert(CapsuleProfile.defaults[0], at: 0)
         }
-        guard mergedProfiles.count <= 12 else { throw ConfigurationShareError.profileLimit }
+        guard mergedProfiles.count <= ConfigurationLimits.maximumProfiles else { throw ConfigurationShareError.profileLimit }
         var mergedRules = mode == .merge ? local.telemetryAlertRules : []
         var usedRuleIDs = Set(local.telemetryAlertRules.map(\.id) + rules.map(\.id))
         for source in rules {
@@ -154,7 +154,7 @@ public struct ConfigurationShare: Codable, Equatable {
             ruleMap[source.id] = imported.id; mergedRules.append(imported)
             summary.addedRules += 1; summary.disabledRules += 1
         }
-        guard mergedRules.count <= 16 else { throw ConfigurationShareError.ruleLimit }
+        guard mergedRules.count <= ConfigurationLimits.maximumRules else { throw ConfigurationShareError.ruleLimit }
         result.capsuleProfiles = mergedProfiles; result.telemetryAlertRules = mergedRules
         let selected = profileMap[selectedProfileID]
         if selected == nil { summary.discardedReferences.append(selectedProfileID) }
@@ -170,7 +170,7 @@ public struct ConfigurationShare: Codable, Equatable {
             summary.replacedRules = local.telemetryAlertRules.count
         } else {
             for id in queue where !result.playback.profileIDs.contains(id) { result.playback.profileIDs.append(id) }
-            guard result.playback.profileIDs.count <= 12 else { throw ConfigurationShareError.invalidField("playback.profileIDs.count") }
+            guard result.playback.profileIDs.count <= ConfigurationLimits.maximumProfiles else { throw ConfigurationShareError.invalidField("playback.profileIDs.count") }
         }
         _ = try Self(preferences: result)
         return ConfigurationImportPreview(preferences: result, summary: summary, profileIDMap: profileMap, ruleIDMap: ruleMap)

@@ -35,13 +35,13 @@ extension SettingsWindowController {
         }
         let add = button(t("新建", "Add"), in: page, x: 362, y: 0, width: 88) { c, _ in
             c.commitEditing()
-            guard c.settings.value.telemetryAlertRules.count < 16 else { return }
+            guard c.settings.value.telemetryAlertRules.count < ConfigurationLimits.maximumRules else { return }
             let rule = TelemetryAlertRule.custom()
             c.settings.value.telemetryAlertRules.append(rule)
             c.selectedRuleID = rule.id
             c.buildPage()
         }
-        add.isEnabled = rules.count < 16
+        add.isEnabled = rules.count < ConfigurationLimits.maximumRules
         let delete = button(t("删除", "Delete"), in: page, x: 458, y: 0, width: 87) { c, _ in
             c.commitEditing()
             c.settings.value.telemetryAlertRules.removeAll { $0.id == id }

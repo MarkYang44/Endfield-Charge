@@ -38,11 +38,11 @@ extension SettingsWindowController {
             c.selectedColorIndex = (sender as! NSPopUpButton).indexOfSelectedItem; c.buildPage()
         }
         let add = button(t("添加", "Add"), in: page, x: 243, y: y + 48, width: 70) { c,_ in
-            guard c.appearanceMutationAllowed(), conditions.count < 4 else { return }
+            guard c.appearanceMutationAllowed(), conditions.count < ConfigurationLimits.maximumColorConditions else { return }
             c.editProfile(id) { $0.colorConditions.append(CapsuleColorCondition(metric: .cpuPercent, comparison: .above, threshold: 90, accent: .amber)) }
             c.selectedColorIndex = conditions.count; c.buildPage()
         }
-        add.identifier = NSUserInterfaceItemIdentifier("appearance.add"); add.isEnabled = conditions.count < 4
+        add.identifier = NSUserInterfaceItemIdentifier("appearance.add"); add.isEnabled = conditions.count < ConfigurationLimits.maximumColorConditions
         let remove = button(t("删除", "Delete"), in: page, x: 319, y: y + 48, width: 70) { c,_ in
             guard c.appearanceMutationAllowed() else { return }
             c.editProfile(id) { $0.colorConditions.remove(at: index) }; c.buildPage()
