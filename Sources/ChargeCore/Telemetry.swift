@@ -46,13 +46,14 @@ public struct TelemetrySnapshot: Codable, Equatable {
     public var thermal: ThermalLevel?
     public var network: NetworkTelemetry?
     public var storage: StorageTelemetry?
+    public var codexQuota: CodexQuotaSnapshot?
 
     public init(sampledAt: Double, battery: BatterySnapshot, power: PowerTelemetry?,
                 compute: ComputeTelemetry?, thermal: ThermalLevel?, network: NetworkTelemetry? = nil,
-                storage: StorageTelemetry? = nil) {
+                storage: StorageTelemetry? = nil, codexQuota: CodexQuotaSnapshot? = nil) {
         self.sampledAt = sampledAt; self.battery = battery; self.power = power
         self.compute = compute; self.thermal = thermal
-        self.network = network; self.storage = storage
+        self.network = network; self.storage = storage; self.codexQuota = codexQuota
     }
 }
 

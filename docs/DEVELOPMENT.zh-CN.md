@@ -14,7 +14,7 @@ bash scripts/verify.sh desktop all
 bash scripts/verify.sh release # 完整 desktop + 通用构建 + 包检查
 ```
 
-日常改动只选择受影响的检查，不重复无关全量回归。`scripts/test.sh` 将带引号的参数原样转发给 `swift test`，例如 `--filter 'CapsulePlayback|ConfigurationLimits'`。`scripts/check-runtime.sh --group all|hud|telemetry|sharing|editors|ipc` 先构建最新 ChargeCore 对象（不运行全量核心测试），再编译并执行所选原生组。`verify.sh desktop <group>` 同理；只有 `desktop all` 显式运行完整核心和原生检查；不带组名的 `desktop` 输出用法并失败。保留 `ENDFIELD_EDITORS_ONLY`、`ENDFIELD_SHARING_ONLY` 兼容入口。缺少组值、未知组和未知模式会在编译前输出用法并失败。
+日常改动只选择受影响的检查，不重复无关全量回归。`scripts/test.sh` 将带引号的参数原样转发给 `swift test`，例如 `--filter 'CapsulePlayback|ConfigurationLimits'`。`scripts/check-runtime.sh --group all|hud|telemetry|sharing|editors|ipc|codex` 先构建最新 ChargeCore 对象（不运行全量核心测试），再编译并执行所选原生组。`verify.sh desktop <group>` 同理；只有 `desktop all` 显式运行完整核心和原生检查；不带组名的 `desktop` 输出用法并失败。保留 `ENDFIELD_EDITORS_ONLY`、`ENDFIELD_SHARING_ONLY` 兼容入口。缺少组值、未知组和未知模式会在编译前输出用法并失败。
 
 纯模型、限制、分享、调度器改动使用相关 `core --filter`；播放及渲染所有权选 `desktop hud`；原生遥测选 `telemetry`；控件选 `editors`；原生事务选 `sharing`；管道、窗口与子进程生命周期选 `ipc`。原生检查使用独立偏好域、真实窗口、管道、子进程及定时器，不改已安装应用的设置，也不能证明每种 Mac 的传感器精度。完整 `release` 是显式分发门槛，不是日常默认命令。
 
@@ -84,3 +84,16 @@ ENDFIELD_EDITORS_ONLY=1 ENDFIELD_EDITOR_SCREENSHOTS=/tmp/endfield-demo bash scri
 [分版本验证](capsule-sharing-validation.md)记录命令、物理占用汇总、安装包哈希与限制。真实偏好备份和原始遥测样本保留在仓库之外。性能脚本只用于开发，应用不打包 Python、.NET、字体或其他运行时。
 
 验证性能时，在同一主机、编译器、预热和采样窗口下，对比 idle/settings/telemetry 场景的 physical footprint，重复测量并报告噪声；重构本身不保证更低内存。确定性渲染对比固定演示数据、语言、动画阶段和 Reduce Motion，保留原始素材哈希。
+
+
+## Codex 额度（1.3.0）
+
+纯模型 `CodexQuotaSnapshot` 只保留 Codex 300／10080 分钟窗口与剩余百分比；新快照字段可缺省，兼容旧通信数据。`CodexQuotaReader` 在独立 utility 队列异步读取，单次在途请求，内存缓存约 300 秒，重试至少间隔 60 秒；已知重置可提前刷新。超时 8 秒，stdout 累计上限 256 KiB，stderr 丢弃。需求结束取消所属子进程，轮播间隙复用有效缓存；唤醒／重置清缓存，代际校验拒绝旧结果。倒计时复用现有可见采样刷新，不增加周期定时器。
+
+子进程使用已有临时目录作为工作目录，保留 CLI 登录／CODEX_HOME 环境，避免继承项目目录配置。
+
+遵循[公开 app-server 协议](https://learn.chatgpt.com/docs/app-server#6-rate-limits-chatgpt)，只调用 `initialize` → `initialized` → `account/rateLimits/read`。从 PATH、常见 CLI 路径及 Codex／ChatGPT 应用包发现可执行文件，使用 CLI 现有登录；不安装或管理守护进程，不读取凭据或对话，不运行模型任务，不修改账户。官方白色 OpenAI PNG 原样打包，HUD 仅持有最大 96 像素缩略图；应用与菜单图标不变。
+
+设置页“当前胶囊”和菜单栏“选择胶囊”均提供两项可选预设，保留方案容量与未完成编辑保护。
+
+针对本功能执行 `bash scripts/test.sh --filter CodexQuota` 和 `bash scripts/check-runtime.sh --group codex`。原生组覆盖真实预设选择／容量、需求、缓存／合并／取消／释放、非阻塞采样，以及临时 stdio CLI 的协议、输出上限和超时清理，不访问真实账户。可单独运行打包程序的 `--codex-quota-check` 做只读真实账户检查，仅打印完成状态、窗口可用性与耗时，不输出实际额度。`--render /tmp/codex.png --capsule codex-5h --demo --en` 与 `codex-week --demo --zh` 使用固定合成额度和时间，不读取真实额度；`--unavailable` 验证未知数据。

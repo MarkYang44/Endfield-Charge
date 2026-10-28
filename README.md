@@ -45,6 +45,7 @@ Actual AppKit exports using **demo data**, not measurements of your Mac. Setting
 - **Power HUD:** original three-stage geometry and ripple directions, estimated Wh, battery percentage, charging state, multi-display placement and Reduce Motion support. The overlay does not take focus or intercept clicks.
 - **Five telemetry modules:** battery-side power and adapter rating; CPU and estimated memory; system thermal state; enabled `en*` interface traffic; APFS Data volume capacity. Missing readings remain unknown.
 - **Capsule profiles:** battery, CPU, memory, network and storage presets; up to 12 profiles with an editable title, primary/secondary metrics and an optional ring. Select a profile from the menu or preview it with your shortcut.
+- **Codex quota (opt-in):** choose **Settings → Capsules → Active capsule → Codex · 5 hours / Weekly** (also available in the menu bar) for remaining percentage, reset countdown and the official OpenAI mark. Requires an installed, signed-in Codex CLI; the five existing defaults remain unchanged.
 - **Sharing and colors:** local `.endfield.json` export/import with merge/replace preview and one backup for undo; up to four ordered Theme/Lime/Amber/Red conditions per capsule. [Configuration guide](docs/configuration-sharing.md).
 - **Playback:** unique queue, 10–600-second interval, one transient round or optional persistent compact display. Rotation and persistent display default off.
 - **Alert rules:** up to 16 optional numeric threshold or typed thermal/memory-pressure transition rules, with hold and cooldown. New rules are disabled. Power events retain priority over generic alerts.
@@ -82,13 +83,16 @@ A newly enabled rule first establishes a quiet baseline. Numeric rules must reco
 | CPU / memory | Mach counter deltas and an active + wired + compressor estimate; memory differs from Activity Monitor's definition. |
 | Thermal | Public system thermal state, not a CPU temperature measurement. |
 | Network | Native 64-bit counters for enabled `en*` interfaces, including LAN traffic and excluding VPN/loopback interfaces. Rates need two valid samples. Totals cover the observation session, not all traffic since boot. |
+| Codex quota | The installed Codex CLI reads account limits through its documented local app-server protocol. Only the Codex 300-minute / 10,080-minute windows are supported; remaining = 100 − used. Missing CLI/login/window/data shows `—`. |
 | Storage | `statfs` on the APFS Data volume, with root fallback. Total, free and user-available space have distinct meanings; shared volumes are not summed. No SSD wear reading. |
+
+Codex reads run separately and asynchronously only for a visible quota capsule/color condition or an enabled quota rule. Results are cached in memory for about 5 minutes (earlier at a known reset, minimum 60-second retry spacing); switching carousel entries reuses that cache. The CLI may contact OpenAI using its existing login. Endfield Charge does not read credentials or conversations, run model turns, manage login, or install a CLI. Reset times come from the service and can change.
 
 The shared sampler runs every 2 seconds for visible telemetry/capsule demand and every 30 seconds for background work. Network and storage stop when no enabled display or rule needs them. Collection runs on one bounded serial worker; stale completions are discarded. Graphs retain at most 300 points in the current window session, with gaps for unavailable data.
 
 ## Privacy and performance
 
-Readings and preferences stay on your Mac. There are no active network probes, automatic telemetry uploads or permanent telemetry histories. Preferences use the app's `com.markyang.endfieldcharge` UserDefaults domain. Accessibility and screen-recording permissions are not required.
+Displayed readings and preferences stay on your Mac. System telemetry uses no active network probes, automatic telemetry uploads or permanent histories; the optional Codex account read uses your installed CLI and its service connection. Preferences use the app's `com.markyang.endfieldcharge` UserDefaults domain. Accessibility and screen-recording permissions are not required.
 
 Settings and telemetry use on-demand UI processes that exit when their windows close. The resident retains the menu, shortcut and monitoring services. Measured costs for the packaged v1.2.0 candidate, including persistent and carousel modes, are recorded with methods and limits in [v1.2.0 validation](docs/capsule-sharing-validation.md) and [performance records](docs/PERFORMANCE.md).
 

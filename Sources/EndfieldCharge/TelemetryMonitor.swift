@@ -3,6 +3,7 @@ import ChargeCore
 
 final class TelemetryMonitor {
     private let settings: AppSettings
+    private let codexReader: CodexQuotaReader
     private let battery: () -> BatterySnapshot
     private struct DisabledEpochs {
         var power: UInt64 = 0
@@ -17,6 +18,7 @@ final class TelemetryMonitor {
         let battery: BatterySnapshot
         let preferences: Preferences
         let demand: TelemetryDemand
+        let codexQuota: CodexQuotaSnapshot?
     }
     /// Reader state is owned exclusively by this serial worker, including resets.
     private final class Collector {
@@ -78,7 +80,9 @@ final class TelemetryMonitor {
     init(settings: AppSettings, battery: @escaping () -> BatterySnapshot,
          clock: @escaping () -> Double = { ProcessInfo.processInfo.systemUptime },
          read: ((BatterySnapshot, TelemetryDemand) -> TelemetrySnapshot)? = nil,
+         codexReader: CodexQuotaReader = CodexQuotaReader(),
          asyncRead: ((BatterySnapshot, TelemetryDemand, () -> TelemetrySnapshot) -> TelemetrySnapshot)? = nil) {
+        self.codexReader = codexReader
         self.settings = settings; self.battery = battery; self.clock = clock; injectedRead = read; asynchronousRead = asyncRead
     }
     func start() {
@@ -164,7 +168,7 @@ final class TelemetryMonitor {
     private func invalidate(resetReader: Bool = false) {
         generation &+= 1
         pendingRequest = nil
-        if resetReader { resetEpoch &+= 1 }
+        if resetReader { resetEpoch &+= 1; codexReader.reset() }
     }
     private func resetCollectorWhenIdle() {
         let collector = collector
@@ -181,7 +185,7 @@ final class TelemetryMonitor {
         }
         previousDemand = demand
         let request = Request(generation: generation, resetEpoch: resetEpoch, disabledEpochs: disabledEpochs,
-            battery: battery(), preferences: preferences, demand: demand)
+            battery: battery(), preferences: preferences, demand: demand, codexQuota: codexReader.read(enabled: demand.codexQuota))
         if let injectedRead {
             // Existing deterministic evaluator tests may explicitly opt into synchronous reads.
             publish(injectedRead(request.battery, demand), request: request)
@@ -217,6 +221,7 @@ final class TelemetryMonitor {
         if !demand.thermal { snapshot.thermal = nil }
         if !demand.network { snapshot.network = nil }
         if !demand.storage { snapshot.storage = nil }
+        snapshot.codexQuota = demand.codexQuota ? request.codexQuota : nil
         latestSnapshot = snapshot
         onSnapshot?(snapshot)
         guard running, generation == request.generation else { return }
@@ -236,6 +241,7 @@ final class TelemetryMonitor {
         }
     }
     deinit {
+        codexReader.reset()
         timer?.invalidate()
         if let sleepObserver { NSWorkspace.shared.notificationCenter.removeObserver(sleepObserver) }
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }

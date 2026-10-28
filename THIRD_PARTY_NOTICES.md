@@ -64,3 +64,15 @@ compatibility with arbitrary upstream files. Its MIT notice is the same
 Copyright (c) 2026 GlacierGlimmer_冰川雪貓 retained in
 LICENSES/zmd-charge-plus-MIT.txt and the packaged notice. No Windows/.NET
 runtime, fonts or additional artwork are distributed.
+
+
+## OpenAI mark
+
+Resources/OpenAIMark.png and Resources/OpenAIMark.svg are unmodified official
+white Blossom assets from [OpenAI's brand resources](https://openai.com/brand/),
+[OpenAI-Logos-2025.zip](https://cdn.openai.com/brand/OpenAI-Logos-2025.zip), members
+`OpenAI-logos(new)/PNGs/OpenAI-white-monoblossom.png` and the SVG counterpart.
+Only the PNG is bundled, shown proportionally with its supplied clear space to
+identify the optional Codex account-quota source. OpenAI retains its trademarks;
+this independent utility is not affiliated with or endorsed by OpenAI. These
+brand assets are not relicensed under this project's MIT code license.

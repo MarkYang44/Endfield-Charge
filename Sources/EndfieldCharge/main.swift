@@ -22,6 +22,14 @@ if arguments.contains("--telemetry-snapshot") {
     exit(0)
 }
 
+// Read-only provider smoke; print availability metadata only, never account or quota values.
+if arguments.contains("--codex-quota-check") {
+    let started = ProcessInfo.processInfo.systemUptime
+    let result = CodexQuotaRequest().read()
+    print("Codex quota read: \(result == nil ? "unavailable" : "completed"); five-hour window: \(result?.fiveHour != nil); weekly window: \(result?.weekly != nil); seconds: \(String(format: "%.3f", ProcessInfo.processInfo.systemUptime - started))")
+    exit(result == nil ? 1 : 0)
+}
+
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 // Export modes use temporary preferences and never enter the resident lock/event loop.
@@ -175,11 +183,22 @@ if let index = arguments.firstIndex(of: "--render") {
         guard capsule + 1 < arguments.count else { fputs("Missing capsule ID\n", stderr); exit(2) }
         let requested = arguments[capsule + 1]
         let id = settings.value.capsuleProfiles.contains(where: { $0.id == requested }) ? requested : "builtin." + requested
-        guard let profile = settings.value.capsuleProfiles.first(where: { $0.id == id }) else {
+        let quotaMetric: TelemetryMetric? = requested == "codex-5h" ? .codexFiveHourRemainingPercent
+            : requested == "codex-week" ? .codexWeeklyRemainingPercent : nil
+        let fixtureProfile = quotaMetric.map { CapsuleProfile(id: "fixture.codex", title: $0 == .codexFiveHourRemainingPercent ? "CODEX 5H" : "CODEX WEEK", primaryMetric: $0, ringMetric: $0) }
+        guard let profile = fixtureProfile ?? settings.value.capsuleProfiles.first(where: { $0.id == id }) else {
             fputs("Unknown capsule ID\n", stderr); exit(2)
         }
         if !profile.isDefaultBattery {
-            let snapshot = exportSnapshot(preferences: renderPreferences, demo: arguments.contains("--demo"))
+            var snapshot = exportSnapshot(preferences: renderPreferences, demo: arguments.contains("--demo"))
+            if quotaMetric != nil {
+                // Quota exports are synthetic and deterministic even when the host has a signed-in CLI.
+                let now = 1_800_000_000.0
+                view.quotaRenderTime = now
+                snapshot.codexQuota = arguments.contains("--unavailable") ? nil : CodexQuotaSnapshot(
+                    fiveHour: CodexQuotaWindow(usedPercent: 23, resetsAt: now + 2 * 3600 + 43 * 60),
+                    weekly: CodexQuotaWindow(usedPercent: 42, resetsAt: now + 3 * 86400 + 5 * 3600))
+            }
             if profile.isBatteryLayout { view.accentOverride = profile.resolvedAccent(in: snapshot) }
             else { view.capsule = CapsulePresentation(profile: profile, snapshot: snapshot) }
         }

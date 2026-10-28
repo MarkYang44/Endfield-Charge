@@ -20,9 +20,22 @@ extension SettingsWindowController {
             selector.addItem(withTitle: profile.title + (profile.id.hasPrefix("builtin.") ? " · " + t("内置", "Built-in") : ""))
             selector.lastItem?.representedObject = profile.id
         }
+        selector.menu?.autoenablesItems = false
+        selector.menu?.addItem(.separator())
+        for metric: TelemetryMetric in [.codexFiveHourRemainingPercent, .codexWeeklyRemainingPercent] {
+            let item = NSMenuItem(title: metric == .codexFiveHourRemainingPercent ? t("Codex · 5小时", "Codex · 5 hours") : t("Codex · 每周", "Codex · Weekly"), action: nil, keyEquivalent: "")
+            item.representedObject = metric
+            selector.menu?.addItem(item)
+        }
         bindings.append { c in
-            for (index, profile) in c.settings.value.capsuleProfiles.enumerated() where index < selector.numberOfItems {
-                selector.item(at: index)?.title = profile.title + (profile.id.hasPrefix("builtin.") ? " · " + c.t("内置", "Built-in") : "")
+            let current = c.settings.value.capsuleProfiles
+            for item in selector.itemArray {
+                if let metric = item.representedObject as? TelemetryMetric {
+                    item.isEnabled = current.contains { $0.id == "preset." + metric.rawValue }
+                        || current.count < ConfigurationLimits.maximumProfiles
+                } else if let id = item.representedObject as? String, let profile = current.first(where: { $0.id == id }) {
+                    item.title = profile.title + (id.hasPrefix("builtin.") ? " · " + c.t("内置", "Built-in") : "")
+                }
             }
         }
         selector.selectItem(at: profiles.firstIndex(where: { $0.id == id }) ?? 0)
@@ -33,7 +46,11 @@ extension SettingsWindowController {
                 selector.selectItem(at: profiles.firstIndex(where: { $0.id == id }) ?? 0)
                 return
             }
-            if let id = (sender as! NSPopUpButton).selectedItem?.representedObject as? String {
+            let choice = (sender as! NSPopUpButton).selectedItem?.representedObject
+            if let metric = choice as? TelemetryMetric {
+                var value = c.settings.value
+                if value.selectCodexQuotaPreset(metric) != nil { c.settings.value = value }
+            } else if let id = choice as? String {
                 c.settings.value.selectedCapsuleID = id
             }
             c.buildPage()

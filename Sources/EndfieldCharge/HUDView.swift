@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 import ChargeCore
 
 enum HUDKind {
@@ -10,6 +11,15 @@ final class HUDView: NSView {
     static let topInset: CGFloat = 27
     override var isFlipped: Bool { true }
     var capsule: CapsulePresentation?
+    var quotaRenderTime: Double?
+    private lazy var openAIMark: NSImage? = {
+        guard let url = Bundle.main.url(forResource: "OpenAIMark", withExtension: "png"),
+              let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 96
+              ] as CFDictionary) else { return nil }
+        return NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+    }()
     var snapshot = BatterySnapshot(hasBattery: false)
     var preferences = Preferences()
     var chinese = true
@@ -195,12 +205,19 @@ final class HUDView: NSView {
         drawFitted(capsule.primary + " " + capsule.primaryUnit,
             rect: NSRect(x: 94, y: 56, width: 238, height: 35), size: 26, alpha: alpha,
             color: resolvedAccent != .theme && (capsule.alert || !capsule.profile.colorConditions.isEmpty) ? accentColor(alpha: 1) : nil)
-        if let metric = capsule.profile.secondaryMetric {
-            drawFitted(TelemetryFormatting.name(metric, chinese: chinese),
-                rect: NSRect(x: 344, y: 47, width: 165, height: 12), size: 8, alpha: alpha * 0.4)
+        if capsule.profile.primaryMetric.isCodexQuota {
+            drawFitted(chinese ? "重置倒计时" : "RESET IN",
+                rect: NSRect(x: 300, y: 47, width: 210, height: 12), size: 8, alpha: alpha * 0.4, centered: true)
+            drawFitted(capsule.quotaResetText(at: quotaRenderTime ?? Date().timeIntervalSince1970, chinese: chinese),
+                rect: NSRect(x: 300, y: 61, width: 210, height: 29), size: 20, alpha: alpha * 0.75, centered: true)
+        } else {
+            if let metric = capsule.profile.secondaryMetric {
+                drawFitted(TelemetryFormatting.name(metric, chinese: chinese),
+                    rect: NSRect(x: 344, y: 47, width: 165, height: 12), size: 8, alpha: alpha * 0.4)
+            }
+            drawFitted(capsule.secondary + (capsule.secondary.isEmpty ? "" : " " + capsule.secondaryUnit),
+                rect: NSRect(x: 344, y: 61, width: 165, height: 29), size: 20, alpha: alpha * 0.75)
         }
-        drawFitted(capsule.secondary + (capsule.secondary.isEmpty ? "" : " " + capsule.secondaryUnit),
-            rect: NSRect(x: 344, y: 61, width: 165, height: 29), size: 20, alpha: alpha * 0.75)
         let badgeCenter = NSPoint(x: 562, y: 72)
         NSColor(rgb: 0x262425, alpha: alpha).setFill()
         NSBezierPath(ovalIn: NSRect(x: 539, y: 49, width: 46, height: 46)).fill()
@@ -210,6 +227,16 @@ final class HUDView: NSView {
             arc.appendArc(withCenter: badgeCenter, radius: 20.75, startAngle: -90,
                 endAngle: -90 + CGFloat(fraction) * 360, clockwise: false)
             accent.setStroke(); arc.lineWidth = 4.5; arc.lineCapStyle = .round; arc.stroke()
+        }
+        if capsule.profile.primaryMetric.isCodexQuota {
+            if let image = openAIMark {
+                let box = NSRect(x: 544, y: 54, width: 36, height: 36)
+                let scale = min(box.width / image.size.width, box.height / image.size.height)
+                let size = NSSize(width: image.size.width * scale, height: image.size.height * scale)
+                image.draw(in: NSRect(x: box.midX - size.width / 2, y: box.midY - size.height / 2, width: size.width, height: size.height),
+                    from: .zero, operation: .sourceOver, fraction: alpha, respectFlipped: true, hints: nil)
+            }
+            return
         }
         let laptop = NSBezierPath(roundedRect: NSRect(x: 553.5, y: 63.5, width: 17, height: 11.5), xRadius: 1.5, yRadius: 1.5)
         accent.setStroke(); laptop.lineWidth = 2; laptop.stroke(); accent.setFill()

@@ -15,13 +15,15 @@ enum TelemetryFormatting {
         case .networkUploadBytesPerSecond: names = ("上传速率", "Upload")
         case .storageAvailableBytes: names = ("存储可用", "Storage available")
         case .storageUsedPercent: names = ("存储占用", "Storage used")
+        case .codexFiveHourRemainingPercent: names = ("Codex · 5小时剩余", "Codex · 5 hours remaining")
+        case .codexWeeklyRemainingPercent: names = ("Codex · 每周剩余", "Codex · Weekly remaining")
         }
         return chinese ? names.0 : names.1
     }
     static func unit(_ metric: TelemetryMetric) -> String {
         switch metric {
         case .batteryEnergyWh: return "Wh"
-        case .batteryPercent, .cpuPercent, .memoryPercent, .storageUsedPercent: return "%"
+        case .batteryPercent, .cpuPercent, .memoryPercent, .storageUsedPercent, .codexFiveHourRemainingPercent, .codexWeeklyRemainingPercent: return "%"
         case .networkDownloadBytesPerSecond, .networkUploadBytesPerSecond: return "MiB/s"
         case .memoryUsedBytes, .storageAvailableBytes: return "GiB"
         }
@@ -55,9 +57,14 @@ struct CapsulePresentation: Equatable {
     let accent: CapsuleAccent
     let stateLabel: String?
     let stateSourceLabel: String?
+    let quotaResetsAt: Double?
+    func quotaResetText(at now: Double, chinese: Bool) -> String {
+        CodexQuotaCountdown.text(resetsAt: quotaResetsAt, at: now, chinese: chinese)
+    }
 
     init(profile: CapsuleProfile, snapshot: TelemetrySnapshot?, alert: Bool = false) {
         self.profile = profile
+        quotaResetsAt = snapshot?.codexQuota?.window(for: profile.primaryMetric)?.resetsAt
         title = String(profile.title.prefix(32))
         primary = TelemetryFormatting.value(snapshot.flatMap { profile.primaryMetric.value(in: $0) }, metric: profile.primaryMetric)
         primaryUnit = TelemetryFormatting.unit(profile.primaryMetric)
@@ -80,6 +87,7 @@ struct CapsulePresentation: Equatable {
             return
         }
         profile = CapsuleProfile(id: "rule.\(rule.id)", title: rule.name, primaryMetric: .batteryPercent)
+        quotaResetsAt = nil
         title = rule.name; alert = true; ringFraction = nil
         primaryUnit = ""; secondary = ""; secondaryUnit = ""
         let state = rule.source?.value(in: snapshot)
@@ -116,13 +124,15 @@ struct TelemetryDemand: Equatable {
     let thermal: Bool
     let network: Bool
     let storage: Bool
+    let codexQuota: Bool
     let highFrequency: Bool
     let batterySnapshot: Bool
-    var hasWork: Bool { power || compute || thermal || network || storage || batterySnapshot }
+    var hasWork: Bool { power || compute || thermal || network || storage || batterySnapshot || codexQuota }
 
     init(preferences: Preferences, panelVisible: Bool, capsuleMetrics: Set<TelemetryMetric>) {
         let rules = preferences.telemetryAlertRules.prefix(ConfigurationLimits.maximumRules).filter { $0.enabled && $0.condition == .threshold }.map(\.metric)
         let metrics = capsuleMetrics.union(rules)
+        codexQuota = metrics.contains(where: \.isCodexQuota)
         batterySnapshot = metrics.contains(.batteryEnergyWh) || metrics.contains(.batteryPercent)
         power = preferences.powerTelemetryEnabled
         compute = preferences.computeTelemetryEnabled

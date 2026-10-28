@@ -16,7 +16,7 @@ bash scripts/verify.sh desktop all
 bash scripts/verify.sh release # full desktop + universal build + package
 ```
 
-For daily changes, select the affected checks; do not rerun unrelated suites. `scripts/test.sh` forwards quoted arguments to `swift test` (for example `--filter 'CapsulePlayback|ConfigurationLimits'`). `scripts/check-runtime.sh --group all|hud|telemetry|sharing|editors|ipc` builds fresh ChargeCore objects without running all core tests, then compiles and runs the selected native checks. `verify.sh desktop <group>` does the same; `desktop all` explicitly runs all core and native checks; bare `desktop` fails with usage. The `ENDFIELD_EDITORS_ONLY` and `ENDFIELD_SHARING_ONLY` legacy flags remain available. Invalid/missing group values and unknown verification modes fail with usage before compiling.
+For daily changes, select the affected checks; do not rerun unrelated suites. `scripts/test.sh` forwards quoted arguments to `swift test` (for example `--filter 'CapsulePlayback|ConfigurationLimits'`). `scripts/check-runtime.sh --group all|hud|telemetry|sharing|editors|ipc|codex` builds fresh ChargeCore objects without running all core tests, then compiles and runs the selected native checks. `verify.sh desktop <group>` does the same; `desktop all` explicitly runs all core and native checks; bare `desktop` fails with usage. The `ENDFIELD_EDITORS_ONLY` and `ENDFIELD_SHARING_ONLY` legacy flags remain available. Invalid/missing group values and unknown verification modes fail with usage before compiling.
 
 Use `core --filter` for relevant pure models, limits, sharing or scheduler suites; `desktop hud` for playback/render ownership, `telemetry` for native telemetry, `editors` for controls, `sharing` for native transactions, and `ipc` for pipes/windows/child lifecycle. Native checks use isolated preference domains and real windows, pipes, child processes and timers. They do not establish hardware sensor accuracy on every Mac. Full `release` verification is an explicit distribution gate, not a daily default.
 
@@ -85,3 +85,24 @@ ENDFIELD_EDITORS_ONLY=1 ENDFIELD_EDITOR_SCREENSHOTS=/tmp/endfield-demo bash scri
 This exports actual English/Chinese settings content and production palette/thermal/memory HUDs from temporary preferences, not user readings. `ENDFIELD_SHARING_ONLY=1` isolates sharing checks; see Tests/RuntimeChecks/SharingChecks.swift for its screenshot fixture. `--render-settings --scroll-bottom` exports the bottom of a scrollable page. The original battery regression uses `--render /tmp/battery.png --demo --stage 1.55`, stage 3, and stage 0.15 with `--reduce-motion`; do not change artwork to update these expectations.
 
 [Versioned validation](capsule-sharing-validation.md) records commands, physical-footprint aggregates, package hashes and limitations. Raw live preference backups and telemetry samples belong outside the repository. The profiling tools are development-only; no Python, .NET, font or other runtime is bundled.
+
+
+## Codex quota (1.3.0)
+
+`CodexQuotaSnapshot` keeps only the Codex 300/10080-minute windows and remaining percentages; old telemetry frames omit its optional field. `CodexQuotaReader` owns a small memory cache and one bounded asynchronous request on a separate utility queue. Normal refresh is 300 seconds, minimum retry 60 seconds, timeout 8 seconds, cumulative stdout 256 KiB; stderr is discarded. Demand release cancels the owned child while retaining a fresh cache across carousel gaps. Wake/reset clears the cache; generation checks reject canceled results. The shared visible sampler supplies countdown redraws without another recurring timer. The child uses an existing temporary working directory while preserving the CLI login/CODEX_HOME environment. No CLI is installed or daemon managed.
+
+Both the Settings Active capsule selector and menu-bar Select Capsule menu offer the two opt-in choices, with capacity and pending-edit fences preserved.
+
+The provider uses [the documented app-server protocol](https://learn.chatgpt.com/docs/app-server#6-rate-limits-chatgpt): `initialize`, `initialized`, `account/rateLimits/read`. It discovers `codex` on PATH, common CLI locations and Codex/ChatGPT bundles, and relies on the CLI's existing login. No model turns, direct credential reads, account changes or conversation parsing. Only the official unmodified white OpenAI PNG is bundled; the HUD owns a thumbnail capped at 96 pixels. App/menu art is unchanged.
+
+Focused checks and private synthetic exports:
+
+```bash
+bash scripts/test.sh --filter CodexQuota
+bash scripts/check-runtime.sh --group codex
+"dist/Endfield Charge.app/Contents/MacOS/EndfieldCharge" --codex-quota-check
+"dist/Endfield Charge.app/Contents/MacOS/EndfieldCharge" --render /tmp/codex-5h.png --capsule codex-5h --demo --en
+"dist/Endfield Charge.app/Contents/MacOS/EndfieldCharge" --render /tmp/codex-week.png --capsule codex-week --demo --zh
+```
+
+The check prints only provider completion/window availability/timing, never live quota values. Both quota exports use a fixed synthetic Unix time and fixed quota data; `--unavailable` exercises missing data. The native quota group covers real preset handlers/capacity, demand, coalescing/cache/cancellation/owner cleanup, a nonblocking sampler and disposable stdio protocol/output/timeout fixtures. It does not require or contact a signed-in account. Actual live smoke is an explicit separate command.

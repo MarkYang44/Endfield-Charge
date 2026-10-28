@@ -22,7 +22,7 @@ check_app() {
       legacy && $1 == "version" { print $2 }')
     [[ "$floor" == 13.0 || "$floor" == 13.0.0 ]] || fail "Expected macOS 13.0 $arch binary floor, found $floor"
   done
-  for resource in AppIcon.icns MenuBarIcon.png endfield-industries.svg PrivacyInfo.xcprivacy LICENSE THIRD_PARTY_NOTICES.md zmd-charge-plus-MIT.txt; do
+  for resource in AppIcon.icns OpenAIMark.png MenuBarIcon.png endfield-industries.svg PrivacyInfo.xcprivacy LICENSE THIRD_PARTY_NOTICES.md zmd-charge-plus-MIT.txt; do
     [[ -s "$bundle/Contents/Resources/$resource" ]] || fail "Missing/empty resource: $resource"
   done
   codesign --verify --deep --strict "$bundle" || fail 'Strict signature verification failed'

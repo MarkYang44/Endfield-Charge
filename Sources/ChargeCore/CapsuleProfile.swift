@@ -5,6 +5,10 @@ public enum TelemetryMetric: String, Codable, CaseIterable {
     case batteryEnergyWh, batteryPercent, cpuPercent, memoryUsedBytes, memoryPercent
     case networkDownloadBytesPerSecond, networkUploadBytesPerSecond, storageAvailableBytes, storageUsedPercent
 
+    case codexFiveHourRemainingPercent, codexWeeklyRemainingPercent
+
+    public var isCodexQuota: Bool { self == .codexFiveHourRemainingPercent || self == .codexWeeklyRemainingPercent }
+
     public func value(in snapshot: TelemetrySnapshot) -> Double? {
         let result: Double?
         switch self {
@@ -20,6 +24,7 @@ public enum TelemetryMetric: String, Codable, CaseIterable {
         case .networkUploadBytesPerSecond: result = snapshot.network?.uploadBytesPerSecond
         case .storageAvailableBytes: result = snapshot.storage.map { Double($0.availableBytes) }
         case .storageUsedPercent: result = snapshot.storage.map { $0.usedFraction * 100 }
+        case .codexFiveHourRemainingPercent, .codexWeeklyRemainingPercent: result = snapshot.codexQuota?.window(for: self)?.remainingPercent
         }
         return result.flatMap { $0.isFinite && $0 >= 0 ? $0 : nil }
     }

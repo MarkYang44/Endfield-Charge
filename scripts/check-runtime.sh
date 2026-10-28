@@ -1,12 +1,12 @@
 #!/bin/bash
 set -euo pipefail
-usage() { echo 'Usage: bash scripts/check-runtime.sh [--group all|hud|telemetry|sharing|editors|ipc]' >&2; exit 2; }
+usage() { echo 'Usage: bash scripts/check-runtime.sh [--group all|hud|telemetry|sharing|editors|ipc|codex]' >&2; exit 2; }
 group=all
 if [[ $# != 0 ]]; then
   [[ $# == 2 && "$1" == --group ]] || usage
   group=$2
 fi
-case "$group" in all|hud|telemetry|sharing|editors|ipc) ;; *) usage ;; esac
+case "$group" in all|hud|telemetry|sharing|editors|ipc|codex) ;; *) usage ;; esac
 cd "$(dirname "$0")/.."
 # Build fresh core objects without running unrelated core tests. Requires a graphical macOS session.
 mkdir -p .build/module-cache
@@ -24,6 +24,7 @@ swiftc -I "$binary_dir/Modules" \
   Sources/EndfieldCharge/ConfigurationBackupStore.swift Sources/EndfieldCharge/ConfigurationTransactionService.swift \
   Sources/EndfieldCharge/SettingsSharing.swift Sources/EndfieldCharge/SettingsChannel.swift Sources/EndfieldCharge/ResidentInstance.swift \
   Sources/EndfieldCharge/SettingsProcessController.swift Sources/EndfieldCharge/SettingsApplicationDelegate.swift \
+  Sources/EndfieldCharge/CodexQuotaReader.swift Sources/EndfieldCharge/StatusMenuController.swift \
   Sources/EndfieldCharge/NetworkReader.swift Sources/EndfieldCharge/StorageReader.swift \
   Sources/EndfieldCharge/CapsulePresentation.swift Sources/EndfieldCharge/TelemetryReader.swift Sources/EndfieldCharge/TelemetryMonitor.swift \
   Sources/EndfieldCharge/BatteryReader.swift Sources/EndfieldCharge/TelemetryApplicationDelegate.swift \

@@ -17,6 +17,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private let profilesItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let profilesMenu = NSMenu()
     private var profileItems: [String: NSMenuItem] = [:]
+    private var codexItems: [NSMenuItem] = []
     private var profileOrder: [String] = []
 
     init(settings: AppSettings, target: AnyObject, entries: [(String, String, Selector?, String)]) {
@@ -38,6 +39,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             menu.addItem(item)
             labels.append((item, zh, en))
         }
+        profilesMenu.autoenablesItems = false
         profilesItem.submenu = profilesMenu
         menu.insertItem(profilesItem, at: 3)
         playbackItem.target = self
@@ -69,18 +71,39 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         profilesItem.title = settings.text("选择胶囊", "Select Capsule")
         let profiles = settings.value.capsuleProfiles
         if profileOrder != profiles.map(\.id) {
-            profilesMenu.removeAllItems(); profileItems.removeAll()
+            profilesMenu.removeAllItems(); profileItems.removeAll(); codexItems.removeAll()
             profileOrder = profiles.map(\.id)
             for profile in profiles {
                 let item = NSMenuItem(title: profile.title, action: #selector(selectProfile(_:)), keyEquivalent: "")
                 item.target = self; item.representedObject = profile.id; item.isEnabled = true
                 profileItems[profile.id] = item; profilesMenu.addItem(item)
             }
+            profilesMenu.addItem(.separator())
+            for metric: TelemetryMetric in [.codexFiveHourRemainingPercent, .codexWeeklyRemainingPercent] {
+                let item = NSMenuItem(title: "", action: #selector(selectCodexPreset(_:)), keyEquivalent: "")
+                item.target = self; item.representedObject = metric.rawValue
+                codexItems.append(item); profilesMenu.addItem(item)
+            }
+        }
+        for item in codexItems {
+            guard let raw = item.representedObject as? String, let metric = TelemetryMetric(rawValue: raw) else { continue }
+            item.title = metric == .codexFiveHourRemainingPercent ? settings.text("Codex · 5小时", "Codex · 5 hours") : settings.text("Codex · 每周", "Codex · Weekly")
+            let exists = profiles.contains { $0.id == "preset." + raw }
+            item.isEnabled = exists || profiles.count < ConfigurationLimits.maximumProfiles
+            item.state = settings.value.selectedCapsuleID == "preset." + raw ? .on : .off
         }
         for profile in profiles {
             profileItems[profile.id]?.title = profile.title
             profileItems[profile.id]?.state = settings.value.selectedCapsuleID == profile.id ? .on : .off
         }
+    }
+
+    @objc func selectCodexPreset(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let metric = TelemetryMetric(rawValue: raw), metric.isCodexQuota else { return }
+        var value = settings.value
+        guard let id = value.selectCodexQuotaPreset(metric) else { return }
+        settings.value = value
+        onProfileSelected?(id)
     }
 
     @objc private func selectProfile(_ sender: NSMenuItem) {

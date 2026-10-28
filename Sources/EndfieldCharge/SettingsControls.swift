@@ -206,13 +206,14 @@ extension SettingsWindowController {
     }
     func metricEnabled(_ metric: TelemetryMetric) -> Bool {
         switch metric {
-        case .batteryEnergyWh, .batteryPercent: return true
+        case .batteryEnergyWh, .batteryPercent, .codexFiveHourRemainingPercent, .codexWeeklyRemainingPercent: return true
         case .cpuPercent, .memoryUsedBytes, .memoryPercent: return settings.value.computeTelemetryEnabled
         case .networkDownloadBytesPerSecond, .networkUploadBytesPerSecond: return settings.value.networkTelemetryEnabled
         case .storageAvailableBytes, .storageUsedPercent: return settings.value.storageTelemetryEnabled
         }
     }
     func metricAvailability(_ metric: TelemetryMetric) -> String {
+        if metric.isCodexQuota { return t("需已登录的本机 Codex CLI；显示剩余额度，约5分钟刷新。— 表示未登录或窗口不可用。", "Requires a locally signed-in Codex CLI; remaining quota refreshes about every 5 minutes. — means unavailable.") }
         return metricEnabled(metric) ? t("— 表示暂不可用；可在“遥测”页管理模块。", "— means unavailable; manage modules in Telemetry.")
             : t("所选指标模块已停用，输入不可用。请在“遥测”页启用。", "Selected metric module is disabled; input unavailable. Enable it in Telemetry.")
     }

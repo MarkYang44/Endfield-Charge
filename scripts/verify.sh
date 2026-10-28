@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-usage() { echo 'Usage: bash scripts/verify.sh {core [--filter regex]|desktop {all|hud|telemetry|sharing|editors|ipc}|package|release}' >&2; exit 2; }
+usage() { echo 'Usage: bash scripts/verify.sh {core [--filter regex]|desktop {all|hud|telemetry|sharing|editors|ipc|codex}|package|release}' >&2; exit 2; }
 [[ $# -ge 1 ]] || usage
 mode=$1
 shift
@@ -9,7 +9,7 @@ case "$mode" in
   desktop)
     [[ $# == 1 ]] || usage
     group=$1
-    case "$group" in all|hud|telemetry|sharing|editors|ipc) ;; *) usage ;; esac ;;
+    case "$group" in all|hud|telemetry|sharing|editors|ipc|codex) ;; *) usage ;; esac ;;
   package|release) [[ $# == 0 ]] || usage ;;
   *) usage ;;
 esac

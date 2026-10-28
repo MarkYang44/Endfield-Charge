@@ -94,7 +94,7 @@ final class CapsulePlaybackController {
                 }
             }
             switch rule.metric {
-            case .batteryEnergyWh, .batteryPercent: return true
+            case .batteryEnergyWh, .batteryPercent, .codexFiveHourRemainingPercent, .codexWeeklyRemainingPercent: return true
             case .cpuPercent, .memoryUsedBytes, .memoryPercent: return preferences.computeTelemetryEnabled
             case .networkDownloadBytesPerSecond, .networkUploadBytesPerSecond: return preferences.networkTelemetryEnabled
             case .storageAvailableBytes, .storageUsedPercent: return preferences.storageTelemetryEnabled

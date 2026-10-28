@@ -12,9 +12,9 @@ let settings = AppSettings(defaults: defaults)
 
 let arguments = Array(CommandLine.arguments.dropFirst())
 let group = arguments.count == 2 && arguments[0] == "--group" ? arguments[1] : "all"
-let groups = ["all", "hud", "telemetry", "sharing", "editors", "ipc"]
+let groups = ["all", "hud", "telemetry", "sharing", "editors", "ipc", "codex"]
 guard (arguments.isEmpty || arguments.count == 2 && arguments[0] == "--group"), groups.contains(group) else {
-    fputs("Usage: check-runtime [--group all|hud|telemetry|sharing|editors|ipc]\n", stderr)
+    fputs("Usage: check-runtime [--group all|hud|telemetry|sharing|editors|ipc|codex]\n", stderr)
     exit(2)
 }
 // Keep the existing screenshot/legacy entry points and their original ordering.
@@ -37,4 +37,5 @@ if group == "all" || group == "telemetry" {
 }
 if group == "all" || group == "hud" { try runHUDChecks(settings: settings) }
 if group == "all" || group == "ipc" { try runSubprocessLifecycleChecks(settings: settings) }
-print(group == "all" ? "All 24 native runtime check groups passed" : "Native \(group) checks passed")
+if group == "all" || group == "codex" { try runCodexQuotaChecks(defaults: defaults) }
+print(group == "all" ? "All 25 native runtime check groups passed" : "Native \(group) checks passed")
