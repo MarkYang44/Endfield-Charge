@@ -76,7 +76,7 @@ Pushing `main` runs core tests and creates and verifies a universal archive. Pus
 
 The [configuration guide](configuration-sharing.md) ([中文](configuration-sharing.zh-CN.md)) defines sharing scope, safety defaults and playback behavior. Share validation is strict and versioned; legacy Preferences migration stays tolerant. Resident-side ConfigurationTransactionService owns validation, atomic backup and one commit; helpers only request and receive authoritative revisions. Undo restores one full snapshot without changing SMAppService registration. CapsulePlaybackScheduler is deterministic; one native coordinator owns the HUD/deadline, while static compact holds stop the animation timer.
 
-`bash scripts/test.sh` builds ChargeCore first; `bash scripts/check-runtime.sh` then exercises actual controls, pipes and child processes, including expanded UTF-8 configurations. For isolated synthetic exports:
+Select the affected group: `bash scripts/verify.sh desktop sharing` for configuration transactions, `desktop editors` for controls, or `desktop ipc` for pipes and child processes, including expanded UTF-8 configurations. The native entry point automatically builds fresh ChargeCore objects; no separate core-test run is required. Use `desktop all` only when explicitly selecting the full suite. For isolated synthetic exports:
 
 ```bash
 ENDFIELD_EDITORS_ONLY=1 ENDFIELD_EDITOR_SCREENSHOTS=/tmp/endfield-demo bash scripts/check-runtime.sh

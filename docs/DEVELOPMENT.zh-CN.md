@@ -73,7 +73,7 @@ swift scripts/render-icons.swift
 
 [配置指南](configuration-sharing.zh-CN.md)（[English](configuration-sharing.md)）说明分享范围、安全默认值和播放行为。分享校验严格且带版本；旧 Preferences 迁移保持宽容。常驻端 ConfigurationTransactionService 负责校验、原子备份及一次提交，辅助进程只发送请求并接收权威版本。撤销恢复一份完整快照，不修改 SMAppService 注册。CapsulePlaybackScheduler 使用确定性状态机；单个原生协调器管理 HUD 与截止计时，静态紧凑保持停止动画计时器。
 
-先用 `bash scripts/test.sh` 构建 ChargeCore，再运行 `bash scripts/check-runtime.sh` 检查真实控件、管道及子进程，包括扩展 UTF-8 极值配置。隔离导出演示界面：
+按改动选择相关组：配置事务用 `bash scripts/verify.sh desktop sharing`，控件用 `desktop editors`，管道及子进程（包括扩展 UTF-8 极值配置）用 `desktop ipc`。原生入口会自动构建最新 ChargeCore 对象，无需先运行核心测试；只有明确需要全量检查时才选择 `desktop all`。隔离导出演示界面：
 
 ```bash
 ENDFIELD_EDITORS_ONLY=1 ENDFIELD_EDITOR_SCREENSHOTS=/tmp/endfield-demo bash scripts/check-runtime.sh
