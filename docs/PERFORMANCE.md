@@ -4,6 +4,12 @@ These are versioned measurements, not universal memory guarantees. Current candi
 
 以下为历史版本测量，不能当作当前版本或所有系统的占用保证。v1.2.0 候选版本的同机对照和新增场景见 [验证记录](capsule-sharing-validation.md)，v1.1.0 记录保留为历史证据。
 
+## 2026-10-28 maintainability candidate / 可维护性重构候选
+
+[Compact same-host comparison](maintainability-validation.md) ([JSON](maintainability-validation.json)): one cold start per affected scenario, no repeated full performance matrix. Resident footprint is about 12 MiB; no statistically supported memory saving is claimed. The ZIP size is essentially unchanged. This candidate is unreleased and did not replace the installed stable build.
+
+[本轮简短对照](maintainability-validation.md)每个相关场景只抽样一次，主要确认没有明显的体积或内存回退；收益是职责和资源所有权更清楚，不宣称明确的内存降幅。
+
 ## v1.2.0 candidate / 候选版本
 
 | Scenario | v1.1.0 final median MiB | Candidate final median MiB | Candidate sampled peak MiB | Whole-run CPU % of one core |

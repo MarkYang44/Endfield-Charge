@@ -23,10 +23,10 @@ Files: create Sources/ChargeCore/ConfigurationLimits.swift; modify Configuration
 
 Produces: public ConfigurationLimits.maximumProfiles = 12, maximumRules = 16, maximumColorConditions = 4. Playback ID capacity uses maximumProfiles. Import remains strict; legacy saved settings remain forgiving.
 
-- [ ] Add behavior characterization for exact and over-limit profile/rule/condition/playback counts; strict import rejection versus legacy normalization, including required battery insertion and reference pruning. Use literal boundary expectations in tests so incorrect constants cannot make both sides pass.
-- [ ] Run focused tests before the refactor; existing valid behavior must pass. If adding new API assertions, verify their expected compile failure before implementing.
-- [ ] Replace matching domain literals with the constants in validation, normalization, bounded decoders and editor capacity checks. Keep localized error text accurate. Do not merge strict and forgiving policy or unrelated numeric limits.
-- [ ] Run bash scripts/test.sh, inspect diff and commit refactor. Report boundary results and unchanged semantics.
+- [x] Add behavior characterization for exact and over-limit profile/rule/condition/playback counts; strict import rejection versus legacy normalization, including required battery insertion and reference pruning. Use literal boundary expectations in tests so incorrect constants cannot make both sides pass.
+- [x] Run focused tests before the refactor; existing valid behavior must pass. If adding new API assertions, verify their expected compile failure before implementing.
+- [x] Replace matching domain literals with the constants in validation, normalization, bounded decoders and editor capacity checks. Keep localized error text accurate. Do not merge strict and forgiving policy or unrelated numeric limits.
+- [x] Run bash scripts/test.sh, inspect diff and commit refactor. Report boundary results and unchanged semantics.
 
 ### Task 2: Native test responsibilities
 
@@ -34,11 +34,11 @@ Files: Tests/RuntimeChecks/main.swift, existing EditorChecks.swift/SharingChecks
 
 Consumes: existing global check/spin/awaitCondition helpers and private UserDefaults suites; may replace globals with explicit fixture arguments where that improves clarity. Produces named run functions and a short main that dispatches child roles first, then named check groups.
 
-- [ ] Inspect existing check groups/child-role branch and record baseline PASS groups. Preserve ENDFIELD_EDITORS_ONLY and ENDFIELD_SHARING_ONLY fast paths.
-- [ ] Extract reusable fixtures and child-role handling, then separate settings/IPC, telemetry sampler/view, and HUD scenarios. Move existing assertions without inventing a testing framework; functions may throw where existing checks throw.
-- [ ] Ensure settings are isolated, child processes naturally close/ACK, native windows/timers are released, environment/defaults cleanup runs, all existing assertions still execute in full mode and failure exits nonzero.
-- [ ] Update compile inputs in scripts/check-runtime.sh to include all check files deterministically. Keep source inputs explicit or well-scoped globs, avoid silently including the app main.swift.
-- [ ] Run bash scripts/check-runtime.sh, compare group coverage with baseline, inspect diff and commit.
+- [x] Inspect existing check groups/child-role branch and record baseline PASS groups. Preserve ENDFIELD_EDITORS_ONLY and ENDFIELD_SHARING_ONLY fast paths.
+- [x] Extract reusable fixtures and child-role handling, then separate settings/IPC, telemetry sampler/view, and HUD scenarios. Move existing assertions without inventing a testing framework; functions may throw where existing checks throw.
+- [x] Ensure settings are isolated, child processes naturally close/ACK, native windows/timers are released, environment/defaults cleanup runs, all existing assertions still execute in full mode and failure exits nonzero.
+- [x] Update compile inputs in scripts/check-runtime.sh to include all check files deterministically. Keep source inputs explicit or well-scoped globs, avoid silently including the app main.swift.
+- [x] Run bash scripts/check-runtime.sh, compare group coverage with baseline, inspect diff and commit.
 
 ### Task 3: Pure telemetry page presentation
 
@@ -46,10 +46,10 @@ Files: create Sources/ChargeCore/TelemetryPagePresentation.swift and Tests/Charg
 
 Produces: a pure value projection selected by page index (0 power, 1 compute, 2 thermal, 3 network, 4 storage; invalid => power), consuming Preferences, optional TelemetrySnapshot, language boolean, history samples and demo flag. Use a typed sample containing timestamp/primary/secondary optional values. Rows carry localized label and formatted value together, with status/caption/footer/range/alert/accessibility text as needed. History stores only existing plotted fields; do not store full snapshots just for convenience.
 
-- [ ] Add deterministic tests first for all five pages in English/Chinese, empty/missing/disabled metrics, NaN handling, bytes/rate/percent/Wh formatting, network observation baseline gating, thermal/pressure states, auto/fixed ranges and alert color, demo suffix and graph timestamp/value association. Run focused tests to see expected missing-API failure.
-- [ ] Move the existing formatting/projection logic verbatim where possible; preserve exact rendered copy and precision. Keep graph drawing, layout and control actions in AppKit. Use one graph sample array instead of zip of separate time/value arrays; preserve gap breaks at nonincreasing time or >60s and nil/nonfinite readings.
-- [ ] Make rebuilding rows and refreshing values consume the same projection. Preserve history reset on clock regression, duplicate timestamps filtering and 300-item cap; maintain on-demand ownership and no new timers.
-- [ ] Run focused tests and bash scripts/test.sh; run native view checks and deterministic render comparison through existing CLI. Commit once behavior is characterized and verified.
+- [x] Add deterministic tests first for all five pages in English/Chinese, empty/missing/disabled metrics, NaN handling, bytes/rate/percent/Wh formatting, network observation baseline gating, thermal/pressure states, auto/fixed ranges and alert color, demo suffix and graph timestamp/value association. Run focused tests to see expected missing-API failure.
+- [x] Move the existing formatting/projection logic verbatim where possible; preserve exact rendered copy and precision. Keep graph drawing, layout and control actions in AppKit. Use one graph sample array instead of zip of separate time/value arrays; preserve gap breaks at nonincreasing time or >60s and nil/nonfinite readings.
+- [x] Make rebuilding rows and refreshing values consume the same projection. Preserve history reset on clock regression, duplicate timestamps filtering and 300-item cap; maintain on-demand ownership and no new timers.
+- [x] Run focused tests and bash scripts/test.sh; run native view checks and deterministic render comparison through existing CLI. Commit once behavior is characterized and verified.
 
 ### Task 4: Single HUD scheduling path and verification tiers
 
@@ -57,12 +57,12 @@ Files: Sources/EndfieldCharge/HUDController.swift, CapsulePlaybackController.swi
 
 Consumes: production CapsulePlaybackController and pure CapsulePlaybackScheduler; renderer render/dismiss/completion API. Produces one scheduler, no standalone compatibility queue or show/showProfile/showRule entry points.
 
-- [ ] Migrate old standalone HUD tests to production playback paths. Preserve meaningful assertions for static hold/queue ordering, power interruption, profile demand and live updates, disabled metrics, deleted rule release, repeated lifecycle, owner deallocation and synchronous demand-release reentrancy. Renderer-specific tests may call render() directly with completion. Do not change production priority to satisfy old tests.
-- [ ] Run migrated tests while compatibility code remains, then remove unused compatibility queue, freshness checks used only by it and entry points. Simplify present/finished to renderer ownership/completion only. Preserve reentrancy by completing teardown before callbacks.
-- [ ] Add scripts/verify.sh with core [--filter regex], desktop <group>, package (existing dist only), and explicit release (full desktop+universal build+package verification) tiers; desktop all explicitly selects full core+native; bare desktop and unknown/missing modes fail with usage before executing work. Add check-package.sh that checks both architectures, macOS 13 floor, strict signature, expected resources and ZIP integrity. Test negative/missing-asset cases with temporary copies, never by corrupting the real dist output.
-- [ ] Cloud build workflow runs core tests and universal package verification. Desktop workflow is workflow_dispatch only on [self-hosted, macOS, endfield-desktop]; no pull-request/push trigger. Document graphical session setup and that no runner is assumed provisioned. Do not dispatch this workflow during implementation.
-- [ ] Document commands, scope/limitations, stage selection and measurement method in English/Chinese; no unsupported memory-saving promises.
-- [ ] Run core, native and universal package checks, preserve artwork hashes, inspect diff and commit. Controller performs final performance/render comparison and independent whole-branch review before integration.
+- [x] Migrate old standalone HUD tests to production playback paths. Preserve meaningful assertions for static hold/queue ordering, power interruption, profile demand and live updates, disabled metrics, deleted rule release, repeated lifecycle, owner deallocation and synchronous demand-release reentrancy. Renderer-specific tests may call render() directly with completion. Do not change production priority to satisfy old tests.
+- [x] Run migrated tests while compatibility code remains, then remove unused compatibility queue, freshness checks used only by it and entry points. Simplify present/finished to renderer ownership/completion only. Preserve reentrancy by completing teardown before callbacks.
+- [x] Add scripts/verify.sh with core [--filter regex], desktop <group>, package (existing dist only), and explicit release (full desktop+universal build+package verification) tiers; desktop all explicitly selects full core+native; bare desktop and unknown/missing modes fail with usage before executing work. Add check-package.sh that checks both architectures, macOS 13 floor, strict signature, expected resources and ZIP integrity. Test negative/missing-asset cases with temporary copies, never by corrupting the real dist output.
+- [x] Cloud build workflow runs core tests and universal package verification. Desktop workflow is workflow_dispatch only on [self-hosted, macOS, endfield-desktop]; no pull-request/push trigger. Document graphical session setup and that no runner is assumed provisioned. Do not dispatch this workflow during implementation.
+- [x] Document commands, scope/limitations, stage selection and measurement method in English/Chinese; no unsupported memory-saving promises.
+- [x] Run core, native and universal package checks, preserve artwork hashes, inspect diff and commit. Controller performs final performance/render comparison and independent whole-branch review before integration.
 
 Task 4 acceptance update (user steering, 2026-10-28): add quoted core filter forwarding; native `--group all|hud|telemetry|sharing|editors|ipc` with precompile usage validation and fresh ChargeCore-only build; `verify.sh core [--filter regex]`, `desktop <group>` (bare desktop fails; full checks require all), `package`, explicit full `release`. Preserve legacy ONLY flags. Prefer focused daily checks; reuse passed full regressions and package negatives. Trim duplicate repetitions without dropping unique lifecycle/priority/reentrancy assertions. After selector edits run only affected HUD and core filter checks, minimal shell contracts; retain the already-verified universal package. No automatic changed-path framework.
 

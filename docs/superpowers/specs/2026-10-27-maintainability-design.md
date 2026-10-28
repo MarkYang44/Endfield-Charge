@@ -30,3 +30,7 @@ Run baseline core/native checks before edits. Preserve and add characterization 
 ## Task 4 verification steering (2026-10-28)
 
 Daily verification selects affected checks: core filters, native groups (all/hud/telemetry/sharing/editors/ipc), or existing-package validation. Native groups build fresh ChargeCore objects without forcing all core tests. Bare `verify.sh desktop` fails with usage; full native verification requires `desktop all`. Manual workflow group choice defaults to hud and is passed through a quoted environment argument. Full desktop/release gates remain explicit; preserve useful legacy suites and ONLY flags. Reuse already-passed full-suite/package-negative evidence rather than repeating it after unrelated selector/documentation changes. Retain one meaningful repeated-lifecycle check, unique priority/owner/reentrancy coverage, and no automatic changed-path framework. This user steering supersedes any interpretation that every edit requires another full regression.
+
+## Migration-found cleanup correction
+
+The production-path owner-release regression exposed that the weak HUD demand forwarder cannot clear demand during coordinator destruction. The accepted minimal correction explicitly publishes empty demand after HUD teardown. Other production behavior is preserved. Final performance checking follows the user steering: one compact baseline/candidate sample of affected scenarios, with no repeat of the full matrix or the unchanged settings scenario.
