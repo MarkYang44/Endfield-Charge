@@ -99,7 +99,7 @@ Use a **Swift 6 toolchain** with Xcode or Apple Command Line Tools. There are no
 ```bash
 git clone https://github.com/MarkYang44/Endfield-Charge.git
 cd Endfield-Charge
-bash scripts/test.sh
+bash scripts/verify.sh core
 bash scripts/build-app.sh --universal
 ```
 

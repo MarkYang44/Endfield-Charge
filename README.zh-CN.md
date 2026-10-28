@@ -99,7 +99,7 @@ Endfield Charge 是一个原生菜单栏应用。插拔充电器时，屏幕顶�
 ```bash
 git clone https://github.com/MarkYang44/Endfield-Charge.git
 cd Endfield-Charge
-bash scripts/test.sh
+bash scripts/verify.sh core
 bash scripts/build-app.sh --universal
 ```
 

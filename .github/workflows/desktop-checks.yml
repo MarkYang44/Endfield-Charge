@@ -1,0 +1,23 @@
+name: macOS desktop checks
+on:
+  workflow_dispatch:
+    inputs:
+      group:
+        description: Native check group (all also runs the complete core suite)
+        type: choice
+        default: hud
+        options: [hud, telemetry, sharing, editors, ipc, all]
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    runs-on: [self-hosted, macOS, endfield-desktop]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Selected graphical native checks
+        env:
+          CHECK_GROUP: ${{ inputs.group }}
+        run: bash scripts/verify.sh desktop "$CHECK_GROUP"

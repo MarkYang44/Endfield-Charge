@@ -26,3 +26,7 @@ Use small value types and focused files within the existing ChargeCore/AppKit sp
 ## Validation
 
 Run baseline core/native checks before edits. Preserve and add characterization tests at domain boundaries, localization/formatting and graph gaps; run focused checks while editing. Complete core/native suites, compare deterministic telemetry render output against the baseline, verify universal architecture/macOS floor/ad-hoc signature/resources and compare idle/settings/telemetry physical footprint. Desktop checks must be manually dispatched to a trusted graphical runner and must not execute untrusted pull-request code automatically.
+
+## Task 4 verification steering (2026-10-28)
+
+Daily verification selects affected checks: core filters, native groups (all/hud/telemetry/sharing/editors/ipc), or existing-package validation. Native groups build fresh ChargeCore objects without forcing all core tests. Bare `verify.sh desktop` fails with usage; full native verification requires `desktop all`. Manual workflow group choice defaults to hud and is passed through a quoted environment argument. Full desktop/release gates remain explicit; preserve useful legacy suites and ONLY flags. Reuse already-passed full-suite/package-negative evidence rather than repeating it after unrelated selector/documentation changes. Retain one meaningful repeated-lifecycle check, unique priority/owner/reentrancy coverage, and no automatic changed-path framework. This user steering supersedes any interpretation that every edit requires another full regression.

@@ -14,10 +14,12 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Test battery events and HUD timeline
-        run: bash scripts/test.sh
+      - name: Core checks
+        run: bash scripts/verify.sh core
       - name: Build universal app
         run: bash scripts/build-app.sh --universal
+      - name: Verify universal package
+        run: bash scripts/check-package.sh
       - uses: actions/upload-artifact@v4
         with:
           name: Endfield-Charge-macOS

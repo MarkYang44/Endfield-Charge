@@ -7,13 +7,22 @@ English | [简体中文](DEVELOPMENT.zh-CN.md)
 Use a Swift 6 toolchain with Xcode or Apple Command Line Tools. Deployment targets macOS 13; Swift Testing checks are best run on macOS 14+. No third-party packages are required.
 
 ```bash
-bash scripts/test.sh
-bash scripts/check-runtime.sh # graphical macOS session required
-bash scripts/build-app.sh --universal
-open "dist/Endfield Charge.app"
+bash scripts/verify.sh core --filter CapsulePlayback # affected core suite
+bash scripts/verify.sh desktop hud                  # affected native group, fresh core build
+bash scripts/verify.sh package                      # existing dist only; no rebuild
+# Explicit broad verification when needed:
+bash scripts/verify.sh core
+bash scripts/verify.sh desktop all
+bash scripts/verify.sh release # full desktop + universal build + package
 ```
 
-Omit `--universal` to build only the host architecture. Outputs are `dist/Endfield Charge.app` and `dist/Endfield-Charge-macOS.zip`. The test script handles Swift Testing framework paths in Command Line Tools environments. Native runtime checks use isolated preference domains; CI runs the desktop-independent core suite.
+For daily changes, select the affected checks; do not rerun unrelated suites. `scripts/test.sh` forwards quoted arguments to `swift test` (for example `--filter 'CapsulePlayback|ConfigurationLimits'`). `scripts/check-runtime.sh --group all|hud|telemetry|sharing|editors|ipc` builds fresh ChargeCore objects without running all core tests, then compiles and runs the selected native checks. `verify.sh desktop <group>` does the same; `desktop all` explicitly runs all core and native checks; bare `desktop` fails with usage. The `ENDFIELD_EDITORS_ONLY` and `ENDFIELD_SHARING_ONLY` legacy flags remain available. Invalid/missing group values and unknown verification modes fail with usage before compiling.
+
+Use `core --filter` for relevant pure models, limits, sharing or scheduler suites; `desktop hud` for playback/render ownership, `telemetry` for native telemetry, `editors` for controls, `sharing` for native transactions, and `ipc` for pipes/windows/child lifecycle. Native checks use isolated preference domains and real windows, pipes, child processes and timers. They do not establish hardware sensor accuracy on every Mac. Full `release` verification is an explicit distribution gate, not a daily default.
+
+`bash scripts/build-app.sh --universal` produces `dist/Endfield Charge.app` and `dist/Endfield-Charge-macOS.zip`; omit `--universal` for a host-only build. `bash scripts/verify.sh package` checks the existing app/archive without rebuilding: arm64/x86_64 slices, the macOS 13.0 floor in both slices and Info.plist, expected resources, strict ad-hoc signing, ZIP integrity and extracted-app equality. `check-package.sh` also accepts explicit app/archive paths together for temporary-copy negative checks. A valid unrelated ZIP cannot pass. This does not establish notarization or execution on Intel hardware.
+
+Cloud CI runs `verify.sh core`, builds the universal app and verifies its package. Native checks run only through manually dispatched `desktop-checks.yml` on `[self-hosted, macOS, endfield-desktop]`. The manual choice defaults to `hud`; `all` explicitly adds the full core suite. No runner is assumed provisioned. An administrator must provide a trusted Mac with the toolchain above, register those labels and run the runner in a logged-in graphical user session with WindowServer access. Dispatch only trusted revisions; there is no PR/push trigger. A headless service is insufficient. Running the workflow is a separate operator action.
 
 ## CLI and exports
 
@@ -58,9 +67,9 @@ Re-export the repository's vector icon source with `swift scripts/render-icons.s
 
 ## Performance and release
 
-See [performance records](PERFORMANCE.md) for profiling commands, metrics and historical results. Python 3 and Command Line Tools are needed only for those developer measurements, not the installed app.
+See [performance records](PERFORMANCE.md) for profiling commands, metrics and historical results. Compare idle, settings and telemetry scenarios on the same host/compiler with the same physical-footprint metric, warm-up and sample windows; repeat runs and report noise. Refactoring alone does not guarantee lower memory. Deterministic render comparisons use the same demo payload, language, stage and Reduce Motion setting; retain original artwork hashes. Python 3 and Command Line Tools are needed only for those developer measurements, not the installed app.
 
-Pushing `main` runs core tests and creates a universal archive. Pushing a `v*` tag publishes the archive using `docs/releases/<tag>.md` when present. Builds currently use ad-hoc signing, without Developer ID notarization. Preserve bundled licenses, third-party notices and privacy metadata when distributing.
+Pushing `main` runs core tests and creates and verifies a universal archive. Pushing a `v*` tag publishes the archive using `docs/releases/<tag>.md` when present. Builds currently use ad-hoc signing, without Developer ID notarization. Preserve bundled licenses, third-party notices and privacy metadata when distributing.
 
 
 ## v1.2.0 configuration verification / 配置验证

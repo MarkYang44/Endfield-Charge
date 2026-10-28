@@ -5,16 +5,22 @@
 需要 Swift 6 工具链，安装 Xcode 或 Apple Command Line Tools 即可；无第三方包依赖。应用部署目标是 macOS 13；测试使用 Swift Testing，建议在 macOS 14+ 运行。
 
 ```bash
-git clone https://github.com/MarkYang44/Endfield-Charge.git
-cd Endfield-Charge
-bash scripts/test.sh
-bash scripts/build-app.sh --universal
-open "dist/Endfield Charge.app"
+bash scripts/verify.sh core --filter CapsulePlayback # 相关核心测试
+bash scripts/verify.sh desktop hud                  # 相关原生组，先构建最新核心对象
+bash scripts/verify.sh package                      # 只检查现有 dist，不重新构建
+# 按需显式运行完整验证：
+bash scripts/verify.sh core
+bash scripts/verify.sh desktop all
+bash scripts/verify.sh release # 完整 desktop + 通用构建 + 包检查
 ```
 
-只编译本机架构可以省略 `--universal`。产物：`dist/Endfield Charge.app` 和 `dist/Endfield-Charge-macOS.zip`。`scripts/test.sh` 包含 Command Line Tools 环境下 Swift Testing 的 framework 路径适配。
+日常改动只选择受影响的检查，不重复无关全量回归。`scripts/test.sh` 将带引号的参数原样转发给 `swift test`，例如 `--filter 'CapsulePlayback|ConfigurationLimits'`。`scripts/check-runtime.sh --group all|hud|telemetry|sharing|editors|ipc` 先构建最新 ChargeCore 对象（不运行全量核心测试），再编译并执行所选原生组。`verify.sh desktop <group>` 同理；只有 `desktop all` 显式运行完整核心和原生检查；不带组名的 `desktop` 输出用法并失败。保留 `ENDFIELD_EDITORS_ONLY`、`ENDFIELD_SHARING_ONLY` 兼容入口。缺少组值、未知组和未知模式会在编译前输出用法并失败。
 
-在有图形桌面的本机可额外运行 `bash scripts/check-runtime.sh`，检查原生窗口释放、消息传输、快速重开和提醒排队。它使用独立测试偏好域，不修改已安装应用的设置；CI 只运行不依赖桌面的核心测试。
+纯模型、限制、分享、调度器改动使用相关 `core --filter`；播放及渲染所有权选 `desktop hud`；原生遥测选 `telemetry`；控件选 `editors`；原生事务选 `sharing`；管道、窗口与子进程生命周期选 `ipc`。原生检查使用独立偏好域、真实窗口、管道、子进程及定时器，不改已安装应用的设置，也不能证明每种 Mac 的传感器精度。完整 `release` 是显式分发门槛，不是日常默认命令。
+
+`bash scripts/build-app.sh --universal` 生成 `dist/Endfield Charge.app` 和 `dist/Endfield-Charge-macOS.zip`，省略 `--universal` 可只编译本机架构。`bash scripts/verify.sh package` 只验证现有产物的 arm64/x86_64、两种架构及 Info.plist 的 macOS 13.0 最低版本、预期资源、严格临时签名、ZIP 完整性，以及解压应用与构建应用一致。`check-package.sh` 也可同时传入应用和 ZIP 路径，用临时副本做负向测试；任意有效 ZIP 不能冒充应用分发包。包检查不等于公证或 Intel 硬件运行验证。
+
+云端 CI 运行 `verify.sh core`、通用构建和包验证。原生检查只通过 `desktop-checks.yml` 手动触发，标签为 `[self-hosted, macOS, endfield-desktop]`，没有 PR/push 触发。手动选项默认 `hud`，只有选择 `all` 才额外运行全量核心测试。当前不假设已配置 runner；管理员需提供可信 Mac、上述工具链并注册标签，在已登录且可访问 WindowServer 的图形用户会话中启动 runner。只选择可信代码版本；无桌面的后台服务不够。工作流需由操作者单独触发。
 
 ```bash
 "dist/Endfield Charge.app/Contents/MacOS/EndfieldCharge" --snapshot
@@ -76,3 +82,5 @@ ENDFIELD_EDITORS_ONLY=1 ENDFIELD_EDITOR_SCREENSHOTS=/tmp/endfield-demo bash scri
 此命令使用临时偏好导出真实中英文设置及生产配色／散热／内存压力 HUD，不使用用户读数。`ENDFIELD_SHARING_ONLY=1` 可仅运行分享检查，其截图 fixture 见 Tests/RuntimeChecks/SharingChecks.swift。`--render-settings --scroll-bottom` 导出可滚动页底部。原电池回归使用 `--render /tmp/battery.png --demo --stage 1.55`、阶段 3，以及阶段 0.15 加 `--reduce-motion`；不要通过修改图案更新基准。
 
 [分版本验证](capsule-sharing-validation.md)记录命令、物理占用汇总、安装包哈希与限制。真实偏好备份和原始遥测样本保留在仓库之外。性能脚本只用于开发，应用不打包 Python、.NET、字体或其他运行时。
+
+验证性能时，在同一主机、编译器、预热和采样窗口下，对比 idle/settings/telemetry 场景的 physical footprint，重复测量并报告噪声；重构本身不保证更低内存。确定性渲染对比固定演示数据、语言、动画阶段和 Reduce Motion，保留原始素材哈希。

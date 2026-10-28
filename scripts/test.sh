@@ -9,4 +9,4 @@ if [[ "$developer_path" == */CommandLineTools ]]; then
   frameworks="$developer_path/Library/Developer/Frameworks"
   flags+=(-Xswiftc -F -Xswiftc "$frameworks" -Xlinker -rpath -Xlinker "$frameworks")
 fi
-swift test "${flags[@]}"
+swift test "${flags[@]}" "$@"

@@ -164,5 +164,9 @@ final class CapsulePlaybackController {
         self.timer = timer
         RunLoop.main.add(timer, forMode: .common)
     }
-    deinit { timer?.invalidate(); hud.dismiss() }
+    deinit {
+        timer?.invalidate(); hud.dismiss()
+        // The renderer forwards weakly; during owner teardown it cannot publish this release.
+        onCapsuleDemand?([])
+    }
 }

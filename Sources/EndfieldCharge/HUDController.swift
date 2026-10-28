@@ -11,7 +11,6 @@ final class HUDController {
     private var panel: HUDPanel?
     private var view: HUDView?
     private var timer: Timer?
-    private var isPresenting = false
     private var startTime = 0.0
     private var observer: NSObjectProtocol?
     private var motionObserver: NSObjectProtocol?
@@ -22,11 +21,7 @@ final class HUDController {
         let profile: CapsuleProfile?
         let rule: TelemetryAlertRule?
         let ruleSnapshot: TelemetrySnapshot?
-        let createdAt: Double
     }
-    // Compatibility queue for standalone callers only. The resident coordinator uses render(),
-    // which clears this queue and delegates every completion to the pure scheduler.
-    private var queue: [Content] = []
     private var current: Content?
     private var incoming: Content?
     private var completion: (() -> Void)?
@@ -60,32 +55,20 @@ final class HUDController {
     private func content(_ battery: BatterySnapshot, kind: HUDKind = .power,
                          profile: CapsuleProfile? = nil, rule: TelemetryAlertRule? = nil,
                          ruleSnapshot: TelemetrySnapshot? = nil) -> Content {
-        Content(battery: battery, kind: kind, profile: profile, rule: rule, ruleSnapshot: ruleSnapshot,
-            createdAt: ProcessInfo.processInfo.systemUptime)
-    }
-    func show(_ snapshot: BatterySnapshot, kind: HUDKind = .power, queued: Bool = false) {
-        present(content(snapshot, kind: kind), queued: queued)
-    }
-    func showProfile(_ profile: CapsuleProfile, snapshot: TelemetrySnapshot?) {
-        latestTelemetry = snapshot
-        present(content(snapshot?.battery ?? BatteryReader.read(), profile: profile), queued: false)
-    }
-    func showRule(_ rule: TelemetryAlertRule, snapshot: TelemetrySnapshot) {
-        latestTelemetry = snapshot
-        present(content(snapshot.battery, rule: rule, ruleSnapshot: snapshot), queued: true)
+        Content(battery: battery, kind: kind, profile: profile, rule: rule, ruleSnapshot: ruleSnapshot)
     }
     func render(battery: BatterySnapshot, kind: HUDKind, completion: @escaping () -> Void) {
-        present(content(battery, kind: kind), queued: false, completion: completion)
+        present(content(battery, kind: kind), completion: completion)
     }
     func render(profile: CapsuleProfile, snapshot: TelemetrySnapshot?, holding: Bool,
                 compactTransition: Bool, completion: @escaping () -> Void) {
         latestTelemetry = snapshot
-        present(content(snapshot?.battery ?? BatterySnapshot(hasBattery: false), profile: profile), queued: false,
+        present(content(snapshot?.battery ?? BatterySnapshot(hasBattery: false), profile: profile),
             holding: holding, compactTransition: compactTransition, completion: completion)
     }
     func render(rule: TelemetryAlertRule, snapshot: TelemetrySnapshot, completion: @escaping () -> Void) {
         latestTelemetry = snapshot
-        present(content(snapshot.battery, rule: rule, ruleSnapshot: snapshot), queued: false, completion: completion)
+        present(content(snapshot.battery, rule: rule, ruleSnapshot: snapshot), completion: completion)
     }
     func updateTelemetry(_ snapshot: TelemetrySnapshot) {
         latestTelemetry = snapshot
@@ -111,16 +94,6 @@ final class HUDController {
         if !p.storageTelemetryEnabled { snapshot.storage = nil }
         return snapshot
     }
-    private func valid(_ content: Content) -> Bool {
-        guard ProcessInfo.processInfo.systemUptime - content.createdAt <= 30 else { return false }
-        if let rule = content.rule { return settings.value.telemetryAlertRules.contains(rule) && rule.enabled }
-        if let profile = content.profile { return settings.value.capsuleProfiles.contains(profile) }
-        return true
-    }
-    func preferencesChanged() {
-        queue.removeAll()
-        if current?.profile != nil || current?.rule != nil { dismiss() }
-    }
     func refreshPresentation() {
         guard let current else { return }
         view?.preferences = settings.value; view?.chinese = settings.chinese
@@ -128,8 +101,8 @@ final class HUDController {
     }
     func dismiss() {
         timer?.invalidate(); timer = nil
-        queue.removeAll(); current = nil; incoming = nil; completion = nil
-        isPresenting = false; holding = false; compactTransition = false
+        current = nil; incoming = nil; completion = nil
+        holding = false; compactTransition = false
         panel?.orderOut(nil); panel?.contentView = nil; panel?.close()
         panel = nil; view = nil
         // Complete teardown before callbacks: a fresh synchronous request can safely create a new owner.
@@ -163,20 +136,15 @@ final class HUDController {
             onCapsuleDemand?(rule.condition == .threshold ? [rule.metric] : [.batteryPercent])
         } else { onCapsuleDemand?([]) }
     }
-    private func present(_ content: Content, queued: Bool, holding: Bool = false,
-                         compactTransition: Bool = false, completion: (() -> Void)? = nil) {
-        if queued && isPresenting {
-            if queue.count < 4 { queue.append(content) }
-            return
-        }
+    private func present(_ content: Content, holding: Bool = false,
+                         compactTransition: Bool = false, completion: @escaping () -> Void) {
         timer?.invalidate(); timer = nil
-        if !queued { queue.removeAll() }
         let outgoing = current
         preparePanel()
         guard let view, let panel else { return }
         self.holding = holding; self.compactTransition = compactTransition
         self.completion = completion
-        incoming = nil; current = content; isPresenting = true
+        incoming = nil; current = content
         view.preferences = settings.value; view.chinese = settings.chinese
         view.reduceMotion = reduceMotion(); view.compactHold = false; view.frameOverride = nil; view.elapsed = 0
         if holding && compactTransition && !view.reduceMotion, let outgoing {
@@ -244,17 +212,10 @@ final class HUDController {
         }
     }
     private func finished() {
-        isPresenting = false
         let callback = completion
-        completion = nil
-        if let callback {
-            // The coordinator receives completion only after the old native owner is fully released.
-            dismiss(); callback()
-        } else {
-            queue.removeAll { !valid($0) }
-            if !queue.isEmpty { present(queue.removeFirst(), queued: true) }
-            else { dismiss() }
-        }
+        // Release the old native owner before demand/completion callbacks can reenter render().
+        dismiss()
+        callback?()
     }
     func position() {
         guard let panel, let view else { return }
