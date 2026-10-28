@@ -51,6 +51,10 @@ Endfield Charge 是一个原生菜单栏应用。插拔充电器时，屏幕顶�
 - **通用提醒**：最多 16 条数值阈值或热状态／内存压力变化规则，支持持续时间和冷却；新规则默认关闭，电源事件优先。
 - **原生设置**：中文／English／跟随系统，可改全局快捷键，可选登录启动与菜单栏百分比；登录启动默认关闭。
 
+![Codex quota capsule](docs/images/codex-week-zh.png)
+
+Codex 额度胶囊：剩余额度、重置倒计时和 OpenAI 徽标。图中为固定演示数据。
+
 ## 安装
 
 1. 从 [最新 Release](https://github.com/MarkYang44/Endfield-Charge/releases/latest) 下载 **`Endfield-Charge-macOS.zip`**。

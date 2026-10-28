@@ -51,6 +51,10 @@ Actual AppKit exports using **demo data**, not measurements of your Mac. Setting
 - **Alert rules:** up to 16 optional numeric threshold or typed thermal/memory-pressure transition rules, with hold and cooldown. New rules are disabled. Power events retain priority over generic alerts.
 - **Native controls:** English / 简体中文 / system language, configurable global shortcut, optional login launch and menu bar percentage. Login launch is off by default.
 
+![Codex quota capsule](docs/images/codex-5h-en.png)
+
+Codex quota capsule: remaining allowance, reset countdown and OpenAI mark. Fixed demo data.
+
 ## Installation
 
 1. Download **`Endfield-Charge-macOS.zip`** from the [latest release](https://github.com/MarkYang44/Endfield-Charge/releases/latest).
