@@ -1,16 +1,6 @@
 import AppKit
 import ChargeCore
 
-private struct TelemetryGraphPoint {
-    let time: Double
-    let power: Double?
-    let cpu: Double?
-    let thermal: Double?
-    let download: Double?
-    let upload: Double?
-    let storage: Double?
-}
-
 private final class TelemetryPage: NSView {
     override var isFlipped: Bool { true }
 }
@@ -48,9 +38,7 @@ private final class TelemetrySegmentCell: NSSegmentedCell {
 
 private final class TelemetryGraph: NSView {
     override var isFlipped: Bool { true }
-    var values: [Double?] = []
-    var secondaryValues: [Double?] = []
-    var times: [Double] = []
+    var samples: [TelemetryGraphSample] = []
     var fixedRange: ClosedRange<Double>?
     var alert = false
 
@@ -58,18 +46,19 @@ private final class TelemetryGraph: NSView {
         NSColor(rgb: 0x312F30).setFill()
         NSBezierPath(roundedRect: bounds, xRadius: 7, yRadius: 7).fill()
         let rect = bounds.insetBy(dx: 8, dy: 7)
-        let finite = (values + secondaryValues).compactMap { $0 }.filter(\.isFinite)
-        guard !finite.isEmpty, let firstTime = times.first else { return }
+        let finite = samples.flatMap { [$0.primary, $0.secondary] }.compactMap { $0 }.filter(\.isFinite)
+        guard !finite.isEmpty, let firstTime = samples.first?.time else { return }
         let lower = fixedRange?.lowerBound ?? min(0, finite.min() ?? 0)
         let upper = fixedRange?.upperBound ?? max(1, finite.max() ?? 1)
         let span = max(0.001, upper - lower)
-        let timeSpan = max(0.001, (times.last ?? firstTime) - firstTime)
-        for (series, color) in [(values, NSColor(rgb: alert ? 0xFF4D4F : 0xC6CA4C)),
-                                (secondaryValues, NSColor(rgb: 0xB6B3B0))] {
+        let timeSpan = max(0.001, (samples.last?.time ?? firstTime) - firstTime)
+        for (series, color) in [(\TelemetryGraphSample.primary, NSColor(rgb: alert ? 0xFF4D4F : 0xC6CA4C)),
+                                (\TelemetryGraphSample.secondary, NSColor(rgb: 0xB6B3B0))] {
         let path = NSBezierPath()
         var connected = false
         var previousTime: Double?
-        for (time, value) in zip(times, series) {
+        for sample in samples {
+            let time = sample.time, value = sample[keyPath: series]
             guard let value, value.isFinite else { connected = false; continue }
             // Public samples arrive every 2s/30s; a long sleep or clock reset must not imply continuous observations.
             if let previousTime, time <= previousTime || time - previousTime > 60 { connected = false }
@@ -114,7 +103,7 @@ final class TelemetryView: NSView {
     private let preview = NSButton()
     private var rows: [(label: NSTextField, value: NSTextField)] = []
     private var snapshot: TelemetrySnapshot?
-    private var history: [TelemetryGraphPoint] = []
+    private var history: [TelemetryHistorySample] = []
     private var headerTimer: Timer?
     private var headerStart = 0.0
     private var renderedChinese = false
@@ -176,13 +165,7 @@ final class TelemetryView: NSView {
         header.needsDisplay = true
         if let lastTime = history.last?.time, snapshot.sampledAt < lastTime { history.removeAll(keepingCapacity: true) }
         if snapshot.sampledAt.isFinite, history.last?.time != snapshot.sampledAt {
-            history.append(TelemetryGraphPoint(time: snapshot.sampledAt,
-                power: settings.value.powerTelemetryEnabled ? snapshot.power?.batteryWatts : nil,
-                cpu: settings.value.computeTelemetryEnabled ? snapshot.compute?.cpuFraction : nil,
-                thermal: settings.value.thermalTelemetryEnabled ? thermalNumber(snapshot.thermal) : nil,
-                download: settings.value.networkTelemetryEnabled ? snapshot.network?.downloadBytesPerSecond : nil,
-                upload: settings.value.networkTelemetryEnabled ? snapshot.network?.uploadBytesPerSecond : nil,
-                storage: settings.value.storageTelemetryEnabled ? snapshot.storage?.usedFraction : nil))
+            history.append(TelemetryHistorySample(snapshot: snapshot, preferences: settings.value))
             if history.count > 300 { history.removeFirst(history.count - 300) }
         }
         refreshValues()
@@ -273,22 +256,9 @@ final class TelemetryView: NSView {
         status.font = .monospacedSystemFont(ofSize: 10, weight: .medium)
         status.textColor = .secondaryLabelColor
         page.addSubview(status)
-        let names: [String]
-        switch selectedTab {
-        case 1: names = [t("CPU 使用率", "CPU usage"), t("内存使用（估算）", "Memory used (approx.)"),
-            t("压缩内存", "Compressed memory"), t("交换空间", "Swap"), t("内存压力", "Memory pressure")]
-        case 2: names = [t("系统热状态", "System thermal state"), t("正常", "Nominal"), t("稍热", "Fair"),
-            t("严重", "Serious"), t("临界", "Critical")]
-        case 3: names = [t("下载速率", "Download rate"), t("上传速率", "Upload rate"),
-            t("观测会话累计接收", "Observed-session received"), t("观测会话累计发送", "Observed-session sent"),
-            t("已启用 en* 接口", "Enabled en* interfaces"), t("接口数量", "Interface count")]
-        case 4: names = [t("文件系统总空间", "Filesystem total"), t("已使用", "Used"), t("空闲空间", "Free"),
-            t("用户可用空间", "User available"), t("文件系统", "Filesystem"), t("采样卷路径", "Sampled volume path")]
-        default: names = [t("电池能量（估算）", "Battery energy (approx.)"), t("电量", "Battery level"),
-            t("电池侧功率（估算）", "Battery-side power (approx.)"), t("适配器报告功率", "Adapter-reported power"),
-            t("循环次数", "Cycle count"), t("近期平均放电（估算）", "Recent discharge (approx.)")]
-        }
-        for (index, name) in names.enumerated() {
+        let presentation = presentation()
+        for (index, row) in presentation.rows.enumerated() {
+            let name = row.label
             let y = CGFloat(36 + index * 36)
             let label = NSTextField(labelWithString: name)
             label.frame = NSRect(x: 0, y: y, width: 330, height: 22)
@@ -309,115 +279,29 @@ final class TelemetryView: NSView {
         refreshValues()
     }
 
-    private func refreshValues() {
-        let enabled: Bool
-        let values: [String]
-        graph.secondaryValues = []
-        switch selectedTab {
-        case 1:
-            enabled = settings.value.computeTelemetryEnabled
-            let c = snapshot?.compute
-            values = [c?.cpuFraction.flatMap { $0.isFinite ? String(format: "%.1f %%", $0 * 100) : nil } ?? "—",
-                c?.memoryUsedBytes.map { "≈" + bytes($0) + " / " + bytes(c?.memoryTotalBytes ?? 0) } ?? "—",
-                c?.compressedBytes.map(bytes) ?? "—", c?.swapUsedBytes.map(bytes) ?? "—", pressureText(c?.pressure)]
-            graph.values = enabled ? history.map(\.cpu) : []
-            graph.fixedRange = 0...1
-            graphCaption.stringValue = t("/// 近期 CPU 使用率", "/// RECENT CPU USAGE")
-            status.stringValue = t("/// 内存估算 = 活跃 + 不可换出 + 压缩", "/// MEMORY ESTIMATE = ACTIVE + WIRED + COMPRESSED")
-        case 2:
-            enabled = settings.value.thermalTelemetryEnabled
-            let thermal = snapshot?.thermal
-            values = [thermalText(thermal), t("系统运行正常", "Normal operation"), t("系统轻度升温", "Mild thermal load"),
-                t("系统限制性能", "Performance constrained"), t("热负载达到临界", "Critical thermal load")]
-            graph.values = enabled ? history.map(\.thermal) : []
-            graph.fixedRange = 0...3
-            graphCaption.stringValue = t("/// 近期系统热状态", "/// RECENT SYSTEM THERMAL STATE")
-            status.stringValue = t("/// 系统公开状态 · 不代表实测温度", "/// PUBLIC SYSTEM STATE · NO MEASURED TEMPERATURE")
-        case 3:
-            enabled = settings.value.networkTelemetryEnabled
-            let n = snapshot?.network
-            let observed = n?.downloadBytesPerSecond != nil && n?.uploadBytesPerSecond != nil
-            values = [rate(n?.downloadBytesPerSecond), rate(n?.uploadBytesPerSecond),
-                observed ? n.map { bytes($0.receivedBytes) } ?? "—" : "—",
-                observed ? n.map { bytes($0.sentBytes) } ?? "—" : "—",
-                n.map { $0.interfaces.isEmpty ? "—" : $0.interfaces.joined(separator: ", ") } ?? "—",
-                n.map { String($0.interfaceCount) } ?? "—"]
-            graph.values = enabled ? history.map(\.download) : []
-            graph.secondaryValues = enabled ? history.map(\.upload) : []
-            graph.fixedRange = nil
-            graphCaption.stringValue = t("/// 下载 ↓ 黄绿 / 上传 ↑ 灰 · 会话重置后重新累计", "/// DOWNLOAD ↓ LIME / UPLOAD ↑ GRAY · TOTALS RESET WITH SESSION")
-            status.stringValue = t("/// 已启用 en* · 含局域网，排除 VPN/回环 · 非联网状态", "/// ENABLED en* · INCLUDES LAN, EXCLUDES VPN/LOOPBACK · NOT CONNECTIVITY")
-        case 4:
-            enabled = settings.value.storageTelemetryEnabled
-            let s = snapshot?.storage
-            values = [s.map { bytes($0.totalBytes) } ?? "—", s.map { bytes($0.usedBytes) } ?? "—",
-                s.map { bytes($0.freeBytes) } ?? "—", s.map { bytes($0.availableBytes) } ?? "—",
-                s?.fileSystem ?? "—", s?.path ?? "—"]
-            graph.values = enabled ? history.map(\.storage) : []
-            graph.fixedRange = 0...1
-            graphCaption.stringValue = t("/// 近期文件系统占用比例 · 非 SSD 磨损读数", "/// RECENT FILESYSTEM USED FRACTION · NO SSD WEAR READING")
-            status.stringValue = t("/// APFS 共享容器空间 · 不重复累加卷容量", "/// APFS SHARED CONTAINER SPACE · VOLUMES ARE NOT SUMMED")
-        default:
-            enabled = settings.value.powerTelemetryEnabled
-            let b = snapshot?.battery, p = snapshot?.power
-            values = [b?.energyWh.map { String(format: "≈%.1f Wh", $0) } ?? "—",
-                b?.percent.map { "\($0) %" } ?? "—", watts(p?.batteryWatts, signed: true),
-                p?.adapterWatts.map { "\($0) W" } ?? "—", p?.cycleCount.map(String.init) ?? "—", watts(p?.averageDischargeWatts)]
-            graph.values = enabled ? history.map(\.power) : []
-            graph.fixedRange = nil
-            graphCaption.stringValue = t("/// 近期电池侧功率", "/// RECENT BATTERY-SIDE POWER")
-            status.stringValue = t("/// 电池侧 + 充电 / − 放电 · 与适配器功率不同", "/// BATTERY + CHARGING / − DISCHARGING · ADAPTER IS SEPARATE")
-        }
-        graph.times = enabled ? history.map(\.time) : []
-        for (index, row) in rows.enumerated() {
-            row.value.stringValue = enabled ? values[index] : "—"
-            row.value.textColor = selectedTab == 2 && index == 0 && enabled
-                && (snapshot?.thermal == .serious || snapshot?.thermal == .critical) ? NSColor(rgb: 0xFF4D4F) : .white
-            row.value.toolTip = row.value.stringValue
-            row.value.setAccessibilityLabel(row.label.stringValue + ": " + row.value.stringValue)
-        }
-        if !enabled { status.stringValue = t("/// 此模块已停用 · 可在设置中启用", "/// MODULE DISABLED · ENABLE IN SETTINGS") }
-        graph.alert = selectedTab == 2 && (snapshot?.thermal == .serious || snapshot?.thermal == .critical)
-        graph.setAccessibilityLabel(graphCaption.stringValue + " · " + t("最多 300 个采样", "Up to 300 samples"))
-        graph.needsDisplay = true
-        footer.stringValue = demo ? t("/// 演示数据 · 非本机读数", "/// DEMO FIXTURE · NOT LIVE READINGS")
-            : t("/// 本机采样 · — 表示暂不可用", "/// LOCAL SAMPLE · — MEANS UNAVAILABLE")
+    private func presentation() -> TelemetryPagePresentation {
+        TelemetryPagePresentation(page: selectedTab, preferences: settings.value, snapshot: snapshot,
+            chinese: settings.chinese, history: history, demo: demo)
     }
 
-    private func rate(_ value: Double?) -> String {
-        guard let value, value.isFinite else { return "—" }
-        return String(format: "%.2f MiB/s", value / 1_048_576)
-    }
-    private func watts(_ value: Double?, signed: Bool = false) -> String {
-        guard let value, value.isFinite else { return "—" }
-        return String(format: signed ? "≈%+.1f W" : "≈%.1f W", value)
-    }
-    private func bytes(_ value: UInt64) -> String { String(format: "%.2f GiB", Double(value) / 1_073_741_824) }
-    private func pressureText(_ pressure: MemoryPressureLevel?) -> String {
-        switch pressure {
-        case .normal: return t("正常", "Normal")
-        case .warning: return t("警告", "Warning")
-        case .critical: return t("临界", "Critical")
-        default: return "—"
+    private func refreshValues() {
+        let presentation = presentation()
+        for (row, content) in zip(rows, presentation.rows) {
+            row.label.stringValue = content.label
+            row.value.stringValue = content.value
+            row.value.textColor = content.alert ? NSColor(rgb: 0xFF4D4F) : .white
+            row.value.toolTip = content.value
+            row.value.setAccessibilityLabel(content.accessibility)
         }
+        graph.samples = presentation.samples
+        graph.fixedRange = presentation.fixedRange
+        graph.alert = presentation.alert
+        graph.setAccessibilityLabel(presentation.graphAccessibility)
+        graphCaption.stringValue = presentation.caption
+        status.stringValue = presentation.status
+        footer.stringValue = presentation.footer
+        graph.needsDisplay = true
     }
-    private func thermalText(_ thermal: ThermalLevel?) -> String {
-        switch thermal {
-        case .nominal: return t("正常", "Nominal")
-        case .fair: return t("稍热", "Fair")
-        case .serious: return t("严重", "Serious")
-        case .critical: return t("临界", "Critical")
-        default: return "—"
-        }
-    }
-    private func thermalNumber(_ thermal: ThermalLevel?) -> Double? {
-        switch thermal {
-        case .nominal: return 0
-        case .fair: return 1
-        case .serious: return 2
-        case .critical: return 3
-        default: return nil
-        }
-    }
+
     deinit { headerTimer?.invalidate() }
 }
