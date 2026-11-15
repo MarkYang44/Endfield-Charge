@@ -43,6 +43,7 @@ final class TelemetryApplicationDelegate: NSObject, NSApplicationDelegate {
                 self.closeTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in NSApp.terminate(nil) }
             }, onScreenChange: { [weak self] in self?.send(.screen) })
         observeVisibility()
+        controller?.installKeyboardMenu()
         controller?.present()
         // Never send this child's disk-cached preferences back to the resident.
         send(.ready)

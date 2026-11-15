@@ -9,17 +9,21 @@ extension SettingsWindowController {
         toggle(t("全局快捷键", "Global shortcut"), \.shortcutEnabled, in: page, y: 73)
         place(label(t("快捷键组合", "Shortcut")), in: page, y: 113, width: 200)
         for (index, modifier) in ShortcutModifier.allCases.enumerated() {
-            let control = button(modifier.symbol, in: page, x: 318 + CGFloat(index) * 37, y: 108, width: 34) { c, sender in
+            let control = NSButton()
+            control.cell = KeyCapCell(textCell: modifier.symbol)
+            control.bezelStyle = .rounded
+            control.isBordered = true
+            control.setButtonType(.pushOnPushOff)
+            control.font = .systemFont(ofSize: 13, weight: .medium)
+            control.toolTip = modifier.rawValue.capitalized
+            control.setAccessibilityLabel(modifier.rawValue.capitalized)
+            place(control, in: page, x: 318 + CGFloat(index) * 37, y: 108, width: 34, height: 28)
+            bind(control) { c, sender in
                 if (sender as! NSButton).state == .on { c.settings.value.shortcutModifiers.insert(modifier) }
                 else { c.settings.value.shortcutModifiers.remove(modifier) }
             }
-            control.setButtonType(.pushOnPushOff)
-            control.toolTip = modifier.rawValue.capitalized
-            control.setAccessibilityLabel(modifier.rawValue.capitalized)
             bindings.append { c in
                 control.state = c.settings.value.shortcutModifiers.contains(modifier) ? .on : .off
-                control.contentTintColor = control.state == .on ? c.accent : .secondaryLabelColor
-                control.bezelColor = control.state == .on ? c.accent : nil
                 control.isEnabled = c.settings.value.shortcutEnabled
             }
         }
@@ -42,8 +46,8 @@ extension SettingsWindowController {
         bindings.append { c in loginMessage.stringValue = c.settings.loginMessage }
     }
 
-    func animationPage(_ container: NSView) {
-        let page = editorPage(in: container, height: 440)
+    /// Everything fits above the footer, so no switch hides below an unmarked fold.
+    func animationPage(_ page: NSView) {
         place(label(t("显示器", "Display")), in: page, y: 4, width: 200)
         let display = NSPopUpButton(frame: .zero, pullsDown: false)
         display.addItem(withTitle: t("当前主显示器", "Current main display"))
@@ -60,36 +64,40 @@ extension SettingsWindowController {
         bindings.append { c in
             display.select(display.itemArray.first { $0.representedObject as? UInt32 == c.settings.value.displayID } ?? display.item(at: 0))
         }
-        place(label(t("顶部位置", "Top position")), in: page, y: 44, width: 200)
+        place(label(t("顶部位置", "Top position")), in: page, y: 42, width: 200)
         let positions = ["left", "center", "right"]
         let position = NSSegmentedControl(labels: [t("靠左", "Left"), t("居中", "Center"), t("靠右", "Right")], trackingMode: .selectOne, target: nil, action: nil)
-        place(position, in: page, x: 337, y: 40, width: 235, height: 28)
+        place(position, in: page, x: 337, y: 38, width: 235, height: 28)
         position.setAccessibilityLabel(t("顶部位置", "Top position"))
         bind(position) { c, sender in
             let index = (sender as! NSSegmentedControl).selectedSegment
             if positions.indices.contains(index) { c.settings.value.position = positions[index] }
         }
         bindings.append { c in position.selectedSegment = positions.firstIndex(of: c.settings.value.position) ?? 1 }
-        slider(t("全局缩放", "Scale"), in: page, y: 80, range: 0.4...1.2, step: 0.05,
+        slider(t("全局缩放", "Scale"), in: page, y: 76, range: 0.4...1.2, step: 0.05,
                value: { $0.scale }, set: { $0.scale = $1 }, format: { String(format: "%.0f%%", $0 * 100) })
-        slider(t("总显示时长", "Total duration"), in: page, y: 120, range: 3...10, step: 0.5,
+        slider(t("总显示时长", "Total duration"), in: page, y: 114, range: 3...10, step: 0.5,
                value: { $0.duration }, set: { $0.duration = $1 }, format: { String(format: "%.1fs", $0) })
-        toggle(t("启用能量波纹", "Energy ripples"), \.ripplesEnabled, in: page, y: 164)
-        _ = caption(t("系统开启“减少动态效果”时，直接显示紧凑胶囊，并保留完整显示时长。", "Reduce Motion shows compact content immediately and keeps the full configured duration."), in: page, y: 201)
-        button(t("模拟插电", "Charging Demo"), in: page, y: 249) { c, _ in c.onPreview(true) }
-        button(t("模拟拔电", "Battery Demo"), in: page, x: 150, y: 249) { c, _ in c.onPreview(false) }
+        // Demos sit beside the ripple switch they exercise, in the same right-hand column as the other controls.
+        toggle(t("启用能量波纹", "Energy ripples"), \.ripplesEnabled, in: page, y: 154, width: 300)
+        button(t("模拟插电", "Charging Demo"), in: page, x: 337, y: 152, width: 115) { c, _ in c.onPreview(true) }
+        button(t("模拟拔电", "Battery Demo"), in: page, x: 457, y: 152, width: 115) { c, _ in c.onPreview(false) }
+        note(t("系统开启“减少动态效果”时，直接显示紧凑胶囊，并保留完整显示时长。", "Reduce Motion shows compact content immediately and keeps the full configured duration."), in: page, y: 190)
+        separator(in: page, y: 228)
         let persistent = NSButton(checkboxWithTitle: t("常驻显示胶囊（默认关闭）", "Keep capsule visible (off by default)"), target: nil, action: nil)
         persistent.identifier = NSUserInterfaceItemIdentifier("playback.persistent")
-        place(persistent, in: page, y: 300, width: 545)
+        place(persistent, in: page, y: 244, width: 340)
         bind(persistent) { c,sender in c.editPlayback { $0.persistent = (sender as! NSButton).state == .on } }
         bindings.append { c in persistent.state = c.settings.value.playback.persistent ? .on : .off }
-        _ = caption(t("保持紧凑胶囊；可在菜单栏隐藏/恢复。队列和间隔在“胶囊”页配置。", "Holds the compact capsule; hide/resume from the menu bar. Configure queue and interval in Capsules."), in: page, y: 340)
+        link(t("播放队列与间隔 →", "Queue & interval →"), in: page, right: 572, y: 246) { c, _ in c.showSection(4, anchor: "playback") }
+        note(t("保持紧凑胶囊；可在菜单栏隐藏/恢复。", "Holds the compact capsule; hide or resume it from the menu bar."), in: page, y: 274)
     }
 
     func alertsPage(_ page: NSView) {
         toggle(t("低电量提醒", "Low battery alert"), \.lowBatteryAlert, in: page, y: 0)
         slider(t("低电量阈值", "Low battery threshold"), in: page, y: 46, range: 5...40, step: 1,
-               value: { Double($0.lowThreshold) }, set: { $0.lowThreshold = Int($1) }, format: { "\(Int($0))%" })
+               value: { Double($0.lowThreshold) }, set: { $0.lowThreshold = Int($1) }, format: { "\(Int($0))%" },
+               enabled: { $0.lowBatteryAlert })
         toggle(t("充满提醒", "Full charge alert"), \.fullBatteryAlert, in: page, y: 96)
         toggle(t("低电量模式切换提醒", "Low Power Mode changes"), \.lowPowerAlert, in: page, y: 143)
         _ = caption(t("提醒使用同风格 HUD。首次启动只读取状态，不重复弹出历史提醒。", "Alerts use the same HUD. Starting the app does not replay old alerts."), in: page, y: 195)

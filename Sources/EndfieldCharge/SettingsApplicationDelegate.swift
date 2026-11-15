@@ -49,6 +49,7 @@ final class SettingsApplicationDelegate: NSObject, NSApplicationDelegate {
         session?.onBusyChange = { [weak self] in self?.controller?.setConfigurationPending($0) }
         session?.onResult = { [weak self] in self?.controller?.configurationCompleted($0) }
         controller?.setConfigurationPending(true)
+        controller?.installKeyboardMenu()
         controller?.present()
         session?.start()
     }

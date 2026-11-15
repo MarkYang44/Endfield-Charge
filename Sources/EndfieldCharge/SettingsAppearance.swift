@@ -11,14 +11,16 @@ extension SettingsWindowController {
         }
         if !marked { commitEditing() }
         guard !marked && !draftText.keys.contains(where: { $0.hasPrefix(prefix) && $0.contains(".color.") }) else {
-            validationMessage?.stringValue = t("先完成或修正颜色阈值，再切换、排序或删除条件。", "Finish or correct the color threshold before switching, moving or deleting conditions.")
-            if let message = validationMessage { message.scrollToVisible(message.bounds) }
+            // The footer explains the refusal in place; no scroll jump away from the control just pressed.
+            updateStatusLine(t("先完成或修正颜色阈值，再切换、排序或删除条件。", "Finish or fix the color threshold before changing conditions."))
             return false
         }
         return true
     }
 
-    func appearanceEditor(_ id: String, profile: CapsuleProfile, in page: NSView, y: CGFloat) {
+    /// Returns the bottom edge of the section.
+    @discardableResult func appearanceEditor(_ id: String, profile: CapsuleProfile, in page: NSView, y: CGFloat) -> CGFloat {
+        scrollAnchors["appearance"] = y
         separator(in: page, y: y)
         place(label(t("条件配色", "Conditional colors"), weight: .semibold), in: page, y: y + 15, width: 350)
         let conditions = profile.colorConditions
@@ -57,7 +59,9 @@ extension SettingsWindowController {
             b.identifier = NSUserInterfaceItemIdentifier("appearance." + name)
             b.isEnabled = conditions.indices.contains(index + delta)
         }
+        var bottom = y + 88
         if conditions.indices.contains(index) {
+            bottom = y + 240
             let condition = conditions[index]
             let metric = choice(t("指标", "Metric"), id: "appearance.metric", choices: TelemetryMetric.allCases.map {
                 TelemetryFormatting.name($0, chinese: settings.chinese) + " · " + TelemetryFormatting.unit($0)
@@ -82,9 +86,7 @@ extension SettingsWindowController {
                 c.editProfile(id) { $0.colorConditions[index].accent = CapsuleAccent.allCases[item] }
             }
         }
-        _ = caption(t("最多 4 条，按顺序首个匹配生效；相等或未知读数不匹配。无匹配使用主题色。真实警报仍优先。", "Up to 4, first match wins. Equal or unknown readings never match. Otherwise use Theme. Real alerts keep priority."), in: page, y: y + 243)
-        let preview = button(t("预览配色", "Preview Colors"), in: page, y: y + 286, width: 240) { c,_ in c.commitEditing(); c.onCapsulePreview?(id) }
-        preview.identifier = NSUserInterfaceItemIdentifier("appearance.preview")
-        editorValidation(in: page, y: y + 322)
+        // Previewing colors uses the footer's "Preview Active Capsule", reachable without scrolling back up.
+        return note(t("最多 4 条，按顺序首个匹配生效；相等或未知读数不匹配。无匹配使用主题色。真实警报仍优先。", "Up to 4, first match wins. Equal or unknown readings never match. Otherwise use Theme. Real alerts keep priority."), in: page, y: bottom + 4, width: 545)
     }
 }

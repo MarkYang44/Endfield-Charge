@@ -11,7 +11,7 @@ extension SettingsWindowController {
     }
 
     func capsulesPage(_ container: NSView) {
-        let page = editorPage(in: container, height: 1220)
+        let page = editorPage(in: container)
         let profiles = settings.value.capsuleProfiles
         let id = profiles.first(where: { $0.id == settings.value.selectedCapsuleID })?.id ?? CapsuleProfile.batteryID
         guard let profile = profiles.first(where: { $0.id == id }) else { return }
@@ -85,7 +85,7 @@ extension SettingsWindowController {
             c.buildPage()
         }
         delete.isEnabled = !id.hasPrefix("builtin.")
-        button(t("恢复内置", "Restore Built-ins"), in: page, x: 303, y: 38, width: 242) { c, _ in
+        button(t("恢复内置", "Restore Built-ins"), in: page, x: 300, y: 38, width: 160) { c, _ in
             guard c.appearanceMutationAllowed() else { return }
             let custom = c.settings.value.capsuleProfiles.filter { !$0.id.hasPrefix("builtin.") }
             let restoredPrefixes = CapsuleProfile.defaults.map { "profile.\($0.id)." }
@@ -94,6 +94,12 @@ extension SettingsWindowController {
             c.settings.value.normalizeTelemetryConfiguration()
             c.buildPage()
         }
+        // Capacity sits beside the buttons it limits.
+        let count = label("\(profiles.count) / \(ConfigurationLimits.maximumProfiles)", size: 11, mono: true)
+        count.alignment = .right
+        count.textColor = profiles.count < ConfigurationLimits.maximumProfiles ? .secondaryLabelColor : .systemOrange
+        count.toolTip = t("胶囊数量 / 上限", "Capsules / limit")
+        place(count, in: page, x: 470, y: 45, width: 75, height: 18)
         textField(t("标题（1–32 字）", "Title (1–32 characters)"), key: "profile.\(id).title", in: page, y: 83,
             value: { c in c.settings.value.capsuleProfiles.first { $0.id == id }?.title ?? "" }) { c, text in
                 guard let title = ConfigurationTextLimit.name.accepted(text) else { return false }
@@ -112,26 +118,23 @@ extension SettingsWindowController {
             }
             c.draftText.removeValue(forKey: "profile.\(id).maximum")
         }
+        // Rows stack from a running edge, so an absent ring field leaves no blank row.
+        var y: CGFloat = 235
         if let metric = profile.ringMetric {
-            textField(t("环形满值", "Ring maximum") + " · " + TelemetryFormatting.unit(metric), key: "profile.\(id).maximum", in: page, y: 235,
+            textField(t("环形满值", "Ring maximum") + " · " + TelemetryFormatting.unit(metric), key: "profile.\(id).maximum", in: page, y: y,
                 value: { c in SettingsNumeric.text(c.settings.value.capsuleProfiles.first { $0.id == id }?.referenceMaximum ?? 100, metric: metric) }) { c, text in
                     guard let base = SettingsNumeric.parse(text, metric: metric, positive: true) else { return false }
                     c.editProfile(id) { $0.referenceMaximum = base }; return true
                 }
+            y += 38
         }
-        button(t("预览当前胶囊", "Preview Active Capsule"), in: page, y: 276, width: 240) { c, _ in
-            c.commitEditing()
-            c.settings.value.normalizeTelemetryConfiguration()
-            c.onCapsulePreview?(id)
-        }
-        place(label("\(profiles.count) / 12", size: 11, mono: true), in: page, x: 475, y: 281, width: 70)
         let metrics = [profile.primaryMetric] + [profile.secondaryMetric, profile.ringMetric].compactMap { $0 }
         let unavailableMetric = metrics.first { !metricEnabled($0) } ?? profile.primaryMetric
-        _ = caption(metricAvailability(unavailableMetric), in: page, y: 317)
-        _ = caption(t("内置 ID 固定；恢复可找回原始电池样式。数值以本机读数为准。", "Built-in IDs stay stable. Restore recovers the original battery style. Values use local readings."), in: page, y: 355)
-        editorValidation(in: page, y: 390)
-        appearanceEditor(id, profile: profile, in: page, y: 430)
-        playbackEditor(in: page, y: 800)
-        button(t("分享与导入…", "Sharing & Import…"), in: page, y: 1155, width: 240) { c, _ in c.showSharing() }
+        y = note(metricAvailability(unavailableMetric), in: page, y: y + 4, width: 545) + 6
+        y = note(t("内置 ID 固定；恢复可找回原始电池样式。数值以本机读数为准。", "Built-in IDs stay stable. Restore recovers the original battery style. Values use local readings."), in: page, y: y, width: 545) + 24
+        y = appearanceEditor(id, profile: profile, in: page, y: y) + 24
+        y = playbackEditor(in: page, y: y) + 18
+        button(t("分享与导入…", "Sharing & Import…"), in: page, y: y, width: 240) { c, _ in c.showSharing() }
+        finishEditorPage(page, bottom: y + 28)
     }
 }

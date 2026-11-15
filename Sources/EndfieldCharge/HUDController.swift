@@ -147,6 +147,7 @@ final class HUDController {
         incoming = nil; current = content
         view.preferences = settings.value; view.chinese = settings.chinese
         view.reduceMotion = reduceMotion(); view.compactHold = false; view.frameOverride = nil; view.elapsed = 0
+        view.transitionOpacity = 1
         if holding && compactTransition && !view.reduceMotion, let outgoing {
             current = outgoing; incoming = content
         }
@@ -175,14 +176,15 @@ final class HUDController {
         if holding {
             let compact = HUDFrame.at(seconds: 2.52, duration: 10)
             if view.reduceMotion {
-                view.frameOverride = compact; view.compactHold = true
+                view.frameOverride = compact; view.compactHold = true; view.transitionOpacity = 1
             } else if compactTransition {
-                let elapsed = view.elapsed
-                if elapsed >= 0.18, let incoming { current = incoming; self.incoming = nil; applyContent(incoming) }
+                // Fade-and-settle swap: never scales from zero; the exit is quicker than the entry.
+                let swap = CompactSwap.frame(at: view.elapsed)
+                if swap.showsIncoming, let incoming { current = incoming; self.incoming = nil; applyContent(incoming) }
                 var frame = compact
-                let progress = min(1, max(0, elapsed < 0.18 ? 1 - elapsed / 0.18 : (elapsed - 0.18) / 0.18))
-                frame.overallScale = progress * progress * (3 - 2 * progress)
-                view.frameOverride = frame; view.compactHold = elapsed >= 0.36
+                frame.overallScale = swap.scale
+                view.transitionOpacity = swap.opacity
+                view.frameOverride = frame; view.compactHold = view.elapsed >= CompactSwap.duration
             } else {
                 view.frameOverride = HUDFrame.at(seconds: min(2.52, view.elapsed), duration: 10)
                 view.compactHold = view.elapsed >= 2.52

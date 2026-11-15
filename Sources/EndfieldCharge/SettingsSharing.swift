@@ -23,6 +23,10 @@ final class SettingsSharingController: NSWindowController, NSWindowDelegate {
         let window = NSWindow(contentRect: view.frame, styleMask: [.titled, .closable], backing: .buffered, defer: false)
         super.init(window: window)
         window.contentView = view; window.delegate = self; window.isReleasedWhenClosed = false
+        // Dropping a share file skips the open panel; it takes the same bounded read, preview and confirmation.
+        view.registerForDraggedTypes([.fileURL])
+        view.acceptsDrop = { [weak self] in self?.pending == false }
+        view.onDropFile = { [weak self] url in self?.prepareImport(from: url) }
         window.appearance = NSAppearance(named: .darkAqua)
         window.title = t("分享与导入", "Sharing & Import")
         window.center()
@@ -66,6 +70,10 @@ final class SettingsSharingController: NSWindowController, NSWindowDelegate {
         button.bezelStyle = .rounded; button.frame = NSRect(x: x, y: y, width: width, height: 30)
         window?.contentView?.addSubview(button); controls.append(button)
     }
+    private func prepareImport(from url: URL) {
+        do { try prepareImport(ConfigurationFileIO.readBounded(url)) }
+        catch { prepared = nil; updatePreview(); showError(error) }
+    }
     func prepareImport(_ data: Data) throws {
         let share = try ConfigurationShare.decode(data)
         prepared = share; status.stringValue = ""; updatePreview()
@@ -89,8 +97,8 @@ final class SettingsSharingController: NSWindowController, NSWindowDelegate {
         if previewFailed { status.stringValue = ""; previewFailed = false }
         applyButton.isEnabled = false
         guard let prepared else {
-            summary.stringValue = t("选择 .endfield.json 文件，确认预览后再应用。取消或关闭窗口不会修改配置。",
-                                    "Choose an .endfield.json file to review before applying. Canceling or closing leaves your configuration unchanged.")
+            summary.stringValue = t("选择或拖入 .endfield.json 文件，确认预览后再应用。取消或关闭窗口不会修改配置。",
+                                    "Choose or drop an .endfield.json file to review before applying. Canceling or closing leaves your configuration unchanged.")
             return
         }
         do {
@@ -164,8 +172,7 @@ final class SettingsSharingController: NSWindowController, NSWindowDelegate {
         let panel = NSOpenPanel(); panel.allowedContentTypes = [.json]; panel.allowsMultipleSelection = false
         panel.beginSheetModal(for: window) { [weak self] response in
             guard response == .OK, let self, let url = panel.url else { return }
-            do { try self.prepareImport(ConfigurationFileIO.readBounded(url)) }
-            catch { self.prepared = nil; self.updatePreview(); self.showError(error) }
+            self.prepareImport(from: url)
         }
     }
     @objc private func confirmImport() {
@@ -199,8 +206,40 @@ final class SettingsSharingController: NSWindowController, NSWindowDelegate {
 }
 
 private final class SharingBackground: NSView {
+    var onDropFile: ((URL) -> Void)?
+    var acceptsDrop: () -> Bool = { false }
+    private var dropTargeted = false { didSet { if dropTargeted != oldValue { needsDisplay = true } } }
     override var isFlipped: Bool { true }
-    override func draw(_ dirtyRect: NSRect) { NSColor(rgb: 0x262425).setFill(); dirtyRect.intersection(bounds).fill() }
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor(rgb: 0x262425).setFill(); dirtyRect.intersection(bounds).fill()
+        guard dropTargeted else { return }
+        // A lime outline confirms the drop target before release.
+        let outline = NSBezierPath(roundedRect: bounds.insetBy(dx: 7, dy: 7), xRadius: 10, yRadius: 10)
+        outline.lineWidth = 2
+        outline.setLineDash([6, 4], count: 2, phase: 0)
+        NSColor(rgb: 0xC6CA4C, alpha: 0.9).setStroke()
+        outline.stroke()
+    }
+    /// Exactly one local JSON file; anything else is refused before it reaches the decoder.
+    private func shareFile(_ info: NSDraggingInfo) -> URL? {
+        let urls = info.draggingPasteboard.readObjects(forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+        guard urls.count == 1, urls[0].pathExtension.lowercased() == "json" else { return nil }
+        return urls[0]
+    }
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        dropTargeted = onDropFile != nil && acceptsDrop() && shareFile(sender) != nil
+        return dropTargeted ? .copy : []
+    }
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation { dropTargeted ? .copy : [] }
+    override func draggingExited(_ sender: NSDraggingInfo?) { dropTargeted = false }
+    override func draggingEnded(_ sender: NSDraggingInfo) { dropTargeted = false }
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        defer { dropTargeted = false }
+        guard dropTargeted, let url = shareFile(sender), let onDropFile else { return false }
+        onDropFile(url)
+        return true
+    }
 }
 
 extension SettingsWindowController {

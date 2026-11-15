@@ -41,3 +41,34 @@ public struct HUDFrame: Equatable {
     }
     private static func pow3(_ x: Double) -> Double { x*x*x }
 }
+
+/// Carousel swap between two held compact capsules. The outgoing capsule fades while settling to 96 %, then the
+/// incoming one rises from 96 % to full size and opacity. Nothing scales from zero, the exit (0.14 s) is quicker
+/// than the entry (0.22 s), and both use a strong ease-out so motion starts at once. The total stays 0.36 s.
+public enum CompactSwap {
+    public static let exitDuration = 0.14
+    public static let duration = 0.36
+    public static let restingScale = 0.96
+
+    public struct Frame: Equatable {
+        public let scale: Double
+        public let opacity: Double
+        public let showsIncoming: Bool
+    }
+
+    public static func frame(at seconds: Double) -> Frame {
+        let t = seconds.isFinite ? max(0, seconds) : duration
+        if t < exitDuration {
+            let eased = easeOut(t / exitDuration)
+            return Frame(scale: 1 - (1 - restingScale) * eased, opacity: 1 - eased, showsIncoming: false)
+        }
+        let eased = easeOut((t - exitDuration) / (duration - exitDuration))
+        return Frame(scale: restingScale + (1 - restingScale) * eased, opacity: eased, showsIncoming: true)
+    }
+
+    /// Quintic ease-out, a close match for cubic-bezier(0.23, 1, 0.32, 1).
+    public static func easeOut(_ x: Double) -> Double {
+        let remaining = 1 - min(1, max(0, x))
+        return 1 - remaining * remaining * remaining * remaining * remaining
+    }
+}

@@ -19,12 +19,16 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private var profileItems: [String: NSMenuItem] = [:]
     private var codexItems: [NSMenuItem] = []
     private var profileOrder: [String] = []
+    private(set) var shortcutItem: NSMenuItem?
 
-    init(settings: AppSettings, target: AnyObject, entries: [(String, String, Selector?, String)]) {
+    /// `shortcutAction` marks the entry the global shortcut also triggers, so the menu can display that shortcut.
+    init(settings: AppSettings, target: AnyObject, entries: [(String, String, Selector?, String)], shortcutAction: Selector? = nil) {
         self.settings = settings
         super.init()
         status.button?.image = Self.statusImage()
         status.button?.imagePosition = .imageLeading
+        // Tabular digits keep the status item from changing width as the percentage ticks.
+        status.button?.font = .monospacedDigitSystemFont(ofSize: NSFont.menuBarFont(ofSize: 0).pointSize, weight: .regular)
         menu.delegate = self
         menu.autoenablesItems = false
         stateItem.isEnabled = false
@@ -38,6 +42,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             item.isEnabled = true
             menu.addItem(item)
             labels.append((item, zh, en))
+            if action == shortcutAction { shortcutItem = item }
         }
         profilesMenu.autoenablesItems = false
         profilesItem.submenu = profilesMenu
@@ -96,6 +101,19 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             profileItems[profile.id]?.title = profile.title
             profileItems[profile.id]?.state = settings.value.selectedCapsuleID == profile.id ? .on : .off
         }
+    }
+
+    /// Shows the registered global shortcut beside its menu action; nil clears it when the shortcut is off or unavailable.
+    func setShortcut(key: String?, modifiers: Set<ShortcutModifier>) {
+        guard let shortcutItem else { return }
+        guard let key else { shortcutItem.keyEquivalent = ""; shortcutItem.keyEquivalentModifierMask = []; return }
+        var mask: NSEvent.ModifierFlags = []
+        if modifiers.contains(.command) { mask.insert(.command) }
+        if modifiers.contains(.control) { mask.insert(.control) }
+        if modifiers.contains(.option) { mask.insert(.option) }
+        if modifiers.contains(.shift) { mask.insert(.shift) }
+        shortcutItem.keyEquivalent = key.lowercased()
+        shortcutItem.keyEquivalentModifierMask = mask
     }
 
     @objc func selectCodexPreset(_ sender: NSMenuItem) {

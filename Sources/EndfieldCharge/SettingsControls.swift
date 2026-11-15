@@ -40,9 +40,9 @@ extension SettingsWindowController {
         return button
     }
 
-    func toggle(_ title: String, _ key: WritableKeyPath<Preferences, Bool>, in page: NSView, y: CGFloat) {
+    func toggle(_ title: String, _ key: WritableKeyPath<Preferences, Bool>, in page: NSView, y: CGFloat, width: CGFloat? = nil) {
         let toggle = NSButton(checkboxWithTitle: title, target: nil, action: nil)
-        place(toggle, in: page, y: y, width: page.bounds.width)
+        place(toggle, in: page, y: y, width: width ?? page.bounds.width)
         bind(toggle) { c, sender in c.settings.value[keyPath: key] = (sender as! NSButton).state == .on }
         bindings.append { c in toggle.state = c.settings.value[keyPath: key] ? .on : .off }
     }
@@ -64,8 +64,9 @@ extension SettingsWindowController {
 
     func slider(_ title: String, in page: NSView, y: CGFloat, range: ClosedRange<Double>, step: Double,
                 value: @escaping (Preferences) -> Double, set: @escaping (inout Preferences, Double) -> Void,
-                format: @escaping (Double) -> String) {
-        place(label(title), in: page, y: y + 4, width: 280)
+                format: @escaping (Double) -> String, enabled: ((Preferences) -> Bool)? = nil) {
+        let name = label(title)
+        place(name, in: page, y: y + 4, width: 280)
         let slider = NSSlider(value: 0, minValue: range.lowerBound, maxValue: range.upperBound, target: nil, action: nil)
         slider.isContinuous = true
         slider.setAccessibilityLabel(title)
@@ -77,8 +78,84 @@ extension SettingsWindowController {
             let snapped = min(range.upperBound, max(range.lowerBound, (sender.doubleValue / step).rounded() * step))
             set(&c.settings.value, snapped)
         }
-        bindings.append { c in let v = value(c.settings.value); slider.doubleValue = v; readout.stringValue = format(v) }
+        bindings.append { c in
+            let v = value(c.settings.value); slider.doubleValue = v; readout.stringValue = format(v)
+            // A threshold whose switch is off reads as inactive instead of silently doing nothing.
+            guard let enabled else { return }
+            let active = enabled(c.settings.value)
+            slider.isEnabled = active && !c.configurationPending
+            name.textColor = active ? .labelColor : .tertiaryLabelColor
+            readout.textColor = active ? .labelColor : .tertiaryLabelColor
+        }
     }
+
+    /// Wrapping caption sized to its text, so stacked editor sections keep one rhythm; returns its bottom edge.
+    @discardableResult func note(_ text: String, in page: NSView, y: CGFloat, width: CGFloat? = nil) -> CGFloat {
+        let field = caption(text, in: page, y: y)
+        let width = width ?? page.bounds.width
+        let height = ceil(field.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: width, height: 10_000)).height ?? 34)
+        field.frame = NSRect(x: 0, y: y, width: width, height: height)
+        return y + height
+    }
+
+    /// Accent text link that jumps to a related section instead of telling people where to look.
+    @discardableResult func link(_ title: String, in page: NSView, right: CGFloat, y: CGFloat, width: CGFloat = 200,
+                                 action: @escaping (SettingsWindowController, NSControl) -> Void) -> NSButton {
+        let link = LinkButton()
+        link.cell = LinkCell(textCell: title)
+        link.isBordered = false
+        link.font = .systemFont(ofSize: 11, weight: .medium)
+        link.alignment = .right
+        link.setAccessibilityLabel(title)
+        place(link, in: page, x: right - width, y: y, width: width, height: 20)
+        bind(link, action: action)
+        return link
+    }
+
+    /// The footer is the one always-visible status line: it confirms auto-save, or explains in orange
+    /// why an input stays unsaved, wherever the edited field sits on a scrolled page.
+    func updateStatusLine(_ message: String? = nil) {
+        guard let status = validationMessage else { return }
+        let warning = message ?? (draftText.isEmpty ? nil
+            : t("有未保存的无效输入，请修正橙色字段。", "Invalid input remains unsaved; correct the orange field."))
+        status.stringValue = warning ?? t("设置自动保存并即时生效", "Changes save automatically")
+        status.textColor = warning == nil ? .secondaryLabelColor : .systemOrange
+        status.toolTip = warning
+    }
+}
+
+/// Shortcut modifiers drawn as key caps: lime when held in the combination, so the active set reads at a glance.
+/// The native button keeps state, keyboard focus, tooltips and accessibility; a press darkens the cap at once.
+final class KeyCapCell: NSButtonCell {
+    override func drawBezel(withFrame frame: NSRect, in controlView: NSView) {
+        var fill = state == .on ? NSColor(rgb: 0xC6CA4C) : NSColor(rgb: 0x454445)
+        if isHighlighted { fill = fill.blended(withFraction: 0.2, of: .black) ?? fill }
+        fill.withAlphaComponent(isEnabled ? 1 : 0.4).setFill()
+        NSBezierPath(roundedRect: frame.insetBy(dx: 0.5, dy: 2), xRadius: 6, yRadius: 6).fill()
+    }
+
+    override func drawTitle(_ title: NSAttributedString, withFrame frame: NSRect, in controlView: NSView) -> NSRect {
+        let text = NSMutableAttributedString(attributedString: title)
+        let color = state == .on ? NSColor(rgb: 0x141313) : NSColor(rgb: 0xE9E7E4)
+        text.addAttribute(.foregroundColor, value: color.withAlphaComponent(isEnabled ? 1 : 0.45),
+                          range: NSRange(location: 0, length: text.length))
+        return super.drawTitle(text, withFrame: frame, in: controlView)
+    }
+}
+
+/// Accent link text that dims while pressed; the pointing hand marks it as navigation.
+final class LinkCell: NSButtonCell {
+    override func drawTitle(_ title: NSAttributedString, withFrame frame: NSRect, in controlView: NSView) -> NSRect {
+        let text = NSMutableAttributedString(attributedString: title)
+        let alpha: CGFloat = !isEnabled ? 0.4 : isHighlighted ? 0.6 : 1
+        text.addAttribute(.foregroundColor, value: NSColor(rgb: 0xC6CA4C, alpha: alpha),
+                          range: NSRange(location: 0, length: text.length))
+        return super.drawTitle(text, withFrame: frame, in: controlView)
+    }
+}
+
+final class LinkButton: NSButton {
+    override func resetCursorRects() { addCursorRect(bounds, cursor: .pointingHand) }
 }
 
 /// Human-unit parsing never uses an unchecked integer conversion.
@@ -107,14 +184,21 @@ enum SettingsNumeric {
 private final class SettingsScrollPage: NSView { override var isFlipped: Bool { true } }
 
 extension SettingsWindowController {
-    func editorPage(in page: NSView, height: CGFloat) -> NSView {
+    func editorPage(in page: NSView) -> NSView {
         let scroll = NSScrollView(frame: page.bounds)
         scroll.hasVerticalScroller = true
         scroll.drawsBackground = false
-        let document = SettingsScrollPage(frame: NSRect(x: 0, y: 0, width: 550, height: height))
+        // 545 pt is the field column; the remaining gutter keeps legacy scrollers clear of controls.
+        let document = SettingsScrollPage(frame: NSRect(x: 0, y: 0, width: 545, height: page.bounds.height))
         scroll.documentView = document
         page.addSubview(scroll)
         return document
+    }
+
+    /// The scrollable document ends just below its last control: no blank tail, no hidden overflow.
+    func finishEditorPage(_ document: NSView, bottom: CGFloat) {
+        let visible = document.enclosingScrollView?.contentSize.height ?? 0
+        document.setFrameSize(NSSize(width: document.frame.width, height: max(visible, ceil(bottom + 20))))
     }
 
     @discardableResult func textField(_ title: String, key: String, in page: NSView, y: CGFloat,
@@ -153,7 +237,7 @@ extension SettingsWindowController {
         if valid { draftText.removeValue(forKey: edit.key) } else { draftText[edit.key] = field.stringValue }
         field.textColor = valid ? .labelColor : .systemOrange
         field.toolTip = valid ? nil : t("输入无效：请输入指定范围内的有限数值，名称为 1–32 字且不超过 1024 个 UTF-8 字节。", "Invalid input: use a finite value in range, or a name of 1–32 characters and at most 1024 UTF-8 bytes.")
-        validationMessage?.stringValue = draftText.isEmpty ? "" : t("有未保存的无效输入，请修正橙色字段。", "Invalid input remains unsaved; correct the orange field.")
+        updateStatusLine()
     }
     func commitEditing() {
         if let editor = window?.firstResponder as? NSTextView,
@@ -199,10 +283,6 @@ extension SettingsWindowController {
             set(c, raw.flatMap(TelemetryMetric.init(rawValue:)))
             c.buildPage()
         }
-    }
-    func editorValidation(in page: NSView, y: CGFloat) {
-        let message = caption(draftText.isEmpty ? "" : t("有未保存的无效输入。", "Invalid input remains unsaved."), in: page, y: y, warning: true)
-        validationMessage = message
     }
     func metricEnabled(_ metric: TelemetryMetric) -> Bool {
         switch metric {

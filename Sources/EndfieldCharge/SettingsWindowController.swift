@@ -37,9 +37,16 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
     var selectedPlaybackIndex = 0
     var validationMessage: NSTextField?
 
+    /// Section offsets registered while a scrollable page is built; jump links scroll straight to them.
+    var scrollAnchors: [String: CGFloat] = [:]
+    private var pendingAnchor: String?
+    private var sectionLabel: NSTextField?
+    private var keyboardMenuInstalled = false
+
     private var renderedChinese: Bool
     private var screenObserver: NSObjectProtocol?
     private static let tabsID = NSToolbarItem.Identifier("settings.tabs")
+    private static let sectionCodes = ["GENERAL", "DISPLAY", "ALERTS", "TELEMETRY", "CAPSULES", "RULES", "ABOUT"]
 
     init(settings: AppSettings, selectedTab: Int, frame: NSRect?, onPreview: @escaping (Bool?) -> Void,
          onClose: @escaping (Int, NSRect) -> Void, onScreenChange: (() -> Void)? = nil) {
@@ -67,7 +74,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         tabs.action = #selector(selectTab)
         rebuild()
         window.toolbar = toolbar
-        if let frame { window.setFrame(frame, display: false) } else { window.center() }
+        window.restoreTopLeft(from: frame)
         settings.onUIChange = { [weak self] in self?.refresh() }
         screenObserver = NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
             object: nil, queue: .main) { [weak self] _ in
@@ -82,6 +89,48 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         settings.refreshLogin()
         showWindow(nil)
         NSApplication.shared.activate(ignoringOtherApps: true)
+        flashScrollableContent()
+    }
+
+    var sectionTitles: [String] {
+        [t("通用", "General"), t("显示", "Display"), t("提醒", "Alerts"), t("遥测", "Telemetry"),
+         t("胶囊", "Capsules"), t("规则", "Rules"), t("关于", "About")]
+    }
+
+    /// Hidden main menu for this accessory role: editing keys in fields, ⌘W/⌘M, and ⌘1–⌘7 for sections.
+    func installKeyboardMenu() {
+        keyboardMenuInstalled = true
+        UtilityMenu.install(chinese: settings.chinese, sections: sectionTitles, target: self,
+                            action: #selector(selectSection(_:)))
+    }
+
+    @objc func selectSection(_ sender: NSMenuItem) { showSection(sender.tag) }
+
+    /// One path for toolbar clicks, ⌘-number keys and in-page jump links.
+    func showSection(_ index: Int, anchor: String? = nil) {
+        guard !configurationPending, (0..<7).contains(index) else { tabs.selectedSegment = selectedTab; return }
+        guard index != selectedTab || anchor != nil else { return }
+        commitEditing()
+        selectedTab = index
+        tabs.selectedSegment = index
+        pendingAnchor = anchor
+        buildPage()
+    }
+
+    /// Overlay scrollers stay hidden until used; flash them once when a page opens with more content below.
+    private func flashScrollableContent() {
+        guard window?.isVisible == true,
+              let scroll = page?.subviews.first(where: { $0 is NSScrollView }) as? NSScrollView,
+              let document = scroll.documentView,
+              document.frame.height > scroll.contentView.bounds.height + 1 else { return }
+        scroll.flashScrollers()
+    }
+
+    func previewActiveCapsule() {
+        commitEditing()
+        settings.value.normalizeTelemetryConfiguration()
+        let id = settings.value.capsuleProfiles.first { $0.id == settings.value.selectedCapsuleID }?.id ?? CapsuleProfile.batteryID
+        onCapsulePreview?(id)
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -139,7 +188,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         window?.title = "Endfield Charge · " + t("设置", "Settings")
         content.subviews.forEach { $0.removeFromSuperview() }
         page = nil
-        let names = [t("通用", "General"), t("显示", "Display"), t("提醒", "Alerts"), t("遥测", "Telemetry"), t("胶囊", "Capsules"), t("规则", "Rules"), t("关于", "About")]
+        if keyboardMenuInstalled { installKeyboardMenu() }
+        let names = sectionTitles
         tabs.segmentCount = names.count
         for (index, name) in names.enumerated() { tabs.setLabel(name, forSegment: index); tabs.setWidth(0, forSegment: index) }
         tabs.selectedSegment = selectedTab
@@ -157,18 +207,24 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         let subtitle = label("/// MACOS POWER TERMINAL", size: 9, mono: true)
         subtitle.textColor = .secondaryLabelColor
         place(subtitle, in: content, x: 64, y: 53, width: 320, height: 16)
-        let power = label("01 / POWER", size: 10, mono: true)
-        power.textColor = accent
-        place(power, in: content, x: 529, y: 40, width: 80, height: 18)
+        // Terminal-style index of the open section (01 / GENERAL … 07 / ABOUT), updated with each page.
+        let section = label("", size: 10, mono: true)
+        section.textColor = accent
+        section.alignment = .right
+        section.identifier = NSUserInterfaceItemIdentifier("settings.section")
+        place(section, in: content, x: 396, y: 40, width: 200, height: 18)
+        sectionLabel = section
         separator(in: content, y: 84)
         buildPage()
     }
 
     func buildPage() {
-        let scrollOffset = renderedTab == selectedTab ? (page?.subviews.first { $0 is NSScrollView } as? NSScrollView)?.contentView.bounds.origin : nil
+        let enteringSection = renderedTab != selectedTab
+        let scrollOffset = enteringSection ? nil : (page?.subviews.first { $0 is NSScrollView } as? NSScrollView)?.contentView.bounds.origin
         commitEditing()
         textEdits.removeAll()
         validationMessage = nil
+        scrollAnchors.removeAll()
         page?.removeFromSuperview()
         // Bindings own only controls on the currently selected page, never a hidden page tree.
         actions.removeAll(keepingCapacity: true)
@@ -186,23 +242,39 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         case 6: aboutPage(page)
         default: generalPage(page)
         }
-        if let scrollOffset, let scroll = page.subviews.first(where: { $0 is NSScrollView }) as? NSScrollView {
+        let anchorOffset = pendingAnchor.flatMap { scrollAnchors[$0] }.map { NSPoint(x: 0, y: max(0, $0 - 12)) }
+        pendingAnchor = nil
+        if let target = scrollOffset ?? anchorOffset, let scroll = page.subviews.first(where: { $0 is NSScrollView }) as? NSScrollView {
             let maximumY = max(0, (scroll.documentView?.bounds.height ?? 0) - scroll.contentView.bounds.height)
-            scroll.contentView.scroll(to: NSPoint(x: scrollOffset.x, y: min(maximumY, scrollOffset.y)))
+            scroll.contentView.scroll(to: NSPoint(x: target.x, y: min(maximumY, target.y)))
             scroll.reflectScrolledClipView(scroll.contentView)
         }
+        sectionLabel?.stringValue = String(format: "%02d / %@", selectedTab + 1, Self.sectionCodes[selectedTab])
         // Footer controls are recreated with the page, so their action entries stay valid.
         content.subviews.filter { $0.identifier?.rawValue == "footer" }.forEach { $0.removeFromSuperview() }
         let footer = SettingsBackground(frame: NSRect(x: 0, y: 434, width: 620, height: 46))
         footer.identifier = NSUserInterfaceItemIdentifier("footer")
         content.addSubview(footer)
         separator(in: footer, y: 0)
-        let hint = label(t("设置自动保存并即时生效", "Changes save automatically"), size: 10)
-        hint.textColor = .secondaryLabelColor
-        place(hint, in: footer, x: 24, y: 17, width: 350, height: 18)
-        button(t("预览本机电量", "Preview Battery"), in: footer, x: 461, y: 10, width: 135) { c, _ in c.commitEditing(); c.onPreview(nil) }
+        // The always-visible action follows the page: Capsules previews the capsule being edited, from any scroll position.
+        let previewsCapsule = selectedTab == 4
+        let preview = button(previewsCapsule ? t("预览当前胶囊", "Preview Active Capsule") : t("预览本机电量", "Preview Battery"),
+                             in: footer, y: 10) { c, _ in
+            c.commitEditing()
+            if c.selectedTab == 4 { c.previewActiveCapsule() } else { c.onPreview(nil) }
+        }
+        preview.identifier = NSUserInterfaceItemIdentifier("footer.preview")
+        let previewWidth = max(135, ceil(preview.fittingSize.width) + 12)
+        preview.frame = NSRect(x: 596 - previewWidth, y: 10, width: previewWidth, height: 28)
+        let status = label("", size: 10)
+        status.identifier = NSUserInterfaceItemIdentifier("footer.status")
+        status.lineBreakMode = .byTruncatingTail
+        place(status, in: footer, x: 24, y: 17, width: preview.frame.minX - 36, height: 18)
+        validationMessage = status
+        updateStatusLine()
         refresh()
         if configurationPending { disableEditing() }
+        if enteringSection { flashScrollableContent() }
     }
 
     private func refresh() {
@@ -211,12 +283,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTo
         for update in bindings { update(self) }
     }
 
-    @objc private func selectTab(_ sender: NSSegmentedControl) {
-        guard !configurationPending else { return }
-        commitEditing()
-        selectedTab = sender.selectedSegment
-        buildPage()
-    }
+    @objc private func selectTab(_ sender: NSSegmentedControl) { showSection(sender.selectedSegment) }
 
     @objc func controlChanged(_ sender: NSControl) { guard !configurationPending else { return }; actions[ObjectIdentifier(sender)]?(self, sender) }
 

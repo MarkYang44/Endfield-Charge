@@ -27,7 +27,7 @@ final class TelemetryWindowController: NSWindowController, NSWindowDelegate {
         window.appearance = NSAppearance(named: .darkAqua)
         window.contentView = view
         refreshPreferences()
-        if let frame { window.setFrame(frame, display: false) } else { window.center() }
+        window.restoreTopLeft(from: frame)
         settings.onUIChange = { [weak self] in self?.refreshPreferences() }
         observers.append(NotificationCenter.default.addObserver(forName: NSApplication.didHideNotification,
             object: NSApp, queue: .main) { [weak self] _ in self?.view.stopHeaderAnimation() })
@@ -46,6 +46,16 @@ final class TelemetryWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func update(_ snapshot: TelemetrySnapshot) { view.update(snapshot) }
+
+    /// Hidden main menu for this accessory role: ⌘W/⌘M and ⌘1–⌘5 for the five terminal pages.
+    func installKeyboardMenu() {
+        let t = settings.text
+        UtilityMenu.install(chinese: settings.chinese,
+                            sections: [t("电源", "Power"), t("计算", "Compute"), t("散热", "Thermal"), t("网络", "Network"), t("存储", "Storage")],
+                            target: self, action: #selector(selectSection(_:)))
+    }
+
+    @objc func selectSection(_ sender: NSMenuItem) { selectedTab = sender.tag }
 
     private func refreshPreferences() {
         window?.title = "Endfield Charge · " + settings.text("遥测终端", "Telemetry Terminal")

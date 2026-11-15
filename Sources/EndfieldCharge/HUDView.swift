@@ -28,6 +28,8 @@ final class HUDView: NSView {
     var reduceMotion = false
     var compactHold = false
     var frameOverride: HUDFrame?
+    /// Whole-capsule opacity for the carousel swap; the pill, bolt and text fade as one group.
+    var transitionOpacity = 1.0
     var accentOverride: CapsuleAccent?
     var resolvedAccent: CapsuleAccent {
         if kind == .lowBattery || kind == .thermalWarning || kind == .thermalCritical { return .red }
@@ -50,8 +52,12 @@ final class HUDView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         let f = frameOverride ?? HUDFrame.at(seconds: elapsed, duration: preferences.duration, reduceMotion: reduceMotion)
-        guard f.overallScale > 0.001 else { return }
+        guard f.overallScale > 0.001, transitionOpacity > 0.001 else { return }
         NSGraphicsContext.saveGraphicsState()
+        // A transparency layer fades overlapping shapes as one group instead of letting the pill show through the plate.
+        let layer = transitionOpacity < 0.999 ? NSGraphicsContext.current?.cgContext : nil
+        layer?.setAlpha(transitionOpacity)
+        layer?.beginTransparencyLayer(auxiliaryInfo: nil)
         let transform = NSAffineTransform()
         // Anchor the visible pill's top edge while it expands downward.
         transform.translateX(by: bounds.midX, yBy: (Self.topInset + f.pillHeight / 2) * bounds.height / 144)
@@ -67,6 +73,7 @@ final class HUDView: NSView {
             drawTitle(f)
             drawNumbers(f)
         }
+        layer?.endTransparencyLayer()
         NSGraphicsContext.restoreGraphicsState()
     }
 

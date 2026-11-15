@@ -84,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ("GitHub 仓库", "GitHub Repository", #selector(openRepository), ""),
             ("", "", nil, ""),
             ("退出 Endfield Charge", "Quit Endfield Charge", #selector(quit), "q")
-        ])
+        ], shortcutAction: #selector(previewSelectedCapsule))
         menu.onPlaybackVisibility = { [weak self] in
             guard let self else { return }
             self.playback.setHidden(!self.playback.isHidden)
@@ -150,6 +150,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settings.shortcutMessage = shortcutStatus == 0 ? "" : settings.text(
                 "快捷键不可用，请换一个组合。", "This shortcut is unavailable. Choose another combination.")
         }
+        // The menu teaches only a shortcut that is actually registered.
+        let registered = settings.value.shortcutEnabled && shortcutStatus == 0
+        menu.setShortcut(key: registered ? settings.value.shortcutKey : nil, modifiers: modifiers)
         menu.update(snapshot)
         hud.position()
         telemetryMonitor.preferencesChanged()

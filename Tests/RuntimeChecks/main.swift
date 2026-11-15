@@ -29,7 +29,10 @@ if group == "all" || group == "ipc" {
     try runPreferencesAndIPCChecks(settings: settings, defaults: defaults)
     try runWindowLifecycleChecks(settings: settings, domain: domain)
 }
-if group == "all" || group == "editors" { try runNativeEditorChecks(domain: domain) }
+if group == "all" || group == "editors" {
+    try runNativeEditorChecks(domain: domain)
+    try runInteractionChecks(domain: domain)
+}
 if group == "all" || group == "telemetry" {
     try runTelemetryViewChecks(settings: settings)
     try runTelemetrySamplerChecks(defaults: defaults)
@@ -38,4 +41,4 @@ if group == "all" || group == "telemetry" {
 if group == "all" || group == "hud" { try runHUDChecks(settings: settings) }
 if group == "all" || group == "ipc" { try runSubprocessLifecycleChecks(settings: settings) }
 if group == "all" || group == "codex" { try runCodexQuotaChecks(defaults: defaults) }
-print(group == "all" ? "All 25 native runtime check groups passed" : "Native \(group) checks passed")
+print(group == "all" ? "All 26 native runtime check groups passed" : "Native \(group) checks passed")

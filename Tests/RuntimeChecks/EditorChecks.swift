@@ -67,7 +67,7 @@ func runEditorChecks() throws {
     click("appearance.delete")
     check(settings.value.capsuleProfiles[0].colorConditions.count == 3, "Remove actual selected condition")
     var previews: [String] = []; c.onCapsulePreview = { previews.append($0) }
-    click("appearance.preview"); check(previews == [id], "Preview routes through resident callback")
+    click("footer.preview"); check(previews == [id], "Always-visible footer preview routes the active capsule through resident callback")
     // Real field editor marked text must block structural edits even before validation.
     let f = control("profile.\(id).color.1.threshold", NSTextField.self)
     c.window?.makeFirstResponder(f)
@@ -131,13 +131,15 @@ func runEditorChecks() throws {
             for (tab, name) in [(1,"display"),(4,"capsules"),(5,"rules")] {
                 c.selectedTab = tab; c.buildPage(); c.window?.displayIfNeeded()
                 let root = c.window!.contentView!
-                let scroll = views(root).compactMap { $0 as? NSScrollView }.first!
-                let height = scroll.documentView!.frame.height
-                let captures: [(String, CGFloat)] = tab == 4
-                    ? [("0",0),("1",430),("2",790),("3",height - 310),("appearance-aligned",480),("queue-aligned",830),("appearance-docs",450)]
+                // Display fits without scrolling; scrolled captures follow section anchors, not fixed offsets.
+                let scroll = views(root).compactMap { $0 as? NSScrollView }.first
+                let height = scroll?.documentView?.frame.height ?? 310
+                let colors = c.scrollAnchors["appearance"] ?? 0, queue = c.scrollAnchors["playback"] ?? 0
+                let captures: [(String, CGFloat)] = scroll == nil ? [("0",0)] : tab == 4
+                    ? [("0",0),("1",colors),("2",queue - 10),("3",height - 310),("appearance-aligned",colors + 50),("queue-aligned",queue + 30),("appearance-docs",colors + 20)]
                     : [("0",0),("1",height - 310)]
                 for (index, offset) in captures {
-                    scroll.contentView.scroll(to: NSPoint(x: 0, y: max(0, offset))); scroll.reflectScrolledClipView(scroll.contentView)
+                    if let scroll { scroll.contentView.scroll(to: NSPoint(x: 0, y: max(0, offset))); scroll.reflectScrolledClipView(scroll.contentView) }
                     root.displayIfNeeded()
                     let rep = root.bitmapImageRepForCachingDisplay(in: root.bounds)!
                     root.cacheDisplay(in: root.bounds, to: rep)

@@ -103,9 +103,12 @@ func runPlaybackChecks() {
     check(!transitionHUD.hasAnimationTimer, "Persistent introduction stops after finite animation")
     now = 10; transition.advance()
     check(view()?.capsule?.profile.id == CapsuleProfile.cpuID, "Compact transition first retracts outgoing profile")
+    var smallestScale = 1.0
+    for _ in 0..<10 { spin(0.03); smallestScale = min(smallestScale, view()?.frameOverride?.overallScale ?? 1) }
+    check(smallestScale >= CompactSwap.restingScale - 1e-9, "Compact swap fades and settles at 96 % instead of collapsing to zero")
     spin(0.4)
-    check(view()?.capsule?.profile.id == CapsuleProfile.memoryID && !transitionHUD.hasAnimationTimer,
-        "Compact transition expands incoming profile once and stops")
+    check(view()?.capsule?.profile.id == CapsuleProfile.memoryID && !transitionHUD.hasAnimationTimer && view()?.transitionOpacity == 1,
+        "Compact transition expands incoming profile once, ends fully opaque and stops")
     transition.stop()
 
     let finiteSettings = AppSettings(defaults: defaults)

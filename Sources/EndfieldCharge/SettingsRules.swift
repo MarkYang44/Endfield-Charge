@@ -10,7 +10,7 @@ extension SettingsWindowController {
         settings.value = value
     }
     func rulesPage(_ container: NSView) {
-        let page = editorPage(in: container, height: 555)
+        let page = editorPage(in: container)
         let rules = settings.value.telemetryAlertRules
         let id = rules.first(where: { $0.id == selectedRuleID })?.id ?? rules.first?.id
         selectedRuleID = id
@@ -51,8 +51,8 @@ extension SettingsWindowController {
         }
         delete.isEnabled = id != nil
         guard let id, let rule = rules.first(where: { $0.id == id }) else {
-            _ = caption(t("最多 16 条本机规则，新规则默认关闭。点击“新建”开始配置。", "Up to 16 local rules. New rules start disabled. Click Add to configure one."), in: page, y: 55)
-            ruleExplanation(in: page, y: 120)
+            let y = note(t("最多 16 条本机规则，新规则默认关闭。点击“新建”开始配置。", "Up to 16 local rules. New rules start disabled. Click Add to configure one."), in: page, y: 55, width: 545) + 12
+            finishEditorPage(page, bottom: ruleExplanation(in: page, y: y))
             return
         }
         let enabled = NSButton(checkboxWithTitle: t("启用此规则", "Enable this rule"), target: nil, action: nil)
@@ -69,6 +69,8 @@ extension SettingsWindowController {
             c.editRule(id) { $0.condition = item == 0 ? .threshold : .stateChange; if $0.condition == .stateChange && $0.source == nil { $0.source = .thermal } }
             c.buildPage()
         }
+        // Rows stack from a running edge; each trigger type keeps its own height without blank rows.
+        var y: CGFloat = 267
         if rule.condition == .threshold {
             metricPopup(t("指标", "Metric"), metric: rule.metric, optional: false, in: page, y: 153) { c, metric in
                 if let metric {
@@ -99,23 +101,23 @@ extension SettingsWindowController {
             choice(t("目标状态", "Target state"), id: "rule.target", choices: [t("任何变化", "Any change")] + titles, selected: rule.targetState.flatMap { states.firstIndex(of: $0).map { $0 + 1 } } ?? 0, in: page, y: 191) { c,item in
                 c.editRule(id) { $0.targetState = item == 0 ? nil : states[item - 1] }
             }
-            _ = caption(t("仅已知状态变化可触发；未知读数不建立状态。切换来源会清空目标。", "Only known transitions can trigger. Unknown readings establish no state. Changing source clears the target."), in: page, y: 229)
+            y = max(y, note(t("仅已知状态变化可触发；未知读数不建立状态。切换来源会清空目标。", "Only known transitions can trigger. Unknown readings establish no state. Changing source clears the target."), in: page, y: 229, width: 545) + 10)
         }
-        textField(t("持续时间 · 秒（0–300）", "Hold · seconds (0–300)"), key: "rule.\(id).hold", in: page, y: 267,
+        textField(t("持续时间 · 秒（0–300）", "Hold · seconds (0–300)"), key: "rule.\(id).hold", in: page, y: y,
             value: { c in SettingsNumeric.text(c.settings.value.telemetryAlertRules.first { $0.id == id }?.holdSeconds ?? 0) }) { c, text in
                 guard let value = SettingsNumeric.parse(text, range: 0...300) else { return false }
                 c.editRule(id) { $0.holdSeconds = value }; return true
             }
-        textField(t("冷却 · 秒（10–86400）", "Cooldown · seconds (10–86400)"), key: "rule.\(id).cooldown", in: page, y: 305,
+        textField(t("冷却 · 秒（10–86400）", "Cooldown · seconds (10–86400)"), key: "rule.\(id).cooldown", in: page, y: y + 38,
             value: { c in SettingsNumeric.text(c.settings.value.telemetryAlertRules.first { $0.id == id }?.cooldownSeconds ?? 30) }) { c, text in
                 guard let value = SettingsNumeric.parse(text, range: 10...86400) else { return false }
                 c.editRule(id) { $0.cooldownSeconds = value }; return true
             }
-        _ = caption(rule.condition == .threshold ? metricAvailability(rule.metric) : t("首次采样仅建立基线。冷却期内变化会被消耗，不会稍后重播。", "First sample establishes a baseline. Transitions during cooldown are consumed, never replayed later."), in: page, y: 345)
-        ruleExplanation(in: page, y: 385, stateChange: rule.condition == .stateChange)
-        editorValidation(in: page, y: 500)
+        y = note(rule.condition == .threshold ? metricAvailability(rule.metric) : t("首次采样仅建立基线。冷却期内变化会被消耗，不会稍后重播。", "First sample establishes a baseline. Transitions during cooldown are consumed, never replayed later."), in: page, y: y + 80, width: 545) + 12
+        finishEditorPage(page, bottom: ruleExplanation(in: page, y: y, stateChange: rule.condition == .stateChange))
     }
-    private func ruleExplanation(in page: NSView, y: CGFloat, stateChange: Bool = false) {
+    /// Returns the bottom edge of the explanation.
+    private func ruleExplanation(in page: NSView, y: CGFloat, stateChange: Bool = false) -> CGFloat {
         let message = NSTextField(wrappingLabelWithString: stateChange ? t(
             "首次已知读数仅建立基线；状态需保持所设持续时间。冷却期内变化不会稍后重播。后台每 30 秒检查，可能跳过短暂变化。停用来源模块不强制采集。散热已有默认提醒，请按需启用自定义规则。",
             "First known reading establishes a baseline. A changed state must last for the hold time. Cooldown transitions are never replayed. Background checks run every 30 s and can miss brief changes. Disabled sources stay unavailable. Built-in thermal alerts already exist; enable custom rules as needed.") : t(
@@ -123,6 +125,8 @@ extension SettingsWindowController {
             "First sample establishes a baseline; no startup replay. Recover to rearm after firing. Background checks run every 30 s and can miss brief crossings. Disabled modules stay unavailable. Built-in battery/thermal alerts already exist; enable custom rules only as needed."))
         message.font = .systemFont(ofSize: 11)
         message.textColor = .secondaryLabelColor
-        place(message, in: page, y: y, width: 545, height: 94)
+        let height = ceil(message.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: 545, height: 10_000)).height ?? 94)
+        place(message, in: page, y: y, width: 545, height: height)
+        return y + height
     }
 }

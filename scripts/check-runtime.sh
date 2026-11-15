@@ -32,6 +32,6 @@ swiftc -I "$binary_dir/Modules" \
   Sources/EndfieldCharge/HUDView.swift Sources/EndfieldCharge/HUDController.swift Sources/EndfieldCharge/CapsulePlaybackController.swift \
   Sources/EndfieldCharge/SettingsControls.swift Sources/EndfieldCharge/SettingsPages.swift \
   Sources/EndfieldCharge/SettingsAppearance.swift Sources/EndfieldCharge/SettingsPlayback.swift Sources/EndfieldCharge/SettingsCapsules.swift Sources/EndfieldCharge/SettingsRules.swift \
-  Sources/EndfieldCharge/SettingsWindowController.swift "${runtime_checks[@]}" \
+  Sources/EndfieldCharge/SettingsWindowController.swift Sources/EndfieldCharge/UtilityWindows.swift "${runtime_checks[@]}" \
   "$binary_dir"/ChargeCore.build/*.o -o "$check_dir/check-runtime"
 "$check_dir/check-runtime" --group "$group"
