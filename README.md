@@ -122,6 +122,7 @@ On a Mac with a graphical session, also run `bash scripts/check-runtime.sh` for 
 | [Developer guide](docs/DEVELOPMENT.md) · [中文](docs/DEVELOPMENT.zh-CN.md) | Build, CLI exports, project structure and release workflow |
 | [Performance records](docs/PERFORMANCE.md) | Versioned measurements and their limits |
 | [Sharing and playback guide](docs/configuration-sharing.md) · [中文](docs/configuration-sharing.zh-CN.md) | Import/undo, colors, typed state alerts and playback defaults/limits |
+| [v1.3.1 delivery](docs/interaction-polish-validation.md) | Interaction polish release: full checks, battery artwork regression and package hashes |
 | [v1.2.0 validation](docs/capsule-sharing-validation.md) | Current candidate tests, artwork regression, package and performance |
 | [v1.1.0 validation](docs/telemetry-plus-validation.md) | Feature, lifecycle, package and release verification |
 | [Release notes](https://github.com/MarkYang44/Endfield-Charge/releases) | Packaged versions and changes |

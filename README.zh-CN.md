@@ -122,6 +122,7 @@ bash scripts/build-app.sh --universal
 | [开发指南](docs/DEVELOPMENT.zh-CN.md) · [English](docs/DEVELOPMENT.md) | 构建、命令行导出、项目结构与发布流程 |
 | [性能记录](docs/PERFORMANCE.md) | 分版本测量、口径与限制 |
 | [分享与播放指南](docs/configuration-sharing.zh-CN.md) · [English](docs/configuration-sharing.md) | 导入／撤销、配色、状态规则及播放默认值和边界 |
+| [v1.3.1 交付记录](docs/interaction-polish-validation.md) | 交互打磨版本：全量检查、电量图案回归与安装包哈希 |
 | [v1.2.0 验证](docs/capsule-sharing-validation.md) | 当前候选版本测试、图案回归、安装包与实测开销 |
 | [v1.1.0 验证](docs/telemetry-plus-validation.md) | 功能、生命周期、安装包与公开发布检查 |
 | [发行说明](https://github.com/MarkYang44/Endfield-Charge/releases) | 正式安装包与版本变化 |
