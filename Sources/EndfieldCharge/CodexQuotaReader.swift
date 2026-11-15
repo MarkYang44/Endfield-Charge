@@ -127,7 +127,7 @@ final class CodexQuotaRequest {
             do { try input.fileHandleForWriting.write(contentsOf: data + Data([10])); return true }
             catch { return false }
         }
-        guard send(["id": 1, "method": "initialize", "params": ["clientInfo": ["name": "endfield_charge", "version": "1.3.0"]]]) else { return nil }
+        guard send(["id": 1, "method": "initialize", "params": ["clientInfo": ["name": "endfield_charge", "version": "1.3.1"]]]) else { return nil }
         var buffer = Data(), total = 0, initialized = false
         let fd = output.fileHandleForReading.fileDescriptor
         var bytes = [UInt8](repeating: 0, count: 8192)
