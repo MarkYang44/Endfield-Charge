@@ -1,6 +1,17 @@
 import AppKit
 import ChargeCore
 
+/// Runs each step once its condition holds, failing after 2 s like `awaitCondition`. Polling from a timer,
+/// rather than spinning a nested run loop, starts every action from the child's own `app.run()` loop.
+private func runSteps(_ steps: ArraySlice<(condition: () -> Bool, failure: String, action: () -> Void)>) {
+    guard let step = steps.first else { return }
+    let deadline = Date(timeIntervalSinceNow: 2)
+    _ = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { timer in
+        if step.condition() { timer.invalidate(); step.action(); runSteps(steps.dropFirst()) }
+        else if Date() >= deadline { fputs("FAIL: \(step.failure)\n", stderr); exit(1) }
+    }
+}
+
 func runChildRoleIfRequested() {
     let telemetryRole = CommandLine.arguments.contains("--telemetry-ui")
     if let index = CommandLine.arguments.firstIndex(of: telemetryRole ? "--telemetry-ui" : "--settings-ui") {
@@ -21,17 +32,7 @@ func runChildRoleIfRequested() {
             bytes.append(0x0A)
             _ = try? file.seekToEnd(); try? file.write(contentsOf: bytes); try? file.close()
         }
-        if telemetryRole && tab == 0 {
-            _ = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { _ in
-                app.windows.first(where: { $0.contentView is TelemetryView })?.miniaturize(nil)
-            }
-            _ = Timer.scheduledTimer(withTimeInterval: 0.9, repeats: false) { _ in
-                app.windows.first(where: { $0.contentView is TelemetryView })?.deminiaturize(nil)
-            }
-            _ = Timer.scheduledTimer(withTimeInterval: 1.3, repeats: false) { _ in app.hide(nil) }
-            _ = Timer.scheduledTimer(withTimeInterval: 1.6, repeats: false) { _ in app.unhide(nil) }
-        }
-        _ = Timer.scheduledTimer(withTimeInterval: telemetryRole && tab == 0 ? 2.0 : 0.8, repeats: false) { _ in
+        let verify: () -> Void = {
             guard let window = app.windows.first(where: { $0.isVisible && (telemetryRole ? $0.contentView is TelemetryView : $0.toolbar != nil) }) else {
                 fputs("FAIL: child settings window missing\n", stderr); exit(1)
             }
@@ -106,6 +107,29 @@ func runChildRoleIfRequested() {
             }
             closedAt = ProcessInfo.processInfo.systemUptime
             window.close()
+        }
+        if telemetryRole && tab == 0 {
+            // Minimize and restore animate for about 0.6 s each on macOS 27, and AppKit drops a deminiaturize sent
+            // during the minimize animation although isMiniaturized is already true. So each step waits for the
+            // notification that reported the previous transition to the resident, not for a fixed offset.
+            var reported: Notification.Name?
+            for name in [NSWindow.didMiniaturizeNotification, NSWindow.didDeminiaturizeNotification,
+                         NSApplication.didHideNotification, NSApplication.didUnhideNotification] {
+                _ = NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { reported = $0.name }
+            }
+            let terminal = { app.windows.first(where: { $0.contentView is TelemetryView }) }
+            runSteps([
+                ({ terminal()?.isVisible == true }, "telemetry window never opened", { terminal()?.miniaturize(nil) }),
+                ({ reported == NSWindow.didMiniaturizeNotification }, "telemetry window never minimized", { terminal()?.deminiaturize(nil) }),
+                ({ reported == NSWindow.didDeminiaturizeNotification }, "telemetry window never restored", { app.hide(nil) }),
+                ({ reported == NSApplication.didHideNotification }, "telemetry child never hid", { app.unhide(nil) }),
+                ({ reported == NSApplication.didUnhideNotification }, "telemetry child never unhid", {}),
+                // The resident sends its newer battery reading 0.4 s after launch; check delivery once it arrives.
+                ({ (terminal()?.contentView as? TelemetryView)?.header.snapshot.percent == 68 },
+                    "telemetry did not receive resident snapshot/preferences", verify),
+            ])
+        } else {
+            _ = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in verify() }
         }
         withExtendedLifetime((delegate, exitObserver)) { app.run() }
         exit(0)
