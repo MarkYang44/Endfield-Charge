@@ -6,7 +6,7 @@ All examples use synthetic demo configurations. These features use the existing 
 
 ## Share and undo
 
-Open **Settings → Capsules**, scroll down to **Sharing & Import…**, then **Export…** to save a local `.endfield.json`. To import, choose **Choose Import File…**, inspect the preview, select **Merge (keep local content)** or **Replace shared content**, then **Apply Import…** and confirm. Cancel leaves the configuration unchanged.
+Open **Settings → Capsules**, scroll down to **Sharing & Import…**, then **Export…** to save a local `.endfield.json`. To import, choose **Choose Import File…** or drop the file onto the window, inspect the preview, select **Merge (keep local content)** or **Replace shared content**, then **Apply Import…** and confirm. Cancel leaves the configuration unchanged.
 
 Shares contain capsule profiles, ordered color conditions, alert rules, the selected capsule, and playback queue/interval. They exclude language, shortcut, display placement, login startup, device readings and other local preferences. Sharing does not upload anything. The format has its own format identifier and schemaVersion; it does **not** import arbitrary zmd-charge-plus JSON.
 
@@ -21,7 +21,7 @@ The share file and private IPC frame limits are 128 KiB (131,072 bytes; IPC excl
 
 ## Conditional colors
 
-In **Settings → Capsules**, scroll to **Conditional colors**, add a condition, choose a numeric metric, strict Above/Below comparison, threshold in the displayed units, and Theme/Lime/Amber/Red. Use the condition selector and Up/Down to set priority; **Preview Colors** uses the actual HUD. Invalid or unfinished IME input must be corrected before structural changes.
+In **Settings → Capsules**, scroll to **Conditional colors**, add a condition, choose a numeric metric, strict Above/Below comparison, threshold in the displayed units, and Theme/Lime/Amber/Red. Use the condition selector and Up/Down to set priority; **Preview Active Capsule** in the footer uses the actual HUD. Invalid or unfinished IME input must be corrected before structural changes.
 
 The first matching known condition wins. Equality does not match; unknown readings are skipped. No match uses the original theme. Colors change the numeric/ring accent, not artwork or geometry, and do not create alerts. Real power/low-battery/thermal alerts keep their priority and severity colors. An unchanged battery profile uses the original rendering path.
 

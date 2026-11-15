@@ -70,11 +70,13 @@ Builds use an ad-hoc signature and are **not Apple-notarized**. If macOS blocks 
 1. Click the menu bar icon and open **Settings → General** to choose your language and shortcut.
 2. Use **Preview Battery** or connect/disconnect your charger to see the original HUD.
 3. Open **Telemetry Terminal** for the five telemetry pages. Individual modules can be disabled in **Settings → Telemetry**.
-4. Open **Settings → Capsules**, select or edit a profile, then use **Preview Active Capsule**.
-5. Scroll down in **Capsules** to edit **Conditional colors**, the **Playback queue**, or open **Sharing & Import…**. Enable persistent display separately in **Display**.
+4. Open **Settings → Capsules**, select or edit a profile, then use **Preview Active Capsule** in the always-visible footer.
+5. Scroll down in **Capsules** to edit **Conditional colors**, the **Playback queue**, or open **Sharing & Import…**. Enable persistent display separately in **Display**; the **Persistent display →** and **Queue & interval →** links jump between the two.
 6. Open **Settings → Rules** to create a threshold or state-change alert, then explicitly enable it.
 
-The fresh-install shortcut is **Control + Option + H**. You can choose **Command + Shift + E** or another supported combination. Existing shortcuts are preserved. The shortcut starts with the selected capsule and, when rotation is enabled, plays one queue round; explicit battery preview and charger events continue to use the battery HUD.
+In Settings and the Telemetry Terminal, **Command + 1–7** (Telemetry: 1–5) switch sections, **Command + W** closes the window, and text fields support the standard copy, paste and undo shortcuts. Invalid input is explained in the footer, wherever the field is scrolled.
+
+The fresh-install shortcut is **Control + Option + H**, also shown next to **Preview Selected Capsule** in the menu bar menu. You can choose **Command + Shift + E** or another supported combination. Existing shortcuts are preserved. The shortcut starts with the selected capsule and, when rotation is enabled, plays one queue round; explicit battery preview and charger events continue to use the battery HUD.
 
 A newly enabled rule first establishes a quiet baseline. Numeric rules must recover and cross the threshold again if already true at startup; state rules wait for the next known transition. Background evaluation is every 30 seconds, so brief changes may be missed.
 
